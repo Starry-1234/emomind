@@ -4,7 +4,6 @@ import useAuth from "@/hooks/useAuth"
 import {
   getMessages,
   sendMessageStream,
-  type DifyMessage,
   type DifyMessageFile,
   uploadFile,
   DIFY_AI_DOCTOR_API_KEY,
@@ -12,7 +11,6 @@ import {
 import { createAnalysisReport } from "@/services/analysisApi"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Card } from "@/components/ui/card"
 import {
   Stethoscope,
   Send,
@@ -26,7 +24,6 @@ import {
 } from "lucide-react"
 import { useConversation } from "@/components/contexts/ConversationContext"
 import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 
 export const Route = createFileRoute("/user/ai-doctor")({
   component: AiDoctor,
@@ -533,7 +530,7 @@ function AiDoctor() {
               // 添加到聊天消息
               setMessages(prev => [...prev,
                 { role: "user", content: `【心理状况分析】上传文件：${analysisFile.name}` },
-                { role: "assitant", content: analysisResult }
+                { role: "assistant", content: analysisResult }
               ])
 
               // 保存到数据库

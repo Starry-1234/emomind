@@ -11,7 +11,7 @@ from sqlmodel.sql.sqltypes import AutoString
 
 # revision identifiers, used by Alembic.
 revision = "a1b2c3d4e5f6"
-down_revision = "1a31ce608336"
+down_revision = "fe56fa70289e"
 branch_labels = None
 depends_on = None
 

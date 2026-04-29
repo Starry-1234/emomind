@@ -14,9 +14,7 @@ import {
   Send,
   Loader2,
   CheckCircle2,
-  BarChart3,
   Info,
-  ChevronRight,
 } from "lucide-react"
 import { useConversation } from "@/components/contexts/ConversationContext"
 import ReactMarkdown from "react-markdown"

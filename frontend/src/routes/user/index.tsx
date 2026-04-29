@@ -151,7 +151,7 @@ function getLevelBadge(level: string) {
 function UserHome() {
   const [chatCount, setChatCount] = useState(0)
   const [testCount, setTestCount] = useState(0)
-  const [streakDays, setStreakDays] = useState(0)
+  const [streakDays] = useState(0)
   const [loading, setLoading] = useState(true)
   const quote = getQuoteOfTheDay()
   const today = new Date()
