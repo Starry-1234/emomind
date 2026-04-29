@@ -1,0 +1,499 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { ExternalLink } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { AnalysisService, type FileInfo } from "@/client/analysis"
+import useAuth from "@/hooks/useAuth"
+
+export const Route = createFileRoute("/_layout-backup/file-upload")({
+  component: FileUpload,
+  head: () => ({
+    meta: [{ title: "文件上传分析 - 心芯智联" }],
+  }),
+})
+
+interface UploadedFile {
+  file: File
+  info?: FileInfo
+}
+
+export default function FileUpload() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const [userInfo, setUserInfo] = useState({
+    name: "",
+    gender: "" as "male" | "female" | "other" | "",
+    age: "",
+    birthdate: "",
+    remark: "",
+  })
+  const [uploadedFiles, setUploadedFiles] = useState<{
+    text: UploadedFile | null
+    audio: UploadedFile | null
+    video: UploadedFile | null
+  }>({ text: null, audio: null, video: null })
+  const [isDragging, setIsDragging] = useState({
+    text: false,
+    audio: false,
+    video: false,
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<{
+    type: "info" | "success" | "error"
+    message: string
+  } | null>(null)
+  const [progress, setProgress] = useState(0)
+  const textInputRef = useRef<HTMLInputElement>(null)
+  const audioInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+
+  const loadPendingFiles = useCallback(async () => {
+    const filesData = JSON.parse(
+      sessionStorage.getItem("pendingFilesData") || "{}",
+    )
+    const pendingAudio = JSON.parse(
+      sessionStorage.getItem("pendingAudioFiles") || "[]",
+    )
+    const pendingVideo = JSON.parse(
+      sessionStorage.getItem("pendingVideoFiles") || "[]",
+    )
+
+    const newUploadedFiles = { ...uploadedFiles }
+    let hasChanges = false
+
+    for (const pending of pendingAudio) {
+      if (filesData[pending.name]) {
+        const base64 = filesData[pending.name]
+        const response = await fetch(base64)
+        const blob = await response.blob()
+        const fileType = pending.name.endsWith(".webm")
+          ? "audio/webm"
+          : "audio/wav"
+        const file = new File([blob], pending.name, { type: fileType })
+        newUploadedFiles.audio = { file }
+        hasChanges = true
+      }
+    }
+
+    for (const pending of pendingVideo) {
+      if (filesData[pending.name]) {
+        const base64 = filesData[pending.name]
+        const response = await fetch(base64)
+        const blob = await response.blob()
+        const file = new File([blob], pending.name, { type: "video/webm" })
+        newUploadedFiles.video = { file }
+        hasChanges = true
+      }
+    }
+
+    if (hasChanges) {
+      setUploadedFiles(newUploadedFiles)
+      sessionStorage.removeItem("pendingAudioFiles")
+      sessionStorage.removeItem("pendingVideoFiles")
+      sessionStorage.removeItem("pendingFilesData")
+      setUploadStatus({ type: "info", message: "已从录制页面导入文件" })
+      setTimeout(() => setUploadStatus(null), 3000)
+    }
+  }, [uploadedFiles])
+
+  useEffect(() => {
+    loadPendingFiles()
+  }, [loadPendingFiles])
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">请先登录后再使用文件上传服务</p>
+      </div>
+    )
+  }
+
+  const canAnalyze =
+    Object.values(uploadedFiles).some((f) => f !== null) &&
+    userInfo.name &&
+    userInfo.age
+
+  const handleFileSelect = async (
+    type: "text" | "audio" | "video",
+    file: File,
+  ) => {
+    setUploadedFiles((prev) => ({ ...prev, [type]: { file } }))
+  }
+
+  const handleDrop = (type: "text" | "audio" | "video", e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging((prev) => ({ ...prev, [type]: false }))
+    if (e.dataTransfer.files?.[0]) {
+      handleFileSelect(type, e.dataTransfer.files[0])
+    }
+  }
+
+  const handleRemoveFile = (type: "text" | "audio" | "video") => {
+    setUploadedFiles((prev) => ({ ...prev, [type]: null }))
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes"
+    const k = 1024
+    const sizes = ["Bytes", "KB", "MB", "GB"]
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`
+  }
+
+  const getFileTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      text: "文本文件",
+      audio: "录音文件",
+      video: "视频文件",
+    }
+    return labels[type] || "文件"
+  }
+
+  const analyzeFiles = async () => {
+    if (!canAnalyze) return
+
+    setIsLoading(true)
+    setProgress(0)
+    setUploadStatus({ type: "info", message: "正在创建分析记录..." })
+
+    try {
+      const recordData = {
+        person_name: userInfo.name,
+        gender: userInfo.gender as "male" | "female" | "other",
+        age: parseInt(userInfo.age, 10),
+        birth_date: userInfo.birthdate
+          ? new Date(userInfo.birthdate).toISOString()
+          : undefined,
+        remarks: userInfo.remark || undefined,
+      }
+
+      const record = await AnalysisService.createRecord(recordData)
+      setProgress(30)
+      setUploadStatus({ type: "info", message: "正在上传文件..." })
+
+      const newUploadedFiles = { ...uploadedFiles }
+      for (const [type, uploaded] of Object.entries(uploadedFiles)) {
+        if (uploaded?.file) {
+          const info = await AnalysisService.uploadFile(
+            record.record_id,
+            uploaded.file,
+          )
+          newUploadedFiles[type as keyof typeof uploadedFiles] = {
+            file: uploaded.file,
+            info,
+          }
+        }
+      }
+
+      setUploadedFiles(newUploadedFiles)
+      setProgress(70)
+      setUploadStatus({ type: "info", message: "正在分析，请稍候..." })
+
+      await AnalysisService.simulateAnalysis(record.record_id)
+
+      setProgress(100)
+      setUploadStatus({ type: "success", message: "分析完成！" })
+      setTimeout(() => {
+        window.location.href = `/analysis-result/${record.record_id}`
+      }, 1500)
+    } catch (error) {
+      console.error("分析失败:", error)
+      setUploadStatus({
+        type: "error",
+        message: `分析失败: ${error instanceof Error ? error.message : `未知错误`}`,
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const resetForm = () => {
+    setUserInfo({ name: "", gender: "", age: "", birthdate: "", remark: "" })
+    setUploadedFiles({ text: null, audio: null, video: null })
+    setProgress(0)
+    setUploadStatus(null)
+  }
+
+  return (
+    <div className="container mx-auto p-6 max-w-4xl">
+      <h1 className="text-3xl font-bold mb-8 text-center">心理分析文件上传</h1>
+
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border">
+        <h2 className="text-xl font-semibold mb-4 text-primary">基本信息</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="name">
+              姓名 *
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={userInfo.name}
+              onChange={(e) =>
+                setUserInfo({ ...userInfo, name: e.target.value })
+              }
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50"
+              placeholder="请输入姓名"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="gender">
+              性别 *
+            </label>
+            <select
+              id="gender"
+              value={userInfo.gender}
+              onChange={(e) =>
+                setUserInfo({
+                  ...userInfo,
+                  gender: e.target.value as typeof userInfo.gender,
+                })
+              }
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">请选择</option>
+              <option value="male">男</option>
+              <option value="female">女</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="age">
+              年龄 *
+            </label>
+            <input
+              id="age"
+              type="number"
+              value={userInfo.age}
+              onChange={(e) =>
+                setUserInfo({ ...userInfo, age: e.target.value })
+              }
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50"
+              placeholder="请输入年龄"
+            />
+          </div>
+          <div>
+            <label
+              className="block text-sm font-medium mb-1"
+              htmlFor="birthdate"
+            >
+              出生日期
+            </label>
+            <input
+              id="birthdate"
+              type="date"
+              value={userInfo.birthdate}
+              onChange={(e) =>
+                setUserInfo({ ...userInfo, birthdate: e.target.value })
+              }
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium mb-1" htmlFor="remark">
+              备注
+            </label>
+            <textarea
+              id="remark"
+              value={userInfo.remark}
+              onChange={(e) =>
+                setUserInfo({ ...userInfo, remark: e.target.value })
+              }
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50"
+              rows={2}
+              placeholder="请输入备注信息"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 mb-6">
+        <h2 className="text-xl font-semibold text-primary">上传文件</h2>
+
+        {(["text", "audio", "video"] as const).map((type) => {
+          const icons = { text: "📝", audio: "🎵", video: "🎬" }
+          const accepts = {
+            text: ".txt,.doc,.docx,.pdf",
+            audio: ".mp3,.wav,.m4a,.ogg",
+            video: ".mp4,.mov,.avi,.wmv",
+          }
+          const uploadPaths = {
+            text: "/psychological-test",
+            audio: "/audio-recording",
+            video: "/video-recording",
+          }
+          const uploaded = uploadedFiles[type]
+          return (
+            <div
+              key={type}
+              className="bg-white rounded-xl shadow-sm overflow-hidden border"
+            >
+              <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{icons[type]}</span>
+                  <span className="font-medium">{getFileTypeLabel(type)}</span>
+                </div>
+                {!uploaded && (
+                  <button
+                    type="button"
+                    onClick={() => navigate({ to: uploadPaths[type] })}
+                    className="flex items-center gap-1 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-sm transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    去获取文件
+                  </button>
+                )}
+              </div>
+              <div
+                role="button"
+                tabIndex={0}
+                className={`p-8 border-2 border-dashed m-4 rounded-xl transition-colors ${
+                  uploaded
+                    ? "border-green-400 bg-green-50"
+                    : isDragging[type]
+                      ? "border-purple-400 bg-purple-50"
+                      : "border-gray-300 hover:border-purple-400"
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setIsDragging((p) => ({ ...p, [type]: true }))
+                }}
+                onDragLeave={() =>
+                  setIsDragging((p) => ({ ...p, [type]: false }))
+                }
+                onDrop={(e) => handleDrop(type, e)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    const input =
+                      type === "text"
+                        ? textInputRef.current
+                        : type === "audio"
+                          ? audioInputRef.current
+                          : videoInputRef.current
+                    input?.click()
+                  }
+                }}
+              >
+                <input
+                  ref={
+                    type === "text"
+                      ? textInputRef
+                      : type === "audio"
+                        ? audioInputRef
+                        : videoInputRef
+                  }
+                  type="file"
+                  accept={accepts[type]}
+                  className="hidden"
+                  onChange={(e) =>
+                    e.target.files?.[0] &&
+                    handleFileSelect(type, e.target.files[0])
+                  }
+                />
+                {uploaded ? (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-800">
+                        {uploaded.file.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {formatFileSize(uploaded.file.size)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {type !== "text" && (
+                        <span className="text-green-500 text-sm flex items-center gap-1">
+                          ✓ 已上传
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(type)}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                      >
+                        移除
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="text-5xl mb-4">{icons[type]}</div>
+                    <p className="text-gray-600 mb-4">
+                      点击或拖拽{getFileTypeLabel(type)}到此处上传
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          type === "text"
+                            ? textInputRef.current?.click()
+                            : type === "audio"
+                              ? audioInputRef.current?.click()
+                              : videoInputRef.current?.click()
+                        }
+                        className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                      >
+                        浏览文件
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate({ to: uploadPaths[type] })}
+                        className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                      >
+                        去获取文件
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {uploadStatus && (
+        <div
+          className={`p-4 rounded-lg mb-4 ${
+            uploadStatus.type === "success"
+              ? "bg-green-100 text-green-800"
+              : uploadStatus.type === "error"
+                ? "bg-red-100 text-red-800"
+                : "bg-blue-100 text-blue-800"
+          }`}
+        >
+          {uploadStatus.message}
+        </div>
+      )}
+
+      {progress > 0 && progress < 100 && (
+        <div className="mb-4">
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-green-500 transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="text-center text-sm text-gray-500 mt-1">{progress}%</p>
+        </div>
+      )}
+
+      <div className="flex justify-center gap-4">
+        <button
+          type="button"
+          onClick={analyzeFiles}
+          disabled={!canAnalyze || isLoading}
+          className="px-8 py-3 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          {isLoading ? "分析中..." : "上传分析"}
+        </button>
+        <button
+          type="button"
+          onClick={resetForm}
+          className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition-colors"
+        >
+          重置
+        </button>
+      </div>
+    </div>
+  )
+}
