@@ -47,7 +47,10 @@ export function ConversationList() {
     }
   }
 
-  const handleDeleteConversation = async (convId: string, e: React.MouseEvent) => {
+  const handleDeleteConversation = async (
+    convId: string,
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation()
     await deleteConversationById(convId)
   }
@@ -75,7 +78,9 @@ export function ConversationList() {
                   <MessageSquare />
                   <span className="truncate">{conv.name || "新对话"}</span>
                 </SidebarMenuButton>
-                <SidebarMenuAction onClick={(e) => handleDeleteConversation(conv.id, e)}>
+                <SidebarMenuAction
+                  onClick={(e) => handleDeleteConversation(conv.id, e)}
+                >
                   <X />
                 </SidebarMenuAction>
               </SidebarMenuItem>

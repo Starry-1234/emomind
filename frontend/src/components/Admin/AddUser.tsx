@@ -39,9 +39,7 @@ const formSchema = z
       .string()
       .min(1, { message: "密码不能为空" })
       .min(8, { message: "密码至少8个字符" }),
-    confirm_password: z
-      .string()
-      .min(1, { message: "请确认密码" }),
+    confirm_password: z.string().min(1, { message: "请确认密码" }),
     is_superuser: z.boolean(),
     is_active: z.boolean(),
   })
@@ -100,9 +98,7 @@ const AddUser = () => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>添加用户</DialogTitle>
-          <DialogDescription>
-            填写以下表单添加新用户到系统。
-          </DialogDescription>
+          <DialogDescription>填写以下表单添加新用户到系统。</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -169,8 +165,7 @@ const AddUser = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      确认密码{" "}
-                      <span className="text-destructive">*</span>
+                      确认密码 <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input

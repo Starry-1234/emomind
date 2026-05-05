@@ -52,8 +52,7 @@ const DeleteConfirmation = () => {
           <DialogHeader>
             <DialogTitle>确认删除</DialogTitle>
             <DialogDescription>
-              您的所有账户数据将被{" "}
-              <strong>永久删除。</strong> 如果您确定，请
+              您的所有账户数据将被 <strong>永久删除。</strong> 如果您确定，请
               点击 <strong>"确认"</strong> 继续。此操作无法撤销。
             </DialogDescription>
           </DialogHeader>

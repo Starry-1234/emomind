@@ -110,9 +110,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>编辑用户</DialogTitle>
-              <DialogDescription>
-                更新以下用户信息。
-              </DialogDescription>
+              <DialogDescription>更新以下用户信息。</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField

@@ -1,4 +1,17 @@
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import {
+  Brain,
+  Calendar,
+  ChevronRight,
+  ClipboardCheck,
+  MessageSquare,
+  Stethoscope,
+  TrendingUp,
+} from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { TestRecordsService } from "@/client"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -7,48 +20,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import useAuth from "@/hooks/useAuth"
 import {
-  MessageSquare,
-  ClipboardCheck,
-  Calendar,
-  Brain,
-  Stethoscope,
-  TrendingUp,
-  ChevronRight,
-} from "lucide-react"
-import { useEffect, useState } from "react"
-import { getConversationCount, DIFY_AI_DOCTOR_API_KEY, DIFY_TEST_API_KEY } from "@/services/difyApi"
+  DIFY_AI_DOCTOR_API_KEY,
+  getConversationCount,
+} from "@/services/difyApi"
 
 export const Route = createFileRoute("/user/")({
   component: UserHome,
   head: () => ({
-    meta: [
-      {
-        title: "用户中心",
-      },
-    ],
+    meta: [{ title: "用户中心" }],
   }),
 })
-
-// ===== 动态统计数据 =====
-const USER = "default-user" // 与 ai-doctor.tsx / test.tsx 保持一致
-
-const MOCK_TREND = [
-  { day: "周一", score: 62 },
-  { day: "周二", score: 58 },
-  { day: "周三", score: 65 },
-  { day: "周四", score: 52 },
-  { day: "周五", score: 70 },
-  { day: "周六", score: 68 },
-  { day: "周日", score: 75 },
-]
-
-const MOCK_HISTORY = [
-  { id: 1, name: "焦虑自评量表", date: "2026-04-25", score: 72, total: 100, level: "需要关注" },
-  { id: 2, name: "睡眠质量评估", date: "2026-04-23", score: 45, total: 100, level: "正常范围" },
-  { id: 3, name: "心理健康综合自评", date: "2026-04-20", score: 68, total: 100, level: "需要关注" },
-]
 
 // ===== 每日一言 =====
 const DAILY_QUOTES = [
@@ -66,9 +49,33 @@ const DAILY_QUOTES = [
 
 function getQuoteOfTheDay() {
   const dayOfYear = Math.floor(
-    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+      86400000,
   )
   return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length]
+}
+
+// ===== 分数等级颜色 =====
+function getScoreColor(score: number | null | undefined) {
+  if (score === null || score === undefined) return "text-muted-foreground"
+  if (score >= 80) return "text-emerald-600"
+  if (score >= 60) return "text-amber-600"
+  return "text-rose-600"
+}
+
+function getLevelBadge(score: number | null | undefined) {
+  if (score === null || score === undefined)
+    return "bg-muted text-muted-foreground"
+  if (score >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200"
+  if (score >= 60) return "bg-amber-50 text-amber-700 border-amber-200"
+  return "bg-rose-50 text-rose-700 border-rose-200"
+}
+
+function getLevelLabel(score: number | null | undefined) {
+  if (score === null || score === undefined) return "待评估"
+  if (score >= 80) return "良好"
+  if (score >= 60) return "中等"
+  return "需关注"
 }
 
 // ===== 简易折线图组件 =====
@@ -88,18 +95,37 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
     value: d.score,
   }))
 
-  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ")
+  const linePath = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+    .join(" ")
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${padY + innerH} L ${points[0].x} ${padY + innerH} Z`
 
   return (
-    <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full" style={{ maxHeight: 180 }}>
+    <svg
+      viewBox={`0 0 ${chartW} ${chartH}`}
+      className="w-full"
+      style={{ maxHeight: 180 }}
+    >
       {/* 网格线 */}
       {[0, 25, 50, 75, 100].map((v) => {
         const y = padY + innerH - (v / maxScore) * innerH
         return (
           <g key={v}>
-            <line x1={padX} y1={y} x2={chartW - padX} y2={y} stroke="currentColor" strokeOpacity={0.08} />
-            <text x={padX - 8} y={y + 4} textAnchor="end" className="fill-muted-foreground" fontSize={10}>
+            <line
+              x1={padX}
+              y1={y}
+              x2={chartW - padX}
+              y2={y}
+              stroke="currentColor"
+              strokeOpacity={0.08}
+            />
+            <text
+              x={padX - 8}
+              y={y + 4}
+              textAnchor="end"
+              className="fill-muted-foreground"
+              fontSize={10}
+            >
               {v}
             </text>
           </g>
@@ -110,13 +136,33 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
       <path d={areaPath} fill="url(#trendGradient)" opacity={0.3} />
 
       {/* 折线 */}
-      <path d={linePath} fill="none" stroke="var(--color-primary)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={linePath}
+        fill="none"
+        stroke="var(--color-primary)"
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
 
       {/* 数据点 */}
       {points.map((p, i) => (
         <g key={i}>
-          <circle cx={p.x} cy={p.y} r={4} fill="var(--color-primary)" stroke="white" strokeWidth={2} />
-          <text x={p.x} y={chartH - 4} textAnchor="middle" className="fill-muted-foreground" fontSize={11}>
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r={4}
+            fill="var(--color-primary)"
+            stroke="white"
+            strokeWidth={2}
+          />
+          <text
+            x={p.x}
+            y={chartH - 4}
+            textAnchor="middle"
+            className="fill-muted-foreground"
+            fontSize={11}
+          >
             {p.label}
           </text>
         </g>
@@ -125,34 +171,31 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
       {/* 渐变定义 */}
       <defs>
         <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.4} />
-          <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
+          <stop
+            offset="0%"
+            stopColor="var(--color-primary)"
+            stopOpacity={0.4}
+          />
+          <stop
+            offset="100%"
+            stopColor="var(--color-primary)"
+            stopOpacity={0.02}
+          />
         </linearGradient>
       </defs>
     </svg>
   )
 }
 
-// ===== 分数等级颜色 =====
-function getScoreColor(score: number, total: number) {
-  const pct = (score / total) * 100
-  if (pct <= 33) return "text-emerald-600"
-  if (pct <= 66) return "text-amber-600"
-  return "text-rose-600"
-}
-
-function getLevelBadge(level: string) {
-  if (level === "正常范围") return "bg-emerald-50 text-emerald-700 border-emerald-200"
-  if (level === "需要关注") return "bg-amber-50 text-amber-700 border-amber-200"
-  return "bg-rose-50 text-rose-700 border-rose-200"
-}
-
 // ===== 主页面 =====
 function UserHome() {
+  const { user } = useAuth()
+  const userId = user?.id || "anonymous"
+
   const [chatCount, setChatCount] = useState(0)
   const [testCount, setTestCount] = useState(0)
   const [streakDays] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [countsLoading, setCountsLoading] = useState(true)
   const quote = getQuoteOfTheDay()
   const today = new Date()
   const dateStr = today.toLocaleDateString("zh-CN", {
@@ -162,23 +205,49 @@ function UserHome() {
     weekday: "long",
   })
 
+  // 获取最近测评记录
+  const { data: testRecordsData } = useQuery({
+    queryKey: ["test-records-home"],
+    queryFn: () => TestRecordsService.readTestRecords({ skip: 0, limit: 100 }),
+  })
+  const records = testRecordsData?.data ?? []
+
   useEffect(() => {
     async function fetchCounts() {
       try {
-        const [chat, test] = await Promise.all([
-          getConversationCount(USER, DIFY_AI_DOCTOR_API_KEY),
-          getConversationCount(USER, DIFY_TEST_API_KEY),
-        ])
+        const chat = await getConversationCount(userId, DIFY_AI_DOCTOR_API_KEY)
         setChatCount(chat)
-        setTestCount(test)
-      } catch (err) {
-        console.error("获取会话统计失败:", err)
+        // 测评次数用真实的测评记录数，而不是对话次数
+        setTestCount(records.length)
+      } catch {
+        // ignore
       } finally {
-        setLoading(false)
+        setCountsLoading(false)
       }
     }
     fetchCounts()
-  }, [])
+  }, [userId, records.length])
+
+  // 从真实记录计算最近7天趋势
+  const trendData = useMemo(() => {
+    const now = new Date()
+    const days: { day: string; score: number }[] = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      const dateStr = d.toISOString().slice(0, 10)
+      const dayLabel = d.toLocaleDateString("zh-CN", { weekday: "short" })
+      const dayRecord = records.find((r) => {
+        if (!r.created_at) return false
+        return r.created_at.slice(0, 10) === dateStr && r.total_score !== null
+      })
+      days.push({ day: dayLabel, score: dayRecord?.total_score ?? 0 })
+    }
+    return days
+  }, [records])
+
+  // 取最近3条记录展示
+  const recentRecords = records.slice(0, 3)
 
   return (
     <div className="mx-auto max-w-6xl flex flex-col gap-6 p-6 md:p-8">
@@ -198,8 +267,12 @@ function UserHome() {
               <MessageSquare className="size-5" />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs font-medium">对话次数</p>
-              <p className="text-2xl font-bold">{loading ? "--" : chatCount}</p>
+              <p className="text-muted-foreground text-xs font-medium">
+                对话次数
+              </p>
+              <p className="text-2xl font-bold">
+                {countsLoading ? "--" : chatCount}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -210,8 +283,12 @@ function UserHome() {
               <ClipboardCheck className="size-5" />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs font-medium">测评次数</p>
-              <p className="text-2xl font-bold">{loading ? "--" : testCount}</p>
+              <p className="text-muted-foreground text-xs font-medium">
+                测评次数
+              </p>
+              <p className="text-2xl font-bold">
+                {countsLoading ? "--" : testCount}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -222,7 +299,9 @@ function UserHome() {
               <Calendar className="size-5" />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs font-medium">连续使用天数</p>
+              <p className="text-muted-foreground text-xs font-medium">
+                连续使用天数
+              </p>
               <p className="text-2xl font-bold">{streakDays}</p>
             </div>
           </CardContent>
@@ -239,7 +318,7 @@ function UserHome() {
           <CardDescription>近 7 天综合评分变化</CardDescription>
         </CardHeader>
         <CardContent>
-          <MiniChart data={MOCK_TREND} />
+          <MiniChart data={trendData} />
         </CardContent>
       </Card>
 
@@ -253,7 +332,9 @@ function UserHome() {
               </div>
               <div>
                 <CardTitle className="text-base">智能心理医生</CardTitle>
-                <CardDescription>AI 倾听你的心声，提供专业心理支持</CardDescription>
+                <CardDescription>
+                  AI 倾听你的心声，提供专业心理支持
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -265,7 +346,6 @@ function UserHome() {
               </Button>
             </Link>
           </CardFooter>
-          {/* 装饰背景 */}
           <div className="pointer-events-none absolute -right-6 -top-6 size-28 rounded-full bg-primary/5" />
         </Card>
 
@@ -277,7 +357,9 @@ function UserHome() {
               </div>
               <div>
                 <CardTitle className="text-base">心理测评</CardTitle>
-                <CardDescription>专业量表评估，了解你的心理健康状态</CardDescription>
+                <CardDescription>
+                  专业量表评估，了解你的心理健康状态
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -303,31 +385,56 @@ function UserHome() {
           <CardDescription>查看您近期的测评结果</CardDescription>
         </CardHeader>
         <CardContent>
-          {MOCK_HISTORY.length > 0 ? (
+          {recentRecords.length > 0 ? (
             <div className="flex flex-col divide-y">
-              {MOCK_HISTORY.map((record) => (
-                <div key={record.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                  <div className="flex flex-col gap-0.5">
-                    <p className="text-sm font-medium">{record.name}</p>
-                    <p className="text-xs text-muted-foreground">{record.date}</p>
+              {recentRecords.map((record) => {
+                const recordDate = record.created_at
+                  ? new Date(record.created_at).toLocaleDateString("zh-CN", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "未知日期"
+                return (
+                  <div
+                    key={record.id}
+                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-sm font-medium">{record.test_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {recordDate}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {record.total_score !== null &&
+                        record.total_score !== undefined && (
+                          <span
+                            className={`text-lg font-bold ${getScoreColor(record.total_score)}`}
+                          >
+                            {record.total_score}
+                            <span className="text-xs font-normal text-muted-foreground">
+                              /100
+                            </span>
+                          </span>
+                        )}
+                      <span
+                        className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${getLevelBadge(record.total_score)}`}
+                      >
+                        {getLevelLabel(record.total_score)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-lg font-bold ${getScoreColor(record.score, record.total)}`}>
-                      {record.score}
-                      <span className="text-xs font-normal text-muted-foreground">/{record.total}</span>
-                    </span>
-                    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${getLevelBadge(record.level)}`}>
-                      {record.level}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <ClipboardCheck className="mb-2 size-8 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">暂无测评记录</p>
-              <p className="text-xs text-muted-foreground/70">完成一次测评后将在这里显示</p>
+              <p className="text-xs text-muted-foreground/70">
+                完成一次测评后将在这里显示
+              </p>
             </div>
           )}
         </CardContent>

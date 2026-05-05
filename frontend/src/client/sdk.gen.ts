@@ -3,7 +3,156 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AdminReadAdminTestRecordsData, AdminReadAdminTestRecordsResponse, AdminDeleteAdminTestRecordData, AdminDeleteAdminTestRecordResponse, AdminGetAdminStatsResponse, AnalysisReadAnalysisReportsData, AnalysisReadAnalysisReportsResponse, AnalysisCreateAnalysisReportData, AnalysisCreateAnalysisReportResponse, AnalysisReadAnalysisReportData, AnalysisReadAnalysisReportResponse, AnalysisDeleteAnalysisReportData, AnalysisDeleteAnalysisReportResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, TestRecordsReadTestRecordsData, TestRecordsReadTestRecordsResponse, TestRecordsCreateTestRecordData, TestRecordsCreateTestRecordResponse, TestRecordsReadTestRecordData, TestRecordsReadTestRecordResponse, TestRecordsUpdateTestRecordData, TestRecordsUpdateTestRecordResponse, TestRecordsDeleteTestRecordData, TestRecordsDeleteTestRecordResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class AdminService {
+    /**
+     * Read Admin Test Records
+     * Retrieve all test records (superadmin only).
+     * Optionally filter by user_id.
+     * @param data The data for the request.
+     * @param data.userId
+     * @param data.skip
+     * @param data.limit
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static readAdminTestRecords(data: AdminReadAdminTestRecordsData = {}): CancelablePromise<AdminReadAdminTestRecordsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/admin/test-records',
+            query: {
+                user_id: data.userId,
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Admin Test Record
+     * Delete any test record (superadmin only).
+     * @param data The data for the request.
+     * @param data.id
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static deleteAdminTestRecord(data: AdminDeleteAdminTestRecordData): CancelablePromise<AdminDeleteAdminTestRecordResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/admin/test-records/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Admin Stats
+     * Get admin dashboard statistics.
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static getAdminStats(): CancelablePromise<AdminGetAdminStatsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/admin/stats'
+        });
+    }
+}
+
+export class AnalysisService {
+    /**
+     * Read Analysis Reports
+     * 获取当前用户的分析报告列表
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns FileAnalysisReportsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAnalysisReports(data: AnalysisReadAnalysisReportsData = {}): CancelablePromise<AnalysisReadAnalysisReportsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/analysis/reports',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Analysis Report
+     * 创建分析报告（由前端调用，接收 JSON 请求体）
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns FileAnalysisReportPublic Successful Response
+     * @throws ApiError
+     */
+    public static createAnalysisReport(data: AnalysisCreateAnalysisReportData): CancelablePromise<AnalysisCreateAnalysisReportResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/analysis/reports',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Analysis Report
+     * 获取单个分析报告详情
+     * @param data The data for the request.
+     * @param data.reportId
+     * @returns FileAnalysisReportPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAnalysisReport(data: AnalysisReadAnalysisReportData): CancelablePromise<AnalysisReadAnalysisReportResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/analysis/reports/{report_id}',
+            path: {
+                report_id: data.reportId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Analysis Report
+     * 删除分析报告
+     * @param data The data for the request.
+     * @param data.reportId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteAnalysisReport(data: AnalysisDeleteAnalysisReportData): CancelablePromise<AnalysisDeleteAnalysisReportResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/analysis/reports/{report_id}',
+            path: {
+                report_id: data.reportId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class ItemsService {
     /**
@@ -228,6 +377,117 @@ export class PrivateService {
             url: '/api/v1/private/users/',
             body: data.requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class TestRecordsService {
+    /**
+     * Read Test Records
+     * Retrieve test records for the current user.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns TestRecordsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readTestRecords(data: TestRecordsReadTestRecordsData = {}): CancelablePromise<TestRecordsReadTestRecordsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/test-records/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Test Record
+     * Create new test record.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns TestRecordPublic Successful Response
+     * @throws ApiError
+     */
+    public static createTestRecord(data: TestRecordsCreateTestRecordData): CancelablePromise<TestRecordsCreateTestRecordResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/test-records/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Test Record
+     * Get test record by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns TestRecordPublic Successful Response
+     * @throws ApiError
+     */
+    public static readTestRecord(data: TestRecordsReadTestRecordData): CancelablePromise<TestRecordsReadTestRecordResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/test-records/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Test Record
+     * Update a test record.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns TestRecordPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateTestRecord(data: TestRecordsUpdateTestRecordData): CancelablePromise<TestRecordsUpdateTestRecordResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/test-records/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Test Record
+     * Delete a test record.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteTestRecord(data: TestRecordsDeleteTestRecordData): CancelablePromise<TestRecordsDeleteTestRecordResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/test-records/{id}',
+            path: {
+                id: data.id
+            },
             errors: {
                 422: 'Validation Error'
             }

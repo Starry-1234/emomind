@@ -57,6 +57,130 @@ export const Body_login_login_access_tokenSchema = {
     title: 'Body_login-login_access_token'
 } as const;
 
+export const FileAnalysisReportCreateSchema = {
+    properties: {
+        file_name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'File Name'
+        },
+        file_type: {
+            type: 'string',
+            maxLength: 50,
+            title: 'File Type'
+        },
+        file_size: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'File Size'
+        },
+        analysis_result: {
+            type: 'string',
+            title: 'Analysis Result'
+        },
+        conversation_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Conversation Id'
+        }
+    },
+    type: 'object',
+    required: ['file_name', 'file_type', 'analysis_result'],
+    title: 'FileAnalysisReportCreate'
+} as const;
+
+export const FileAnalysisReportPublicSchema = {
+    properties: {
+        file_name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'File Name'
+        },
+        file_type: {
+            type: 'string',
+            maxLength: 50,
+            title: 'File Type'
+        },
+        file_size: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'File Size'
+        },
+        analysis_result: {
+            type: 'string',
+            title: 'Analysis Result'
+        },
+        conversation_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Conversation Id'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['file_name', 'file_type', 'analysis_result', 'id'],
+    title: 'FileAnalysisReportPublic'
+} as const;
+
+export const FileAnalysisReportsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/FileAnalysisReportPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'FileAnalysisReportsPublic'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -249,6 +373,235 @@ export const PrivateUserCreateSchema = {
     type: 'object',
     required: ['email', 'password', 'full_name'],
     title: 'PrivateUserCreate'
+} as const;
+
+export const TestRecordCreateSchema = {
+    properties: {
+        test_name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Test Name'
+        },
+        user_topic: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Topic'
+        },
+        total_score: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Total Score'
+        },
+        result_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Result Description'
+        },
+        questions: {
+            items: {},
+            type: 'array',
+            title: 'Questions',
+            default: []
+        },
+        answers: {
+            items: {},
+            type: 'array',
+            title: 'Answers',
+            default: []
+        },
+        conversation_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Conversation Id'
+        }
+    },
+    type: 'object',
+    required: ['test_name'],
+    title: 'TestRecordCreate'
+} as const;
+
+export const TestRecordPublicSchema = {
+    properties: {
+        test_name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Test Name'
+        },
+        user_topic: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Topic'
+        },
+        total_score: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Total Score'
+        },
+        result_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Result Description'
+        },
+        questions: {
+            items: {},
+            type: 'array',
+            title: 'Questions',
+            default: []
+        },
+        answers: {
+            items: {},
+            type: 'array',
+            title: 'Answers',
+            default: []
+        },
+        conversation_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Conversation Id'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['test_name', 'id'],
+    title: 'TestRecordPublic'
+} as const;
+
+export const TestRecordUpdateSchema = {
+    properties: {
+        test_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Test Name'
+        },
+        user_topic: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Topic'
+        },
+        total_score: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Total Score'
+        },
+        result_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Result Description'
+        }
+    },
+    type: 'object',
+    title: 'TestRecordUpdate'
+} as const;
+
+export const TestRecordsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/TestRecordPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'TestRecordsPublic'
 } as const;
 
 export const TokenSchema = {

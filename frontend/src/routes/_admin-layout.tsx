@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
-
+import { UsersService } from "@/client"
 import { Footer } from "@/components/Common/Footer"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
 import {
@@ -8,7 +8,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { isLoggedIn } from "@/hooks/useAuth"
-import { UsersService } from "@/client"
 
 export const Route = createFileRoute("/_admin-layout")({
   component: AdminLayout,
@@ -18,18 +17,17 @@ export const Route = createFileRoute("/_admin-layout")({
         to: "/login",
       })
     }
+    let user
     try {
-      // 验证是否为超管
-      const user = await UsersService.readUserMe()
-      if (!user.is_superuser) {
-        throw redirect({
-          to: "/user",
-        })
-      }
-    } catch (error) {
-      // Token 无效或过期，清除 token 并重定向到登录页
+      user = await UsersService.readUserMe()
+    } catch {
       localStorage.removeItem("access_token")
       throw redirect({ to: "/login" })
+    }
+    if (!user.is_superuser) {
+      throw redirect({
+        to: "/user",
+      })
     }
   },
 })

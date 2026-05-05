@@ -53,9 +53,7 @@ function UserManage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">用户管理</h1>
-          <p className="text-muted-foreground">
-            管理用户账户和权限
-          </p>
+          <p className="text-muted-foreground">管理用户账户和权限</p>
         </div>
         <AddUser />
       </div>

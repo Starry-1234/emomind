@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 from pydantic import EmailStr
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, JSON
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -56,6 +56,7 @@ class User(UserBase, table=True):
     )
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
     analysis_reports: list["FileAnalysisReport"] = Relationship(back_populates="owner", cascade_delete=True)
+    test_records: list["TestRecord"] = Relationship(back_populates="owner", cascade_delete=True)
 
 
 # Properties to return via API, id is always required
@@ -177,4 +178,49 @@ class FileAnalysisReportPublic(FileAnalysisReportBase):
 
 class FileAnalysisReportsPublic(SQLModel):
     data: list[FileAnalysisReportPublic]
+    count: int
+
+
+# TestRecord - 测评记录
+class TestRecordBase(SQLModel):
+    test_name: str = Field(max_length=255)
+    user_topic: str | None = Field(default=None, max_length=500)
+    total_score: int | None = None
+    result_description: str | None = None
+    questions: list = Field(default=[], sa_type=JSON)
+    answers: list = Field(default=[], sa_type=JSON)
+    conversation_id: str | None = None
+
+
+class TestRecordCreate(TestRecordBase):
+    pass
+
+
+class TestRecordUpdate(SQLModel):
+    test_name: str | None = Field(default=None, max_length=255)
+    user_topic: str | None = Field(default=None, max_length=500)
+    total_score: int | None = None
+    result_description: str | None = None
+
+
+class TestRecord(TestRecordBase, table=True):
+    __tablename__ = "test_record"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=False),
+    )
+    owner_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    owner: User | None = Relationship(back_populates="test_records")
+
+
+class TestRecordPublic(TestRecordBase):
+    id: uuid.UUID
+    created_at: datetime | None = None
+
+
+class TestRecordsPublic(SQLModel):
+    data: list[TestRecordPublic]
     count: int

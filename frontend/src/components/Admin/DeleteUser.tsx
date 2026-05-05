@@ -66,24 +66,24 @@ const DeleteUser = ({ id, onSuccess }: DeleteUserProps) => {
           <DialogHeader>
             <DialogTitle>删除用户</DialogTitle>
             <DialogDescription>
-              此用户关联的所有项目也将被{" "}
-              <strong>永久删除。</strong> 您确定吗？此操作无法撤销。
+              此用户关联的所有项目也将被 <strong>永久删除。</strong>{" "}
+              您确定吗？此操作无法撤销。
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter className="mt-4">
-              <DialogClose asChild>
-                <Button variant="outline" disabled={mutation.isPending}>
-                  取消
-                </Button>
-              </DialogClose>
-              <LoadingButton
-                variant="destructive"
-                type="submit"
-                loading={mutation.isPending}
-              >
-                删除
-              </LoadingButton>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={mutation.isPending}>
+                取消
+              </Button>
+            </DialogClose>
+            <LoadingButton
+              variant="destructive"
+              type="submit"
+              loading={mutation.isPending}
+            >
+              删除
+            </LoadingButton>
           </DialogFooter>
         </form>
       </DialogContent>

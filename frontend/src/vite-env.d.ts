@@ -3,13 +3,16 @@
 // React JSX namespace for react-markdown compatibility
 declare namespace JSX {
   interface IntrinsicElements {
-    [elemName: string]: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
+    [elemName: string]: React.DetailedHTMLProps<
+      React.HTMLAttributes<HTMLElement>,
+      HTMLElement
+    >
   }
 }
 
 // Fix for react-markdown compatibility with React 19 JSX types
 declare module "react-markdown" {
-  import type { ComponentProps, ReactNode } from "react"
+  import type { ReactNode } from "react"
 
   interface ReactMarkdownProps {
     children?: ReactNode

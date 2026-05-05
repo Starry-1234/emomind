@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
-
-import { isLoggedIn } from "@/hooks/useAuth"
 import { UsersService } from "@/client"
+import { isLoggedIn } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -17,10 +16,9 @@ export const Route = createFileRoute("/")({
       const user = await UsersService.readUserMe()
       if (user.is_superuser) {
         throw redirect({ to: "/admin" })
-      } else {
-        throw redirect({ to: "/user" })
       }
-    } catch (error) {
+      throw redirect({ to: "/user" })
+    } catch (_error) {
       // Token 无效或过期，清除 token 并重定向到登录页
       localStorage.removeItem("access_token")
       throw redirect({ to: "/login" })

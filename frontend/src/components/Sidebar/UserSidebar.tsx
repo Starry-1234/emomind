@@ -1,4 +1,4 @@
-import { Home, Brain, History, MessageSquare, Stethoscope } from "lucide-react"
+import { Brain, History, Home, MessageSquare, Stethoscope } from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
@@ -17,7 +17,7 @@ const userItems: Item[] = [
   { icon: Home, title: "首页", path: "/user" },
   { icon: Stethoscope, title: "智能心理医生", path: "/user/ai-doctor" },
   { icon: Brain, title: "心理测评", path: "/user/test" },
-  { icon: History, title: "测评记录", path: "/user/history" },
+  { icon: History, title: "测评记录", path: "/user/test-records" },
   { icon: MessageSquare, title: "咨询记录", path: "/user/consultations" },
 ]
 

@@ -1,19 +1,36 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import {
+  Clock,
+  Inbox,
+  MessageSquare,
+  Search,
+  User as UserIcon,
+  X,
+} from "lucide-react"
 import { useEffect, useRef, useState } from "react"
-
 import { type UserPublic, UsersService } from "@/client"
 import {
-  type DifyConversation,
-  type DifyMessage,
-  getConversations,
-  getMessages,
-} from "@/services/difyApi"
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Search, User as UserIcon, MessageSquare, Inbox, Clock } from "lucide-react"
+import {
+  type DifyConversation,
+  type DifyMessage,
+  deleteConversation,
+  getConversations,
+  getMessages,
+} from "@/services/difyApi"
 
 export const Route = createFileRoute("/_admin-layout/chat-history")({
   component: ChatHistory,
@@ -38,9 +55,11 @@ function getInitial(name: string) {
 /* ── Page ──────────────────────────────────────────── */
 
 function ChatHistory() {
+  const queryClient = useQueryClient()
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null)
   const [search, setSearch] = useState("")
+  const [deleteConvId, setDeleteConvId] = useState<string | null>(null)
 
   // 1) 用户列表
   const { data: usersRes, isLoading: usersLoading } = useQuery({
@@ -49,7 +68,7 @@ function ChatHistory() {
   })
 
   const allUsers = (usersRes?.data || []).filter(
-    (u: UserPublic) => !u.is_superuser
+    (u: UserPublic) => !u.is_superuser,
   )
   const filteredUsers = allUsers.filter((u: UserPublic) => {
     if (!search) return true
@@ -61,7 +80,7 @@ function ChatHistory() {
   })
 
   const selectedUser = allUsers.find(
-    (u: UserPublic) => u.id === selectedUserId
+    (u: UserPublic) => u.id === selectedUserId,
   ) as UserPublic | undefined
 
   // 2) 会话列表
@@ -76,14 +95,35 @@ function ChatHistory() {
   // 3) 消息列表
   const { data: msgsRes, isLoading: msgsLoading } = useQuery({
     queryKey: ["admin-messages", selectedUserId, selectedConvId],
-    queryFn: () => getMessages(selectedUserId!, selectedConvId!, { limit: 100 }),
+    queryFn: () =>
+      getMessages(selectedUserId!, selectedConvId!, { limit: 100 }),
     enabled: !!selectedUserId && !!selectedConvId,
   })
 
   const messages = msgsRes?.data || []
   const selectedConv = conversations.find(
-    (c: DifyConversation) => c.id === selectedConvId
+    (c: DifyConversation) => c.id === selectedConvId,
   ) as DifyConversation | undefined
+
+  // 4) 删除会话
+  const deleteMutation = useMutation({
+    mutationFn: (convId: string) => deleteConversation(convId, selectedUserId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["admin-conversations", selectedUserId],
+      })
+      if (selectedConvId === deleteConvId) {
+        setSelectedConvId(null)
+      }
+      setDeleteConvId(null)
+    },
+  })
+
+  const handleDeleteConv = () => {
+    if (deleteConvId) {
+      deleteMutation.mutate(deleteConvId)
+    }
+  }
 
   // 联动：切换用户时重置会话
   const handleSelectUser = (userId: string) => {
@@ -185,7 +225,9 @@ function ChatHistory() {
                 <span className="text-xs text-muted-foreground">
                   当前用户：
                   <span className="font-medium text-foreground">
-                    {selectedUser?.full_name || selectedUser?.email || selectedUserId}
+                    {selectedUser?.full_name ||
+                      selectedUser?.email ||
+                      selectedUserId}
                   </span>
                 </span>
               </div>
@@ -202,23 +244,36 @@ function ChatHistory() {
                 ) : (
                   <div className="flex flex-col gap-0.5">
                     {conversations.map((conv: DifyConversation) => (
-                      <button
+                      <div
                         key={conv.id}
-                        onClick={() => setSelectedConvId(conv.id)}
-                        className={`rounded-md px-2.5 py-2.5 text-left transition-colors cursor-pointer ${
+                        className={`group relative rounded-md px-2.5 py-2.5 cursor-pointer ${
                           selectedConvId === conv.id
                             ? "bg-primary/10 text-primary"
                             : "hover:bg-muted"
                         }`}
+                        onClick={() => setSelectedConvId(conv.id)}
                       >
-                        <div className="truncate text-xs font-medium">
-                          {conv.name || "未命名会话"}
+                        <div className="flex items-start justify-between gap-1">
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-xs font-medium">
+                              {conv.name || "未命名会话"}
+                            </div>
+                            <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              {formatTime(conv.updated_at || conv.created_at)}
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDeleteConvId(conv.id)
+                            }}
+                            className="opacity-0 group-hover:opacity-100 shrink-0 size-6 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                          >
+                            <X className="size-3.5" />
+                          </button>
                         </div>
-                        <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {formatTime(conv.updated_at || conv.created_at)}
-                        </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -248,9 +303,7 @@ function ChatHistory() {
                   </div>
                   <div className="text-xs text-muted-foreground">
                     创建于{" "}
-                    {selectedConv
-                      ? formatTime(selectedConv.created_at)
-                      : ""}
+                    {selectedConv ? formatTime(selectedConv.created_at) : ""}
                   </div>
                 </div>
                 <Badge variant="outline" className="text-xs">
@@ -264,6 +317,30 @@ function ChatHistory() {
           )}
         </div>
       </div>
+
+      {/* 删除确认弹窗 */}
+      <AlertDialog
+        open={deleteConvId !== null}
+        onOpenChange={(open) => !open && setDeleteConvId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定删除该会话？删除后无法恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConv}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
@@ -281,7 +358,7 @@ function MessageList({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages.length])
+  }, [])
 
   if (isLoading) {
     return (
@@ -299,7 +376,6 @@ function MessageList({
     )
   }
 
-  // Dify messages 按 created_at 正序
   const sorted = [...messages].sort((a, b) => a.created_at - b.created_at)
 
   return (
@@ -308,11 +384,8 @@ function MessageList({
         {sorted.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${
-              msg.query ? "justify-end" : "justify-start"
-            }`}
+            className={`flex ${msg.query ? "justify-end" : "justify-start"}`}
           >
-            {/* 用户消息 */}
             {msg.query && (
               <div className="max-w-[70%]">
                 <div className="rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-sm text-primary-foreground">
@@ -323,8 +396,7 @@ function MessageList({
                 </div>
               </div>
             )}
-            {/* AI 回复 */}
-            {!msg.query && msg.answer && (
+            {msg.answer && (
               <div className="max-w-[70%]">
                 <div className="rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm text-foreground">
                   {msg.answer}

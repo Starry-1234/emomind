@@ -7,9 +7,8 @@ import {
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import type {
-  Body_login_login_access_token as AccessToken,
-} from "@/client"
+import type { Body_login_login_access_token as AccessToken } from "@/client"
+import { UsersService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
   Form,
@@ -23,7 +22,6 @@ import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
-import { UsersService } from "@/client"
 
 const formSchema = z.object({
   username: z.email(),
@@ -39,19 +37,19 @@ export const Route = createFileRoute("/login")({
   component: Login,
   beforeLoad: async () => {
     if (isLoggedIn()) {
+      let user
       try {
-        // 已登录用户根据角色重定向到对应后台
-        const user = await UsersService.readUserMe()
-        if (user.is_superuser) {
-          throw redirect({ to: "/admin" })
-        } else {
-          throw redirect({ to: "/user" })
-        }
-      } catch (error) {
+        user = await UsersService.readUserMe()
+      } catch {
         // Token 无效或过期，清除 token 并留在登录页
         localStorage.removeItem("access_token")
-        // 继续显示登录页面
+        return
       }
+      // 只有成功获取用户信息后才重定向
+      if (user.is_superuser) {
+        throw redirect({ to: "/admin" })
+      }
+      throw redirect({ to: "/user" })
     }
   },
   head: () => ({

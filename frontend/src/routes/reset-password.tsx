@@ -35,9 +35,7 @@ const formSchema = z
       .string()
       .min(1, { message: "密码不能为空" })
       .min(8, { message: "密码至少8个字符" }),
-    confirm_password: z
-      .string()
-      .min(1, { message: "确认密码不能为空" }),
+    confirm_password: z.string().min(1, { message: "确认密码不能为空" }),
   })
   .refine((data) => data.new_password === data.confirm_password, {
     message: "两次密码不一致",

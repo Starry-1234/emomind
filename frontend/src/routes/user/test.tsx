@@ -1,24 +1,20 @@
+import { useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { CheckCircle2, ClipboardList, Info, Loader2, Send } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
-import useAuth from "@/hooks/useAuth"
-import {
-  sendMessageStream,
-  getMessages,
-  DIFY_TEST_API_KEY,
-} from "@/services/difyApi"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Card } from "@/components/ui/card"
-import {
-  ClipboardList,
-  Send,
-  Loader2,
-  CheckCircle2,
-  Info,
-} from "lucide-react"
-import { useConversation } from "@/components/contexts/ConversationContext"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { TestRecordsService } from "@/client"
+import { useConversation } from "@/components/contexts/ConversationContext"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import useAuth from "@/hooks/useAuth"
+import {
+  DIFY_TEST_API_KEY,
+  getMessages,
+  sendMessageStream,
+} from "@/services/difyApi"
 
 export const Route = createFileRoute("/user/test")({
   component: PsychologicalTest,
@@ -46,12 +42,21 @@ function preprocessMarkdown(text: string): string {
       }
       if (buffer.length >= 2) {
         // 转成 Markdown 表格
-        const header = buffer[0].split("\t").map((c) => c.trim()).join(" | ")
-        const sep = header.split(" | ").map(() => "---").join(" | ")
+        const header = buffer[0]
+          .split("\t")
+          .map((c) => c.trim())
+          .join(" | ")
+        const sep = header
+          .split(" | ")
+          .map(() => "---")
+          .join(" | ")
         result.push(`| ${header} |`)
         result.push(`| ${sep} |`)
         for (let j = 1; j < buffer.length; j++) {
-          const row = buffer[j].split("\t").map((c) => c.trim()).join(" | ")
+          const row = buffer[j]
+            .split("\t")
+            .map((c) => c.trim())
+            .join(" | ")
           result.push(`| ${row} |`)
         }
       } else {
@@ -103,6 +108,7 @@ function PsychologicalTest() {
   const { user } = useAuth()
   const userId = user?.id || "anonymous"
   const { activeConvId, setActiveConvId, loadConversations } = useConversation()
+  const queryClient = useQueryClient()
 
   // 聊天状态
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -111,8 +117,11 @@ function PsychologicalTest() {
 
   // 答题状态
   const [activeTest, setActiveTest] = useState<TestData | null>(null)
-  const [testAnswers, setTestAnswers] = useState<Record<string, { answer: number; score: number }>>({})
-  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>("idle")
+  const [testAnswers, setTestAnswers] = useState<
+    Record<string, { answer: number; score: number }>
+  >({})
+  const [submissionStatus, setSubmissionStatus] =
+    useState<SubmissionStatus>("idle")
 
   // workflow 运行状态（独立于消息内容，不占气泡）
   const [workflowRunning, setWorkflowRunning] = useState(false)
@@ -125,9 +134,13 @@ function PsychologicalTest() {
   const loadMessages = useCallback(
     async (convId: string) => {
       try {
-        const result = await getMessages(userId, convId, { apiKey: DIFY_TEST_API_KEY })
+        const result = await getMessages(userId, convId, {
+          apiKey: DIFY_TEST_API_KEY,
+        })
         const chatMsgs: ChatMessage[] = []
-        const sorted = [...result.data].sort((a, b) => a.created_at - b.created_at)
+        const sorted = [...result.data].sort(
+          (a, b) => a.created_at - b.created_at,
+        )
         for (const msg of sorted) {
           if (msg.query) {
             // 历史消息中过滤掉 RESULT_JSON 前缀的用户消息
@@ -153,7 +166,7 @@ function PsychologicalTest() {
         setMessages([])
       }
     },
-    [userId]
+    [userId],
   )
 
   useEffect(() => {
@@ -167,7 +180,7 @@ function PsychologicalTest() {
   // 自动滚动
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, submissionStatus])
+  }, [])
 
   // ── 解析 TEST_JSON ──────────────────────────────────────────────────────────
   const tryParseTestJson = (content: string): TestData | null => {
@@ -199,7 +212,10 @@ function PsychologicalTest() {
     setWorkflowRunning(false)
 
     // 添加 assistant 占位
-    setMessages((prev) => [...prev, { role: "assistant", content: "", isStreaming: true }])
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: "", isStreaming: true },
+    ])
 
     let accumulated = ""
     let streamHandledEnd = false
@@ -219,7 +235,10 @@ function PsychologicalTest() {
                 const newMsgs = [...prev]
                 const last = newMsgs[newMsgs.length - 1]
                 if (last?.isStreaming) {
-                  newMsgs[newMsgs.length - 1] = { ...last, content: "正在生成测评题目..." }
+                  newMsgs[newMsgs.length - 1] = {
+                    ...last,
+                    content: "正在生成测评题目...",
+                  }
                 }
                 return newMsgs
               })
@@ -229,7 +248,10 @@ function PsychologicalTest() {
                 const newMsgs = [...prev]
                 const last = newMsgs[newMsgs.length - 1]
                 if (last?.isStreaming) {
-                  newMsgs[newMsgs.length - 1] = { ...last, content: accumulated }
+                  newMsgs[newMsgs.length - 1] = {
+                    ...last,
+                    content: accumulated,
+                  }
                 }
                 return newMsgs
               })
@@ -245,7 +267,9 @@ function PsychologicalTest() {
             if (parsed) {
               detectedTest = parsed
               // 提取 TEST_JSON 之前的文字（AI 回复的引导语）
-              const prefixText = accumulated.slice(0, accumulated.indexOf("TEST_JSON::")).trim()
+              const prefixText = accumulated
+                .slice(0, accumulated.indexOf("TEST_JSON::"))
+                .trim()
               const displayContent = prefixText
                 ? `${prefixText}\n\n已为您准备好《${parsed.title}》，请在下方完成作答。`
                 : `已为您准备好《${parsed.title}》，请在下方完成作答。`
@@ -253,7 +277,10 @@ function PsychologicalTest() {
               setMessages((prev) => {
                 const newMsgs = [...prev]
                 const last = newMsgs[newMsgs.length - 1]
-                if (last?.isStreaming || last?.content === "正在生成测评题目...") {
+                if (
+                  last?.isStreaming ||
+                  last?.content === "正在生成测评题目..."
+                ) {
                   newMsgs[newMsgs.length - 1] = {
                     role: "assistant",
                     content: displayContent,
@@ -304,7 +331,10 @@ function PsychologicalTest() {
             })
           },
         },
-        { conversationId: activeConvId || undefined, apiKey: DIFY_TEST_API_KEY }
+        {
+          conversationId: activeConvId || undefined,
+          apiKey: DIFY_TEST_API_KEY,
+        },
       )
     } catch (err) {
       if (!streamHandledEnd) {
@@ -328,7 +358,9 @@ function PsychologicalTest() {
   // ── 提交测评答案 ────────────────────────────────────────────────────────────
   const handleTestSubmit = async () => {
     if (!activeTest) return
-    const allAnswered = activeTest.questions.every((q) => testAnswers[q.id] !== undefined)
+    const allAnswered = activeTest.questions.every(
+      (q) => testAnswers[q.id] !== undefined,
+    )
     if (!allAnswered) return
 
     // 构造 RESULT_JSON
@@ -343,6 +375,10 @@ function PsychologicalTest() {
     }
     const resultText = `RESULT_JSON::${JSON.stringify(resultPayload)}`
 
+    // 在清除状态前先捕获当前值（避免异步闭包陷阱）
+    const capturedTest = activeTest
+    const capturedAnswers = { ...testAnswers }
+
     // 清除答题界面
     setActiveTest(null)
     setTestAnswers({})
@@ -356,10 +392,9 @@ function PsychologicalTest() {
       const newMsgs = [...prev]
       const last = newMsgs[newMsgs.length - 1]
       if (last?.role === "assistant" && last.content.includes("已为您准备好")) {
-        const title = activeTest.title
         newMsgs[newMsgs.length - 1] = {
           ...last,
-          content: `已提交《${title}》测评，正在生成分析报告...`,
+          content: `已提交《${capturedTest.title}》测评，正在生成分析报告...`,
         }
       }
       return newMsgs
@@ -370,7 +405,10 @@ function PsychologicalTest() {
     setWorkflowRunning(false)
 
     // 添加一个新的 assistant 占位消息，用于接收分析报告
-    setMessages((prev) => [...prev, { role: "assistant", content: "", isStreaming: true }])
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: "", isStreaming: true },
+    ])
 
     let accumulated = ""
     let streamHandledEnd = false
@@ -393,7 +431,11 @@ function PsychologicalTest() {
               // 从后往前找最后一个 isStreaming 的消息
               for (let i = newMsgs.length - 1; i >= 0; i--) {
                 if (newMsgs[i]?.isStreaming) {
-                  newMsgs[i] = { ...newMsgs[i], content: accumulated, isStreaming: false }
+                  newMsgs[i] = {
+                    ...newMsgs[i],
+                    content: accumulated,
+                    isStreaming: false,
+                  }
                   break
                 }
               }
@@ -405,6 +447,63 @@ function PsychologicalTest() {
               setActiveConvId(conversationId)
             }
             loadConversations()
+
+            // 保存测评记录到数据库
+            const testName = capturedTest?.title || "心理测评"
+            const questions =
+              capturedTest?.questions.map((q) => ({
+                id: q.id,
+                text: q.text,
+                type: q.type,
+                options: q.options,
+                scores: q.scores,
+              })) || []
+            const answers =
+              capturedTest?.questions.map((q) => ({
+                question_id: q.id,
+                answer: capturedAnswers[q.id]?.answer,
+                score: capturedAnswers[q.id]?.score,
+              })) || []
+
+            // 提取用户输入的主题（第一条用户消息，非 RESULT_JSON）
+            const userTopic =
+              messages.find(
+                (m) =>
+                  m.role === "user" &&
+                  !m.content.startsWith("RESULT_JSON") &&
+                  !m.content.startsWith("TEST_JSON"),
+              )?.content || null
+
+            // 尝试从 accumulated 中提取分数
+            let totalScore: number | null = null
+            const scoreMatch = accumulated.match(
+              /(?:总分|得分|score)[：:]\s*(\d+)/i,
+            )
+            if (scoreMatch) {
+              totalScore = parseInt(scoreMatch[1], 10)
+            }
+
+            // 调用 API 保存记录
+            TestRecordsService.createTestRecord({
+              requestBody: {
+                test_name: testName,
+                user_topic: userTopic,
+                total_score: totalScore,
+                result_description: accumulated,
+                questions: questions,
+                answers: answers,
+                conversation_id: activeConvId || undefined,
+              },
+            })
+              .then(() => {
+                // 刷新测评记录列表
+                queryClient.invalidateQueries({ queryKey: ["test-records"] })
+              })
+              .catch((err: unknown) => {
+                // 只记录错误，不影响主流程
+                const message = err instanceof Error ? err.message : String(err)
+                console.error("保存测评记录失败:", message)
+              })
           },
           onWorkflowStarted() {
             setWorkflowRunning(true)
@@ -421,7 +520,11 @@ function PsychologicalTest() {
               const newMsgs = [...prev]
               for (let i = newMsgs.length - 1; i >= 0; i--) {
                 if (newMsgs[i]?.isStreaming) {
-                  newMsgs[i] = { ...newMsgs[i], content: `分析时出错: ${message}`, isStreaming: false }
+                  newMsgs[i] = {
+                    ...newMsgs[i],
+                    content: `分析时出错: ${message}`,
+                    isStreaming: false,
+                  }
                   break
                 }
               }
@@ -429,7 +532,10 @@ function PsychologicalTest() {
             })
           },
         },
-        { conversationId: activeConvId || undefined, apiKey: DIFY_TEST_API_KEY }
+        {
+          conversationId: activeConvId || undefined,
+          apiKey: DIFY_TEST_API_KEY,
+        },
       )
     } catch (err) {
       if (!streamHandledEnd) {
@@ -473,7 +579,6 @@ function PsychologicalTest() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border bg-card">
-
       {/* ── 顶栏 ─────────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 border-b px-5 py-3">
         <div className="flex size-8 items-center justify-center rounded-full bg-violet-100">
@@ -481,13 +586,14 @@ function PsychologicalTest() {
         </div>
         <div>
           <h1 className="text-sm font-semibold">心理测评</h1>
-          <p className="text-xs text-muted-foreground">专业心理量表 · AI 智能分析报告</p>
+          <p className="text-xs text-muted-foreground">
+            专业心理量表 · AI 智能分析报告
+          </p>
         </div>
       </div>
 
       {/* ── 主内容区 ──────────────────────────────────────────────────────────── */}
       <div className="relative flex-1 overflow-hidden">
-
         {/* ── 聊天消息区域 ──────────────────────────────────────────────────── */}
         <div className="h-full overflow-y-auto px-4 py-4">
           {messages.length === 0 && !activeTest ? (
@@ -500,11 +606,12 @@ function PsychologicalTest() {
 
               {/* 问候语 */}
               <div className="max-w-md text-center space-y-3">
-                <h2 className="text-xl font-semibold">
-                  你好呀！👋✨
-                </h2>
+                <h2 className="text-xl font-semibold">你好呀！👋✨</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  很高兴见到你！我是<strong className="text-violet-600">小心</strong>，你的心理测试小助手～<br />
+                  很高兴见到你！我是
+                  <strong className="text-violet-600">小心</strong>
+                  ，你的心理测试小助手～
+                  <br />
                   这里是一个温暖的角落，可以帮助你更好地了解自己的内心世界。
                 </p>
               </div>
@@ -532,10 +639,16 @@ function PsychologicalTest() {
                     key={item.title}
                     className="flex items-start gap-3 rounded-xl border border-violet-100 bg-white/80 p-4 shadow-sm transition-all hover:bg-violet-50/60 hover:border-violet-200 hover:shadow-md cursor-default"
                   >
-                    <span className="text-2xl flex-shrink-0 mt-0.5">{item.emoji}</span>
+                    <span className="text-2xl flex-shrink-0 mt-0.5">
+                      {item.emoji}
+                    </span>
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold text-violet-700">{item.title}</div>
-                      <div className="text-xs text-muted-foreground leading-relaxed mt-0.5">{item.desc}</div>
+                      <div className="text-sm font-semibold text-violet-700">
+                        {item.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                        {item.desc}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -576,13 +689,13 @@ function PsychologicalTest() {
                             </ReactMarkdown>
                           )}
                           {msg.isStreaming && msg.content && (
-                            <span className="ml-0.5 inline-block animate-pulse text-current opacity-70">|</span>
+                            <span className="ml-0.5 inline-block animate-pulse text-current opacity-70">
+                              |
+                            </span>
                           )}
                         </div>
                       ) : (
-                        <>
-                          {msg.content}
-                        </>
+                        msg.content
                       )}
                     </div>
                   </div>
@@ -597,26 +710,33 @@ function PsychologicalTest() {
               ))}
 
               {/* 思考中 loading（非 workflow 状态时才显示普通思考动画） */}
-              {isStreaming && !messages[messages.length - 1]?.content && !activeTest && !workflowRunning && (
-                <div className="flex gap-3">
-                  <Avatar className="mt-0.5 size-8 flex-shrink-0">
-                    <AvatarFallback className="bg-violet-100 text-violet-600">
-                      <ClipboardList className="size-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-2.5">
-                    <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">思考中...</span>
+              {isStreaming &&
+                !messages[messages.length - 1]?.content &&
+                !activeTest &&
+                !workflowRunning && (
+                  <div className="flex gap-3">
+                    <Avatar className="mt-0.5 size-8 flex-shrink-0">
+                      <AvatarFallback className="bg-violet-100 text-violet-600">
+                        <ClipboardList className="size-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-2.5">
+                      <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        思考中...
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* workflow 运行中 loading（独立状态指示器，不占消息气泡） */}
               {workflowRunning && isStreaming && (
                 <div className="flex justify-center">
                   <div className="flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-sm animate-in fade-in duration-300">
                     <Loader2 className="size-4 animate-spin text-violet-500" />
-                    <span className="text-violet-600 font-medium">AI 正在分析中，请稍候...</span>
+                    <span className="text-violet-600 font-medium">
+                      AI 正在分析中，请稍候...
+                    </span>
                   </div>
                 </div>
               )}
@@ -628,19 +748,25 @@ function PsychologicalTest() {
                     {submissionStatus === "submitting" && (
                       <>
                         <CheckCircle2 className="size-4 text-green-500" />
-                        <span className="text-green-600 font-medium">提交成功</span>
+                        <span className="text-green-600 font-medium">
+                          提交成功
+                        </span>
                       </>
                     )}
                     {submissionStatus === "analyzing" && (
                       <>
                         <Loader2 className="size-4 animate-spin text-violet-500" />
-                        <span className="text-violet-600 font-medium">开始分析</span>
+                        <span className="text-violet-600 font-medium">
+                          开始分析
+                        </span>
                       </>
                     )}
                     {submissionStatus === "done" && (
                       <>
                         <Info className="size-4 text-blue-500" />
-                        <span className="text-blue-600 font-medium">分析完成</span>
+                        <span className="text-blue-600 font-medium">
+                          分析完成
+                        </span>
                       </>
                     )}
                   </div>
@@ -656,19 +782,26 @@ function PsychologicalTest() {
         {activeTest && (
           <div className="absolute inset-0 overflow-y-auto bg-background/95 backdrop-blur-sm animate-in slide-in-from-bottom-4 duration-400">
             <div className="mx-auto max-w-2xl px-4 py-6 space-y-5">
-
               {/* 测试标题区 */}
               <div className="space-y-1">
-                <h2 className="text-xl font-bold text-foreground">{activeTest.title}</h2>
-                <p className="text-xs text-violet-600 font-medium">{activeTest.dimension}</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">{activeTest.description}</p>
+                <h2 className="text-xl font-bold text-foreground">
+                  {activeTest.title}
+                </h2>
+                <p className="text-xs text-violet-600 font-medium">
+                  {activeTest.dimension}
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {activeTest.description}
+                </p>
               </div>
 
               {/* 进度条 */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>答题进度</span>
-                  <span className="font-medium text-foreground">{answeredCount} / {totalCount} 题</span>
+                  <span className="font-medium text-foreground">
+                    {answeredCount} / {totalCount} 题
+                  </span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                   <div
@@ -686,11 +819,15 @@ function PsychologicalTest() {
                     <Card
                       key={question.id}
                       className={`p-4 transition-all duration-200 ${
-                        answered !== undefined ? "border-violet-200 bg-violet-50/50" : ""
+                        answered !== undefined
+                          ? "border-violet-200 bg-violet-50/50"
+                          : ""
                       }`}
                     >
                       <p className="mb-3 text-sm font-medium leading-relaxed">
-                        <span className="mr-1.5 text-violet-500 font-bold">{qIdx + 1}.</span>
+                        <span className="mr-1.5 text-violet-500 font-bold">
+                          {qIdx + 1}.
+                        </span>
                         {question.text}
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -746,7 +883,6 @@ function PsychologicalTest() {
                   提交答案
                 </Button>
               </div>
-
             </div>
           </div>
         )}
@@ -789,7 +925,6 @@ function PsychologicalTest() {
           </div>
         </div>
       )}
-
     </div>
   )
 }

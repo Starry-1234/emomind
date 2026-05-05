@@ -81,11 +81,13 @@ services:
     # TODO: remove once coverage is done locally
     volumes:
       - ./backend/htmlcov:/app/backend/htmlcov
-    environment:
-      SMTP_HOST: "mailcatcher"
-      SMTP_PORT: "1025"
-      SMTP_TLS: "false"
-      EMAILS_FROM_EMAIL: "noreply@example.com"
+    env_file:
+      - .env
+    # environment:
+    #   SMTP_HOST: "mailcatcher"
+    #   SMTP_PORT: "1025"
+    #   SMTP_TLS: "false"
+    #   EMAILS_FROM_EMAIL: "noreply@example.com"
 
   mailcatcher:
     image: schickling/mailcatcher

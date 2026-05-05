@@ -9,6 +9,29 @@ export type Body_login_login_access_token = {
     client_secret?: (string | null);
 };
 
+export type FileAnalysisReportCreate = {
+    file_name: string;
+    file_type: string;
+    file_size?: (number | null);
+    analysis_result: string;
+    conversation_id?: (string | null);
+};
+
+export type FileAnalysisReportPublic = {
+    file_name: string;
+    file_type: string;
+    file_size?: (number | null);
+    analysis_result: string;
+    conversation_id?: (string | null);
+    id: string;
+    created_at?: (string | null);
+};
+
+export type FileAnalysisReportsPublic = {
+    data: Array<FileAnalysisReportPublic>;
+    count: number;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -50,6 +73,40 @@ export type PrivateUserCreate = {
     password: string;
     full_name: string;
     is_verified?: boolean;
+};
+
+export type TestRecordCreate = {
+    test_name: string;
+    user_topic?: (string | null);
+    total_score?: (number | null);
+    result_description?: (string | null);
+    questions?: Array<unknown>;
+    answers?: Array<unknown>;
+    conversation_id?: (string | null);
+};
+
+export type TestRecordPublic = {
+    test_name: string;
+    user_topic?: (string | null);
+    total_score?: (number | null);
+    result_description?: (string | null);
+    questions?: Array<unknown>;
+    answers?: Array<unknown>;
+    conversation_id?: (string | null);
+    id: string;
+    created_at?: (string | null);
+};
+
+export type TestRecordsPublic = {
+    data: Array<TestRecordPublic>;
+    count: number;
+};
+
+export type TestRecordUpdate = {
+    test_name?: (string | null);
+    user_topic?: (string | null);
+    total_score?: (number | null);
+    result_description?: (string | null);
 };
 
 export type Token = {
@@ -112,6 +169,47 @@ export type ValidationError = {
         [key: string]: unknown;
     };
 };
+
+export type AdminReadAdminTestRecordsData = {
+    limit?: number;
+    skip?: number;
+    userId?: (string | null);
+};
+
+export type AdminReadAdminTestRecordsResponse = (unknown);
+
+export type AdminDeleteAdminTestRecordData = {
+    id: string;
+};
+
+export type AdminDeleteAdminTestRecordResponse = (unknown);
+
+export type AdminGetAdminStatsResponse = (unknown);
+
+export type AnalysisReadAnalysisReportsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type AnalysisReadAnalysisReportsResponse = (FileAnalysisReportsPublic);
+
+export type AnalysisCreateAnalysisReportData = {
+    requestBody: FileAnalysisReportCreate;
+};
+
+export type AnalysisCreateAnalysisReportResponse = (FileAnalysisReportPublic);
+
+export type AnalysisReadAnalysisReportData = {
+    reportId: string;
+};
+
+export type AnalysisReadAnalysisReportResponse = (FileAnalysisReportPublic);
+
+export type AnalysisDeleteAnalysisReportData = {
+    reportId: string;
+};
+
+export type AnalysisDeleteAnalysisReportResponse = (Message);
 
 export type ItemsReadItemsData = {
     limit?: number;
@@ -176,6 +274,38 @@ export type PrivateCreateUserData = {
 };
 
 export type PrivateCreateUserResponse = (UserPublic);
+
+export type TestRecordsReadTestRecordsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type TestRecordsReadTestRecordsResponse = (TestRecordsPublic);
+
+export type TestRecordsCreateTestRecordData = {
+    requestBody: TestRecordCreate;
+};
+
+export type TestRecordsCreateTestRecordResponse = (TestRecordPublic);
+
+export type TestRecordsReadTestRecordData = {
+    id: string;
+};
+
+export type TestRecordsReadTestRecordResponse = (TestRecordPublic);
+
+export type TestRecordsUpdateTestRecordData = {
+    id: string;
+    requestBody: TestRecordUpdate;
+};
+
+export type TestRecordsUpdateTestRecordResponse = (TestRecordPublic);
+
+export type TestRecordsDeleteTestRecordData = {
+    id: string;
+};
+
+export type TestRecordsDeleteTestRecordResponse = (Message);
 
 export type UsersReadUsersData = {
     limit?: number;

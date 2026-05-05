@@ -17,12 +17,15 @@ import { Route as AdminLayoutRouteImport } from './routes/_admin-layout'
 import { Route as UserRouteRouteImport } from './routes/user/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UserIndexRouteImport } from './routes/user/index'
+import { Route as UserTestRecordsRouteImport } from './routes/user/test-records'
 import { Route as UserTestRouteImport } from './routes/user/test'
 import { Route as UserSettingsRouteImport } from './routes/user/settings'
+import { Route as UserConsultationsRouteImport } from './routes/user/consultations'
 import { Route as UserAiDoctorRouteImport } from './routes/user/ai-doctor'
 import { Route as LayoutPsychologicalTestRouteImport } from './routes/_layout/psychological-test'
 import { Route as AdminLayoutUserManageRouteImport } from './routes/_admin-layout/user-manage'
 import { Route as AdminLayoutChatHistoryRouteImport } from './routes/_admin-layout/chat-history'
+import { Route as AdminLayoutAdminTestRecordsRouteImport } from './routes/_admin-layout/admin-test-records'
 import { Route as AdminLayoutAdminSettingsRouteImport } from './routes/_admin-layout/admin-settings'
 import { Route as AdminLayoutAdminRouteImport } from './routes/_admin-layout/admin'
 
@@ -65,6 +68,11 @@ const UserIndexRoute = UserIndexRouteImport.update({
   path: '/',
   getParentRoute: () => UserRouteRoute,
 } as any)
+const UserTestRecordsRoute = UserTestRecordsRouteImport.update({
+  id: '/test-records',
+  path: '/test-records',
+  getParentRoute: () => UserRouteRoute,
+} as any)
 const UserTestRoute = UserTestRouteImport.update({
   id: '/test',
   path: '/test',
@@ -73,6 +81,11 @@ const UserTestRoute = UserTestRouteImport.update({
 const UserSettingsRoute = UserSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => UserRouteRoute,
+} as any)
+const UserConsultationsRoute = UserConsultationsRouteImport.update({
+  id: '/consultations',
+  path: '/consultations',
   getParentRoute: () => UserRouteRoute,
 } as any)
 const UserAiDoctorRoute = UserAiDoctorRouteImport.update({
@@ -95,6 +108,12 @@ const AdminLayoutChatHistoryRoute = AdminLayoutChatHistoryRouteImport.update({
   path: '/chat-history',
   getParentRoute: () => AdminLayoutRoute,
 } as any)
+const AdminLayoutAdminTestRecordsRoute =
+  AdminLayoutAdminTestRecordsRouteImport.update({
+    id: '/admin-test-records',
+    path: '/admin-test-records',
+    getParentRoute: () => AdminLayoutRoute,
+  } as any)
 const AdminLayoutAdminSettingsRoute =
   AdminLayoutAdminSettingsRouteImport.update({
     id: '/admin-settings',
@@ -116,12 +135,15 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof AdminLayoutAdminRoute
   '/admin-settings': typeof AdminLayoutAdminSettingsRoute
+  '/admin-test-records': typeof AdminLayoutAdminTestRecordsRoute
   '/chat-history': typeof AdminLayoutChatHistoryRoute
   '/user-manage': typeof AdminLayoutUserManageRoute
   '/psychological-test': typeof LayoutPsychologicalTestRoute
   '/user/ai-doctor': typeof UserAiDoctorRoute
+  '/user/consultations': typeof UserConsultationsRoute
   '/user/settings': typeof UserSettingsRoute
   '/user/test': typeof UserTestRoute
+  '/user/test-records': typeof UserTestRecordsRoute
   '/user/': typeof UserIndexRoute
 }
 export interface FileRoutesByTo {
@@ -132,12 +154,15 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin': typeof AdminLayoutAdminRoute
   '/admin-settings': typeof AdminLayoutAdminSettingsRoute
+  '/admin-test-records': typeof AdminLayoutAdminTestRecordsRoute
   '/chat-history': typeof AdminLayoutChatHistoryRoute
   '/user-manage': typeof AdminLayoutUserManageRoute
   '/psychological-test': typeof LayoutPsychologicalTestRoute
   '/user/ai-doctor': typeof UserAiDoctorRoute
+  '/user/consultations': typeof UserConsultationsRoute
   '/user/settings': typeof UserSettingsRoute
   '/user/test': typeof UserTestRoute
+  '/user/test-records': typeof UserTestRecordsRoute
   '/user': typeof UserIndexRoute
 }
 export interface FileRoutesById {
@@ -151,12 +176,15 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_admin-layout/admin': typeof AdminLayoutAdminRoute
   '/_admin-layout/admin-settings': typeof AdminLayoutAdminSettingsRoute
+  '/_admin-layout/admin-test-records': typeof AdminLayoutAdminTestRecordsRoute
   '/_admin-layout/chat-history': typeof AdminLayoutChatHistoryRoute
   '/_admin-layout/user-manage': typeof AdminLayoutUserManageRoute
   '/_layout/psychological-test': typeof LayoutPsychologicalTestRoute
   '/user/ai-doctor': typeof UserAiDoctorRoute
+  '/user/consultations': typeof UserConsultationsRoute
   '/user/settings': typeof UserSettingsRoute
   '/user/test': typeof UserTestRoute
+  '/user/test-records': typeof UserTestRecordsRoute
   '/user/': typeof UserIndexRoute
 }
 export interface FileRouteTypes {
@@ -170,12 +198,15 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/admin-settings'
+    | '/admin-test-records'
     | '/chat-history'
     | '/user-manage'
     | '/psychological-test'
     | '/user/ai-doctor'
+    | '/user/consultations'
     | '/user/settings'
     | '/user/test'
+    | '/user/test-records'
     | '/user/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -186,12 +217,15 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/admin-settings'
+    | '/admin-test-records'
     | '/chat-history'
     | '/user-manage'
     | '/psychological-test'
     | '/user/ai-doctor'
+    | '/user/consultations'
     | '/user/settings'
     | '/user/test'
+    | '/user/test-records'
     | '/user'
   id:
     | '__root__'
@@ -204,12 +238,15 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_admin-layout/admin'
     | '/_admin-layout/admin-settings'
+    | '/_admin-layout/admin-test-records'
     | '/_admin-layout/chat-history'
     | '/_admin-layout/user-manage'
     | '/_layout/psychological-test'
     | '/user/ai-doctor'
+    | '/user/consultations'
     | '/user/settings'
     | '/user/test'
+    | '/user/test-records'
     | '/user/'
   fileRoutesById: FileRoutesById
 }
@@ -282,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UserIndexRouteImport
       parentRoute: typeof UserRouteRoute
     }
+    '/user/test-records': {
+      id: '/user/test-records'
+      path: '/test-records'
+      fullPath: '/user/test-records'
+      preLoaderRoute: typeof UserTestRecordsRouteImport
+      parentRoute: typeof UserRouteRoute
+    }
     '/user/test': {
       id: '/user/test'
       path: '/test'
@@ -294,6 +338,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/user/settings'
       preLoaderRoute: typeof UserSettingsRouteImport
+      parentRoute: typeof UserRouteRoute
+    }
+    '/user/consultations': {
+      id: '/user/consultations'
+      path: '/consultations'
+      fullPath: '/user/consultations'
+      preLoaderRoute: typeof UserConsultationsRouteImport
       parentRoute: typeof UserRouteRoute
     }
     '/user/ai-doctor': {
@@ -324,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutChatHistoryRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
+    '/_admin-layout/admin-test-records': {
+      id: '/_admin-layout/admin-test-records'
+      path: '/admin-test-records'
+      fullPath: '/admin-test-records'
+      preLoaderRoute: typeof AdminLayoutAdminTestRecordsRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
     '/_admin-layout/admin-settings': {
       id: '/_admin-layout/admin-settings'
       path: '/admin-settings'
@@ -343,15 +401,19 @@ declare module '@tanstack/react-router' {
 
 interface UserRouteRouteChildren {
   UserAiDoctorRoute: typeof UserAiDoctorRoute
+  UserConsultationsRoute: typeof UserConsultationsRoute
   UserSettingsRoute: typeof UserSettingsRoute
   UserTestRoute: typeof UserTestRoute
+  UserTestRecordsRoute: typeof UserTestRecordsRoute
   UserIndexRoute: typeof UserIndexRoute
 }
 
 const UserRouteRouteChildren: UserRouteRouteChildren = {
   UserAiDoctorRoute: UserAiDoctorRoute,
+  UserConsultationsRoute: UserConsultationsRoute,
   UserSettingsRoute: UserSettingsRoute,
   UserTestRoute: UserTestRoute,
+  UserTestRecordsRoute: UserTestRecordsRoute,
   UserIndexRoute: UserIndexRoute,
 }
 
@@ -362,6 +424,7 @@ const UserRouteRouteWithChildren = UserRouteRoute._addFileChildren(
 interface AdminLayoutRouteChildren {
   AdminLayoutAdminRoute: typeof AdminLayoutAdminRoute
   AdminLayoutAdminSettingsRoute: typeof AdminLayoutAdminSettingsRoute
+  AdminLayoutAdminTestRecordsRoute: typeof AdminLayoutAdminTestRecordsRoute
   AdminLayoutChatHistoryRoute: typeof AdminLayoutChatHistoryRoute
   AdminLayoutUserManageRoute: typeof AdminLayoutUserManageRoute
 }
@@ -369,6 +432,7 @@ interface AdminLayoutRouteChildren {
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutAdminRoute: AdminLayoutAdminRoute,
   AdminLayoutAdminSettingsRoute: AdminLayoutAdminSettingsRoute,
+  AdminLayoutAdminTestRecordsRoute: AdminLayoutAdminTestRecordsRoute,
   AdminLayoutChatHistoryRoute: AdminLayoutChatHistoryRoute,
   AdminLayoutUserManageRoute: AdminLayoutUserManageRoute,
 }

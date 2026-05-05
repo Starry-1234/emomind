@@ -1,17 +1,17 @@
 import {
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useState,
-  type ReactNode,
 } from "react"
+import useAuth from "@/hooks/useAuth"
 import {
+  type DifyConversation,
   deleteConversation,
   getConversations,
-  type DifyConversation,
 } from "@/services/difyApi"
-import useAuth from "@/hooks/useAuth"
 
 interface ConversationContextValue {
   conversations: DifyConversation[]
@@ -44,7 +44,7 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
   // userId 变化时（包括 user 从 null 变为真实用户）重新加载会话列表
   useEffect(() => {
     loadConversations()
-  }, [userId])
+  }, [loadConversations])
 
   const selectConversation = useCallback((convId: string) => {
     setActiveConvId(convId)
@@ -62,7 +62,7 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
         // silent
       }
     },
-    [userId, activeConvId, loadConversations]
+    [userId, activeConvId, loadConversations],
   )
 
   const newConversation = useCallback(() => {
@@ -89,7 +89,9 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
 export function useConversation() {
   const ctx = useContext(ConversationContext)
   if (!ctx) {
-    throw new Error("useConversation must be used within a ConversationProvider")
+    throw new Error(
+      "useConversation must be used within a ConversationProvider",
+    )
   }
   return ctx
 }

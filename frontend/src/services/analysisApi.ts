@@ -27,7 +27,7 @@ export interface FileAnalysisReportsPublic {
 export async function getAnalysisReports(
   token: string,
   skip = 0,
-  limit = 100
+  limit = 100,
 ): Promise<FileAnalysisReportsPublic> {
   const res = await fetch(`${API_BASE}/reports?skip=${skip}&limit=${limit}`, {
     headers: {
@@ -43,7 +43,7 @@ export async function getAnalysisReports(
  */
 export async function getAnalysisReport(
   reportId: string,
-  token: string
+  token: string,
 ): Promise<FileAnalysisReport> {
   const res = await fetch(`${API_BASE}/reports/${reportId}`, {
     headers: {
@@ -65,7 +65,7 @@ export async function createAnalysisReport(
     analysis_result: string
     conversation_id?: string | null
   },
-  token: string
+  token: string,
 ): Promise<FileAnalysisReport> {
   const res = await fetch(`${API_BASE}/reports`, {
     method: "POST",
@@ -84,7 +84,7 @@ export async function createAnalysisReport(
  */
 export async function deleteAnalysisReport(
   reportId: string,
-  token: string
+  token: string,
 ): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE}/reports/${reportId}`, {
     method: "DELETE",

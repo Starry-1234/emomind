@@ -4,7 +4,7 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
+from app.models import Item, ItemCreate, TestRecord, TestRecordCreate, TestRecordUpdate, User, UserCreate, UserUpdate
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -66,3 +66,38 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     session.commit()
     session.refresh(db_item)
     return db_item
+
+
+def create_test_record(*, session: Session, test_record_in: TestRecordCreate, owner_id: uuid.UUID) -> TestRecord:
+    db_obj = TestRecord.model_validate(test_record_in, update={"owner_id": owner_id})
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+def get_test_record(*, session: Session, test_record_id: uuid.UUID) -> TestRecord | None:
+    statement = select(TestRecord).where(TestRecord.id == test_record_id)
+    return session.exec(statement).first()
+
+
+def get_test_records(*, session: Session, owner_id: uuid.UUID, skip: int = 0, limit: int = 100) -> list[TestRecord]:
+    statement = select(TestRecord).where(TestRecord.owner_id == owner_id).offset(skip).limit(limit)
+    return session.exec(statement).all()
+
+
+def update_test_record(*, session: Session, db_obj: TestRecord, obj_in: TestRecordUpdate) -> TestRecord:
+    obj_data = obj_in.model_dump(exclude_unset=True)
+    db_obj.sqlmodel_update(obj_data)
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+def delete_test_record(*, session: Session, test_record_id: uuid.UUID) -> None:
+    statement = select(TestRecord).where(TestRecord.id == test_record_id)
+    obj = session.exec(statement).first()
+    if obj:
+        session.delete(obj)
+        session.commit()

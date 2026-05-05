@@ -7,7 +7,7 @@ const DIFY_TEST_API_KEY = import.meta.env.VITE_DIFY_TEST_API_KEY || ""
 /** 兼容旧代码的默认 Key（指向智能心理医生） */
 const DIFY_API_KEY = DIFY_AI_DOCTOR_API_KEY
 
-export { DIFY_AI_DOCTOR_API_KEY, DIFY_TEST_API_KEY, DIFY_API_KEY }
+export { DIFY_AI_DOCTOR_API_KEY, DIFY_API_KEY, DIFY_TEST_API_KEY }
 
 export interface DifyMessage {
   id: string
@@ -44,7 +44,11 @@ export interface DifyUploadResult {
 }
 
 export interface StreamCallbacks {
-  onMessage?: (answer: string, messageId: string, conversationId: string) => void
+  onMessage?: (
+    answer: string,
+    messageId: string,
+    conversationId: string,
+  ) => void
   onMessageEnd?: (messageId: string, conversationId: string) => void
   onMessageFile?: (file: DifyMessageFile) => void
   onError?: (message: string) => void
@@ -65,9 +69,14 @@ export async function sendMessageStream(
   callbacks: StreamCallbacks,
   options?: {
     conversationId?: string
-    files?: { type: string; transfer_method: string; url: string; upload_file_id?: string }[]
+    files?: {
+      type: string
+      transfer_method: string
+      url: string
+      upload_file_id?: string
+    }[]
     apiKey?: string
-  }
+  },
 ): Promise<void> {
   const key = options?.apiKey || DIFY_API_KEY
   const body: Record<string, unknown> = {
@@ -94,7 +103,9 @@ export async function sendMessageStream(
       body: JSON.stringify(body),
     })
   } catch (err) {
-    callbacks.onError?.(`网络连接失败: ${err instanceof Error ? err.message : "未知错误"}`)
+    callbacks.onError?.(
+      `网络连接失败: ${err instanceof Error ? err.message : "未知错误"}`,
+    )
     return
   }
 
@@ -131,10 +142,17 @@ export async function sendMessageStream(
 
           switch (parsed.event) {
             case "message":
-              callbacks.onMessage?.(parsed.answer || "", parsed.message_id, parsed.conversation_id)
+              callbacks.onMessage?.(
+                parsed.answer || "",
+                parsed.message_id,
+                parsed.conversation_id,
+              )
               break
             case "message_end":
-              callbacks.onMessageEnd?.(parsed.message_id, parsed.conversation_id)
+              callbacks.onMessageEnd?.(
+                parsed.message_id,
+                parsed.conversation_id,
+              )
               break
             case "message_file":
               if (parsed.type === "image") {
@@ -162,7 +180,9 @@ export async function sendMessageStream(
       }
     }
   } catch (err) {
-    callbacks.onError?.(`读取响应流时出错: ${err instanceof Error ? err.message : "未知错误"}`)
+    callbacks.onError?.(
+      `读取响应流时出错: ${err instanceof Error ? err.message : "未知错误"}`,
+    )
   } finally {
     reader.releaseLock()
   }
@@ -171,7 +191,7 @@ export async function sendMessageStream(
 export async function uploadFile(
   file: File,
   user: string,
-  apiKey?: string
+  apiKey?: string,
 ): Promise<DifyUploadResult> {
   const key = apiKey || DIFY_API_KEY
   const formData = new FormData()
@@ -196,7 +216,7 @@ export async function uploadFile(
 
 export async function getConversations(
   user: string,
-  options?: { lastId?: string; limit?: number; apiKey?: string }
+  options?: { lastId?: string; limit?: number; apiKey?: string },
 ): Promise<{ data: DifyConversation[]; has_more: boolean }> {
   const key = options?.apiKey || DIFY_API_KEY
   const params = new URLSearchParams()
@@ -221,10 +241,10 @@ export async function getConversations(
 
 export async function getConversationCount(
   user: string,
-  apiKey?: string
+  apiKey?: string,
 ): Promise<number> {
   let count = 0
-  let lastId: string | undefined = undefined
+  let lastId: string | undefined
   let hasMore = true
 
   while (hasMore) {
@@ -242,7 +262,7 @@ export async function getConversationCount(
 export async function getMessages(
   user: string,
   conversationId: string,
-  options?: { firstId?: string; limit?: number; apiKey?: string }
+  options?: { firstId?: string; limit?: number; apiKey?: string },
 ): Promise<{ data: DifyMessage[]; has_more: boolean }> {
   const key = options?.apiKey || DIFY_API_KEY
   const params = new URLSearchParams()
@@ -269,17 +289,20 @@ export async function getMessages(
 export async function deleteConversation(
   conversationId: string,
   user: string,
-  apiKey?: string
+  apiKey?: string,
 ): Promise<void> {
   const key = apiKey || DIFY_API_KEY
-  const response = await fetch(`${DIFY_BASE_URL}/conversations/${conversationId}`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
+  const response = await fetch(
+    `${DIFY_BASE_URL}/conversations/${conversationId}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({ user }),
     },
-    body: JSON.stringify({ user }),
-  })
+  )
 
   if (!response.ok && response.status !== 204) {
     throw new Error(`删除会话失败 (${response.status})`)
