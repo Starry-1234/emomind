@@ -2,10 +2,6 @@ import { Link } from "@tanstack/react-router"
 
 import { useTheme } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
-import icon from "/assets/images/fastapi-icon.svg"
-import iconLight from "/assets/images/fastapi-icon-light.svg"
-import logo from "/assets/images/fastapi-logo.svg"
-import logoLight from "/assets/images/fastapi-logo-light.svg"
 
 interface LogoProps {
   variant?: "full" | "icon" | "responsive"
@@ -20,36 +16,40 @@ export function Logo({
 }: LogoProps) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
+  const isColorful = resolvedTheme === "colorful"
+  const isWarm = resolvedTheme === "warm"
 
-  const fullLogo = isDark ? logoLight : logo
-  const iconLogo = isDark ? iconLight : icon
+  const getTextStyle = () => {
+    if (isColorful) {
+      return "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent"
+    }
+    if (isWarm) {
+      return "bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"
+    }
+    if (isDark) {
+      return "text-white"
+    }
+    // 浅色主题下使用淡紫色
+    return "text-purple-300"
+  }
 
   const content =
     variant === "responsive" ? (
-      <>
-        <img
-          src={fullLogo}
-          alt="心理测评系统"
-          className={cn(
-            "h-6 w-auto group-data-[collapsible=icon]:hidden",
-            className,
-          )}
-        />
-        <img
-          src={iconLogo}
-          alt="心理测评系统"
-          className={cn(
-            "size-5 hidden group-data-[collapsible=icon]:block",
-            className,
-          )}
-        />
-      </>
+      <div className={cn("flex items-center ml-8", className)}>
+        <span className={cn("font-black text-3xl group-data-[collapsible=icon]:hidden tracking-wide", getTextStyle())}>
+          心驿智通
+        </span>
+      </div>
+    ) : variant === "icon" ? (
+      <span className={cn("font-black text-2xl tracking-wide ml-8", getTextStyle(), className)}>
+        心驿智通
+      </span>
     ) : (
-      <img
-        src={variant === "full" ? fullLogo : iconLogo}
-        alt="FastAPI"
-        className={cn(variant === "full" ? "h-6 w-auto" : "size-5", className)}
-      />
+      <div className={cn("flex items-center ml-8", className)}>
+        <span className={cn("font-black text-4xl tracking-wide", getTextStyle())}>
+          心驿智通
+        </span>
+      </div>
     )
 
   if (!asLink) {

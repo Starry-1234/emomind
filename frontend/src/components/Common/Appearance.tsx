@@ -1,4 +1,4 @@
-import { Monitor, Moon, Sun } from "lucide-react"
+import { Heart, Monitor, Moon, Sun, Circle, Sparkles } from "lucide-react"
 
 import { type Theme, useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,9 @@ const ICON_MAP: Record<Theme, LucideIcon> = {
   system: Monitor,
   light: Sun,
   dark: Moon,
+  warm: Heart,
+  none: Circle,
+  colorful: Sparkles,
 }
 
 export const SidebarAppearance = () => {
@@ -42,23 +45,35 @@ export const SidebarAppearance = () => {
           align="end"
           className="w-(--radix-dropdown-menu-trigger-width) min-w-56"
         >
+          <DropdownMenuItem onClick={() => setTheme("none")}>
+            <Circle className="mr-2 h-4 w-4" />
+            无
+          </DropdownMenuItem>
           <DropdownMenuItem
             data-testid="light-mode"
             onClick={() => setTheme("light")}
           >
             <Sun className="mr-2 h-4 w-4" />
-            Light
+            浅色
           </DropdownMenuItem>
           <DropdownMenuItem
             data-testid="dark-mode"
             onClick={() => setTheme("dark")}
           >
             <Moon className="mr-2 h-4 w-4" />
-            Dark
+            暗色
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("warm")}>
+            <Heart className="mr-2 h-4 w-4" />
+            温馨
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("colorful")}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            缤纷
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setTheme("system")}>
             <Monitor className="mr-2 h-4 w-4" />
-            System
+            系统
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -80,6 +95,10 @@ export const Appearance = () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => setTheme("none")}>
+            <Circle className="mr-2 h-4 w-4" />
+            无
+          </DropdownMenuItem>
           <DropdownMenuItem
             data-testid="light-mode"
             onClick={() => setTheme("light")}
@@ -93,6 +112,14 @@ export const Appearance = () => {
           >
             <Moon className="mr-2 h-4 w-4" />
             深色
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("warm")}>
+            <Heart className="mr-2 h-4 w-4" />
+            温馨
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("colorful")}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            缤纷
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setTheme("system")}>
             <Monitor className="mr-2 h-4 w-4" />

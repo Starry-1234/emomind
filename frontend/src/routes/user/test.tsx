@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
+import { useCurrentTheme } from "@/hooks/useCurrentTheme"
 import {
   DIFY_TEST_API_KEY,
   getMessages,
@@ -109,6 +110,7 @@ function PsychologicalTest() {
   const userId = user?.id || "anonymous"
   const { activeConvId, setActiveConvId, loadConversations } = useConversation()
   const queryClient = useQueryClient()
+  const { isWarmTheme } = useCurrentTheme()
 
   // 聊天状态
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -162,11 +164,15 @@ function PsychologicalTest() {
           }
         }
         setMessages(chatMsgs)
-      } catch {
+      } catch (error) {
+        // 404 表示会话不存在（可能被删除），重置 activeConvId
+        if (error instanceof Error && error.message.includes("404")) {
+          setActiveConvId("")
+        }
         setMessages([])
       }
     },
-    [userId],
+    [userId, setActiveConvId],
   )
 
   useEffect(() => {
@@ -581,8 +587,12 @@ function PsychologicalTest() {
     <div className="flex h-full flex-col overflow-hidden rounded-lg border bg-card">
       {/* ── 顶栏 ─────────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 border-b px-5 py-3">
-        <div className="flex size-8 items-center justify-center rounded-full bg-violet-100">
-          <ClipboardList className="size-4 text-violet-600" />
+        <div className={`flex size-8 items-center justify-center rounded-full ${
+          isWarmTheme ? 'warm-gradient-bg warm-shadow' : 'bg-violet-100'
+        }`}>
+          <ClipboardList className={`size-4 ${
+            isWarmTheme ? 'text-white' : 'text-violet-600'
+          }`} />
         </div>
         <div>
           <h1 className="text-sm font-semibold">心理测评</h1>
@@ -600,7 +610,11 @@ function PsychologicalTest() {
             /* 欢迎界面 */
             <div className="flex h-full flex-col items-center justify-center gap-8 px-6">
               {/* 头像 */}
-              <div className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-purple-100 shadow-sm">
+              <div className={`flex size-20 items-center justify-center rounded-full shadow-sm ${
+                isWarmTheme
+                  ? 'warm-gradient-bg warm-shadow-lg'
+                  : 'bg-gradient-to-br from-violet-100 to-purple-100'
+              }`}>
                 <span className="text-3xl">🧠</span>
               </div>
 
@@ -609,7 +623,7 @@ function PsychologicalTest() {
                 <h2 className="text-xl font-semibold">你好呀！👋✨</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   很高兴见到你！我是
-                  <strong className="text-violet-600">小心</strong>
+                  <strong className={isWarmTheme ? 'warm-gradient-text' : 'text-violet-600'}>小心</strong>
                   ，你的心理测试小助手～
                   <br />
                   这里是一个温暖的角落，可以帮助你更好地了解自己的内心世界。
@@ -637,13 +651,19 @@ function PsychologicalTest() {
                 ].map((item) => (
                   <div
                     key={item.title}
-                    className="flex items-start gap-3 rounded-xl border border-violet-100 bg-white/80 p-4 shadow-sm transition-all hover:bg-violet-50/60 hover:border-violet-200 hover:shadow-md cursor-default"
+                    className={`flex items-start gap-3 rounded-xl border p-4 shadow-sm transition-all cursor-default ${
+                      isWarmTheme
+                        ? 'border-primary/20 bg-white/80 hover:bg-primary/10 hover:border-primary warm-transition'
+                        : 'border-violet-100 bg-white/80 hover:bg-violet-50/60 hover:border-violet-200 hover:shadow-md'
+                    }`}
                   >
                     <span className="text-2xl flex-shrink-0 mt-0.5">
                       {item.emoji}
                     </span>
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold text-violet-700">
+                      <div className={`text-sm font-semibold ${
+                        isWarmTheme ? 'text-primary' : 'text-violet-700'
+                      }`}>
                         {item.title}
                       </div>
                       <div className="text-xs text-muted-foreground leading-relaxed mt-0.5">
@@ -666,8 +686,12 @@ function PsychologicalTest() {
                 >
                   {msg.role === "assistant" && (
                     <Avatar className="mt-0.5 size-8 flex-shrink-0">
-                      <AvatarFallback className="bg-violet-100 text-violet-600">
-                        <ClipboardList className="size-4" />
+                      <AvatarFallback className={`${
+                        isWarmTheme ? 'warm-gradient-bg' : 'bg-violet-100 text-violet-600'
+                      }`}>
+                        <ClipboardList className={`size-4 ${
+                          isWarmTheme ? 'text-white' : ''
+                        }`} />
                       </AvatarFallback>
                     </Avatar>
                   )}
@@ -675,7 +699,7 @@ function PsychologicalTest() {
                     <div
                       className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                         msg.role === "user"
-                          ? "bg-violet-600 text-white whitespace-pre-wrap"
+                          ? (isWarmTheme ? 'btn-warm-primary' : 'bg-violet-600 text-white whitespace-pre-wrap')
                           : "bg-muted text-foreground"
                       }`}
                     >
@@ -716,8 +740,12 @@ function PsychologicalTest() {
                 !workflowRunning && (
                   <div className="flex gap-3">
                     <Avatar className="mt-0.5 size-8 flex-shrink-0">
-                      <AvatarFallback className="bg-violet-100 text-violet-600">
-                        <ClipboardList className="size-4" />
+                      <AvatarFallback className={`${
+                        isWarmTheme ? 'warm-gradient-bg' : 'bg-violet-100 text-violet-600'
+                      }`}>
+                        <ClipboardList className={`size-4 ${
+                          isWarmTheme ? 'text-white' : ''
+                        }`} />
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-2.5">
@@ -732,9 +760,17 @@ function PsychologicalTest() {
               {/* workflow 运行中 loading（独立状态指示器，不占消息气泡） */}
               {workflowRunning && isStreaming && (
                 <div className="flex justify-center">
-                  <div className="flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-sm animate-in fade-in duration-300">
-                    <Loader2 className="size-4 animate-spin text-violet-500" />
-                    <span className="text-violet-600 font-medium">
+                  <div className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm animate-in fade-in duration-300 ${
+                    isWarmTheme
+                      ? 'border-primary/30 bg-primary/10 warm-shadow'
+                      : 'border-violet-200 bg-violet-50'
+                  }`}>
+                    <Loader2 className={`size-4 animate-spin ${
+                      isWarmTheme ? 'text-primary' : 'text-violet-500'
+                    }`} />
+                    <span className={`font-medium ${
+                      isWarmTheme ? 'text-primary' : 'text-violet-600'
+                    }`}>
                       AI 正在分析中，请稍候...
                     </span>
                   </div>

@@ -6,7 +6,7 @@ import {
   useState,
 } from "react"
 
-export type Theme = "dark" | "light" | "system"
+export type Theme = "dark" | "light" | "system" | "warm" | "none" | "colorful"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -16,7 +16,7 @@ type ThemeProviderProps = {
 
 type ThemeProviderState = {
   theme: Theme
-  resolvedTheme: "dark" | "light"
+  resolvedTheme: "dark" | "light" | "warm" | "none" | "colorful"
   setTheme: (theme: Theme) => void
 }
 
@@ -38,7 +38,7 @@ export function ThemeProvider({
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme,
   )
 
-  const getResolvedTheme = useCallback((theme: Theme): "dark" | "light" => {
+  const getResolvedTheme = useCallback((theme: Theme): "dark" | "light" | "warm" | "none" | "colorful" => {
     if (theme === "system") {
       return window.matchMedia("(prefers-color-scheme: dark)").matches
         ? "dark"
@@ -47,14 +47,14 @@ export function ThemeProvider({
     return theme
   }, [])
 
-  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">(() =>
+  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light" | "warm" | "none" | "colorful">(() =>
     getResolvedTheme(theme),
   )
 
   const updateTheme = useCallback((newTheme: Theme) => {
     const root = window.document.documentElement
 
-    root.classList.remove("light", "dark")
+    root.classList.remove("light", "dark", "warm", "colorful")
 
     if (newTheme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
@@ -63,6 +63,11 @@ export function ThemeProvider({
         : "light"
 
       root.classList.add(systemTheme)
+      return
+    }
+
+    if (newTheme === "none") {
+      // 对于"无"主题，不添加任何类，使用默认样式
       return
     }
 

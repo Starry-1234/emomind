@@ -16,6 +16,7 @@ import { useConversation } from "@/components/contexts/ConversationContext"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import useAuth from "@/hooks/useAuth"
+import { useCurrentTheme } from "@/hooks/useCurrentTheme"
 import { createAnalysisReport } from "@/services/analysisApi"
 import {
   DIFY_AI_DOCTOR_API_KEY,
@@ -43,6 +44,7 @@ function AiDoctor() {
   const { user } = useAuth()
   const userId = user?.id || "anonymous"
   const { activeConvId, setActiveConvId, loadConversations } = useConversation()
+  const { isWarmTheme } = useCurrentTheme()
 
   // 消息
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -88,11 +90,15 @@ function AiDoctor() {
           }
         }
         setMessages(chatMsgs)
-      } catch {
+      } catch (error) {
+        // 404 表示会话不存在（可能被删除），重置 activeConvId
+        if (error instanceof Error && error.message.includes("404")) {
+          setActiveConvId("")
+        }
         setMessages([])
       }
     },
-    [userId],
+    [userId, setActiveConvId],
   )
 
   // 当 activeConvId 变化时加载消息
@@ -274,10 +280,10 @@ function AiDoctor() {
   // 文件图标
   const getFileIcon = (file: File) => {
     if (file.type.startsWith("audio"))
-      return <Mic className="size-4 text-purple-400" />
+      return <Mic className={`size-4 ${isWarmTheme ? 'text-warm-primary' : 'text-purple-400'}`} />
     if (file.type.startsWith("video"))
-      return <Video className="size-4 text-blue-400" />
-    return <FileText className="size-4 text-green-400" />
+      return <Video className={`size-4 ${isWarmTheme ? 'text-warm-primary' : 'text-blue-400'}`} />
+    return <FileText className={`size-4 ${isWarmTheme ? 'text-warm-primary' : 'text-green-400'}`} />
   }
 
   // 开场白
@@ -307,8 +313,10 @@ function AiDoctor() {
         <div className="flex-1 overflow-y-auto px-4 py-4">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-6">
-              <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
-                <Brain className="size-8 text-primary" />
+              <div className={`flex size-16 items-center justify-center rounded-full ${
+                isWarmTheme ? 'warm-gradient-bg warm-shadow' : 'bg-primary/10'
+              }`}>
+                <Brain className={`size-8 ${isWarmTheme ? 'text-white' : 'text-primary'}`} />
               </div>
               <div className="max-w-md text-center">
                 <h2 className="mb-2 text-lg font-semibold">
@@ -609,9 +617,13 @@ function AiDoctor() {
                           analysisFileRef.current.click()
                         }
                       }}
-                      className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/30 p-4 transition-all hover:border-primary hover:bg-primary/5"
+                      className={`flex flex-col items-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all ${
+                        isWarmTheme
+                          ? 'border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition'
+                          : 'border-muted-foreground/30 hover:border-primary hover:bg-primary/5'
+                      }`}
                     >
-                      <FileText className="size-8 text-blue-500" />
+                      <FileText className={`size-8 ${isWarmTheme ? 'text-primary' : 'text-blue-500'}`} />
                       <span className="text-sm font-medium">文档</span>
                     </button>
 
@@ -623,9 +635,13 @@ function AiDoctor() {
                           analysisFileRef.current.click()
                         }
                       }}
-                      className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/30 p-4 transition-all hover:border-primary hover:bg-primary/5"
+                      className={`flex flex-col items-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all ${
+                        isWarmTheme
+                          ? 'border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition'
+                          : 'border-muted-foreground/30 hover:border-primary hover:bg-primary/5'
+                      }`}
                     >
-                      <Mic className="size-8 text-purple-500" />
+                      <Mic className={`size-8 ${isWarmTheme ? 'text-primary' : 'text-purple-500'}`} />
                       <span className="text-sm font-medium">音频</span>
                     </button>
 
@@ -637,23 +653,31 @@ function AiDoctor() {
                           analysisFileRef.current.click()
                         }
                       }}
-                      className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/30 p-4 transition-all hover:border-primary hover:bg-primary/5"
+                      className={`flex flex-col items-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all ${
+                        isWarmTheme
+                          ? 'border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition'
+                          : 'border-muted-foreground/30 hover:border-primary hover:bg-primary/5'
+                      }`}
                     >
-                      <Video className="size-8 text-green-500" />
+                      <Video className={`size-8 ${isWarmTheme ? 'text-primary' : 'text-green-500'}`} />
                       <span className="text-sm font-medium">视频</span>
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg border bg-muted/30 p-4">
+                <div className={`rounded-lg border p-4 ${
+                  isWarmTheme ? 'bg-primary/10 border-primary/20' : 'bg-muted/30'
+                }`}>
                   <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+                    <div className={`flex size-10 items-center justify-center rounded-lg ${
+                      isWarmTheme ? 'bg-primary/20' : 'bg-primary/10'
+                    }`}>
                       {analysisFile.type.startsWith("audio") ? (
-                        <Mic className="size-5 text-purple-500" />
+                        <Mic className={`size-5 ${isWarmTheme ? 'text-primary' : 'text-purple-500'}`} />
                       ) : analysisFile.type.startsWith("video") ? (
-                        <Video className="size-5 text-green-500" />
+                        <Video className={`size-5 ${isWarmTheme ? 'text-primary' : 'text-green-500'}`} />
                       ) : (
-                        <FileText className="size-5 text-blue-500" />
+                        <FileText className={`size-5 ${isWarmTheme ? 'text-primary' : 'text-blue-500'}`} />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
