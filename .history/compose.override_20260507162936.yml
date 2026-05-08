@@ -92,7 +92,7 @@ services:
   mailcatcher:
     image: schickling/mailcatcher
     ports:
-      - "10800:1080"
+      - "1081:1080"
       - "1025:1025"
 
   frontend:
