@@ -232,7 +232,7 @@ function PsychologicalTest() {
         text,
         userId,
         {
-          onMessage(answer) {
+          onMessage: (answer) => {
             accumulated += answer
             // 实时检测是否包含 TEST_JSON 子串
             if (!detectedTest && accumulated.includes("TEST_JSON::")) {
@@ -263,7 +263,7 @@ function PsychologicalTest() {
               })
             }
           },
-          onMessageEnd(_messageId, conversationId) {
+          onMessageEnd: (_messageId, conversationId) => {
             streamHandledEnd = true
             setIsStreaming(false)
             setWorkflowRunning(false)
@@ -313,13 +313,13 @@ function PsychologicalTest() {
             }
             loadConversations()
           },
-          onWorkflowStarted() {
+          onWorkflowStarted: () => {
             setWorkflowRunning(true)
           },
-          onWorkflowFinished() {
+          onWorkflowFinished: () => {
             setWorkflowRunning(false)
           },
-          onError(message) {
+          onError: (message) => {
             streamHandledEnd = true
             setIsStreaming(false)
             setWorkflowRunning(false)
@@ -424,10 +424,10 @@ function PsychologicalTest() {
         resultText,
         userId,
         {
-          onMessage(answer) {
+          onMessage: (answer) => {
             accumulated += answer
           },
-          onMessageEnd(_messageId, conversationId) {
+          onMessageEnd: (_messageId, conversationId) => {
             streamHandledEnd = true
             setIsStreaming(false)
             setWorkflowRunning(false)
@@ -511,13 +511,13 @@ function PsychologicalTest() {
                 console.error("保存测评记录失败:", message)
               })
           },
-          onWorkflowStarted() {
+          onWorkflowStarted: () => {
             setWorkflowRunning(true)
           },
-          onWorkflowFinished() {
+          onWorkflowFinished: () => {
             setWorkflowRunning(false)
           },
-          onError(message) {
+          onError: (message) => {
             streamHandledEnd = true
             setIsStreaming(false)
             setWorkflowRunning(false)
