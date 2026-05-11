@@ -649,9 +649,11 @@ function PsychologicalTest() {
                     desc: "如果你想了解如何使用测试功能，我可以一步步告诉你哦",
                   },
                 ].map((item) => (
-                  <div
+                  <button
                     key={item.title}
-                    className={`flex items-start gap-3 rounded-xl border p-4 shadow-sm transition-all cursor-default ${
+                    type="button"
+                    onClick={() => setInputText(item.title)}
+                    className={`w-full flex items-start gap-3 rounded-xl border p-4 shadow-sm transition-all cursor-pointer ${
                       isWarmTheme
                         ? 'border-primary/20 bg-white/80 hover:bg-primary/10 hover:border-primary warm-transition'
                         : 'border-violet-100 bg-white/80 hover:bg-violet-50/60 hover:border-violet-200 hover:shadow-md'
@@ -660,7 +662,7 @@ function PsychologicalTest() {
                     <span className="text-2xl flex-shrink-0 mt-0.5">
                       {item.emoji}
                     </span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 text-left">
                       <div className={`text-sm font-semibold ${
                         isWarmTheme ? 'text-primary' : 'text-violet-700'
                       }`}>
@@ -670,7 +672,7 @@ function PsychologicalTest() {
                         {item.desc}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
