@@ -272,6 +272,23 @@ function AiDoctor() {
     }
   }
 
+  // 根据文件类型分类
+  const categorizeFile = (file: File) => {
+    if (file.type.startsWith("audio")) {
+      return "audio"
+    } else if (file.type.startsWith("video")) {
+      return "video"
+    } else if (file.type.startsWith("text") ||
+               file.name.endsWith(".txt") ||
+               file.name.endsWith(".md") ||
+               file.name.endsWith(".doc") ||
+               file.name.endsWith(".docx") ||
+               file.name.endsWith(".pdf")) {
+      return "text"
+    }
+    return "document"
+  }
+
   // 移除附件
   const removeAttachment = (index: number) => {
     setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
@@ -719,9 +736,11 @@ function AiDoctor() {
                     DIFY_AI_DOCTOR_API_KEY,
                   )
 
+                  const fileCategory = categorizeFile(analysisFile)
+
                   const userMsg: ChatMessage = {
                     role: "user",
-                    content: `【心理状况分析】上传文件：${analysisFile.name}`,
+                    content: `【心理状况分析】上传${fileCategory === "audio" ? "音频" : fileCategory === "video" ? "视频" : "文档"}文件：${analysisFile.name}`,
                   }
                   setMessages((prev) => [...prev, userMsg])
 
@@ -732,11 +751,22 @@ function AiDoctor() {
                   }
                   setMessages((prev) => [...prev, assistantMsg])
 
-                  const fileType = analysisFile.type.startsWith("audio")
-                    ? "audio"
-                    : analysisFile.type.startsWith("video")
-                      ? "video"
-                      : "document"
+                  // 构建 inputs 参数，将文件分配到对应字段
+                  const inputs: Record<string, unknown> = {
+                    userinput: {
+                      query: "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
+                      files: []
+                    }
+                  }
+
+                  // 根据文件类型分配到对应的输入字段
+                  if (fileCategory === "audio") {
+                    inputs.audio = uploadResult.id
+                  } else if (fileCategory === "video") {
+                    inputs.video = uploadResult.id
+                  } else if (fileCategory === "text") {
+                    inputs.text = uploadResult.id
+                  }
 
                   await sendMessageStream(
                     "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
@@ -775,7 +805,7 @@ function AiDoctor() {
                         createAnalysisReport(
                           {
                             file_name: analysisFile!.name,
-                            file_type: fileType,
+                            file_type: fileCategory,
                             file_size: analysisFile!.size,
                             analysis_result: accumulated,
                             conversation_id:
@@ -809,14 +839,7 @@ function AiDoctor() {
                       },
                     },
                     {
-                      files: [
-                        {
-                          type: fileType,
-                          transfer_method: "local_file",
-                          url: uploadResult.id,
-                          upload_file_id: uploadResult.id,
-                        },
-                      ],
+                      inputs: inputs,
                       apiKey: DIFY_AI_DOCTOR_API_KEY,
                     },
                   )

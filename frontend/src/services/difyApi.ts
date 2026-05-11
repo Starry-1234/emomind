@@ -75,12 +75,13 @@ export async function sendMessageStream(
       url: string
       upload_file_id?: string
     }[]
+    inputs?: Record<string, unknown>
     apiKey?: string
   },
 ): Promise<void> {
   const key = options?.apiKey || DIFY_API_KEY
   const body: Record<string, unknown> = {
-    inputs: {},
+    inputs: options?.inputs || {},
     query,
     response_mode: "streaming",
     conversation_id: options?.conversationId || "",
