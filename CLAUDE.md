@@ -56,7 +56,7 @@ bash ./scripts/generate-client.sh
 
 ### 后端结构 (`backend/app/`)
 - `main.py` - FastAPI 应用工厂
-- `models.py` - SQLModel 数据库模型（User, Item, FileAnalysisReport）
+- `models.py` - SQLModel 数据库模型（User, Item, TestRecord, FileAnalysisReport）
 - `crud.py` - 增删改查操作
 - `core/config.py` - Pydantic 配置管理
 - `core/security.py` - JWT 和密码工具
@@ -66,7 +66,7 @@ bash ./scripts/generate-client.sh
 ### 前端结构 (`frontend/src/`)
 - `main.tsx` - React 应用引导，包含 QueryClient 和 Router
 - `routes/` - 按路由组织的页面组件（login, signup, admin/*, user/*）
-- `components/` - UI 组件（ui/, Admin/, Common/, Items/, Sidebar/, contexts/）
+- `components/` - UI 组件（ui/, Admin/, Common/, UserSettings/, Sidebar/, contexts/）
 - `hooks/` - 自定义 Hooks（useAuth.ts, useCustomToast.ts, useMobile.ts）
 - `services/` - API 服务（analysisApi.ts, difyApi.ts 用于 Dify AI 集成）
 - `client/` - 自动生成的 OpenAPI 客户端
@@ -76,13 +76,14 @@ bash ./scripts/generate-client.sh
 - `/users` - 用户管理（增删改查）
 - `/items` - 项目管理
 - `/analysis` - 文件分析报告管理
+- `/test-records` - 心理测评记录管理
 - `/utils` - 工具端点（健康检查）
 - `/private` - 本地开发专用端点
 
 ### 前端路由
 - 认证相关: `/login`, `/signup`, `/recover-password`, `/reset-password`
 - 管理员（超级用户）: `/admin/*`
-- 普通用户: `/user/*`
+- 普通用户: `/user/*`（包含 `/user/test` 心理测评和 `/user/test-records` 测评记录）
 
 ## 服务地址（开发环境）
 

@@ -79,9 +79,11 @@ export type TestRecordCreate = {
     test_name: string;
     user_topic?: (string | null);
     total_score?: (number | null);
+    total_max?: (number | null);
     result_description?: (string | null);
     questions?: Array<unknown>;
     answers?: Array<unknown>;
+    scoring_ranges?: Array<unknown>;
     conversation_id?: (string | null);
 };
 
@@ -89,9 +91,11 @@ export type TestRecordPublic = {
     test_name: string;
     user_topic?: (string | null);
     total_score?: (number | null);
+    total_max?: (number | null);
     result_description?: (string | null);
     questions?: Array<unknown>;
     answers?: Array<unknown>;
+    scoring_ranges?: Array<unknown>;
     conversation_id?: (string | null);
     id: string;
     created_at?: (string | null);
@@ -106,7 +110,9 @@ export type TestRecordUpdate = {
     test_name?: (string | null);
     user_topic?: (string | null);
     total_score?: (number | null);
+    total_max?: (number | null);
     result_description?: (string | null);
+    scoring_ranges?: (Array<unknown> | null);
 };
 
 export type Token = {

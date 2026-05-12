@@ -186,9 +186,11 @@ class TestRecordBase(SQLModel):
     test_name: str = Field(max_length=255)
     user_topic: str | None = Field(default=None, max_length=500)
     total_score: int | None = None
+    total_max: int | None = None
     result_description: str | None = None
     questions: list = Field(default=[], sa_type=JSON)
     answers: list = Field(default=[], sa_type=JSON)
+    scoring_ranges: list = Field(default=[], sa_type=JSON)
     conversation_id: str | None = None
 
 
@@ -200,7 +202,9 @@ class TestRecordUpdate(SQLModel):
     test_name: str | None = Field(default=None, max_length=255)
     user_topic: str | None = Field(default=None, max_length=500)
     total_score: int | None = None
+    total_max: int | None = None
     result_description: str | None = None
+    scoring_ranges: list | None = None
 
 
 class TestRecord(TestRecordBase, table=True):

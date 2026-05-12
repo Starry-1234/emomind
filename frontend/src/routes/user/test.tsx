@@ -394,6 +394,10 @@ function PsychologicalTest() {
     // 在清除状态前先捕获当前值（避免异步闭包陷阱）
     const capturedTest = activeTest
     const capturedAnswers = { ...testAnswers }
+    const capturedTotalScore = resultPayload.answers.reduce(
+      (sum: number, a: { score: number }) => sum + (a.score || 0),
+      0,
+    )
 
     // 清除答题界面
     setActiveTest(null)
@@ -491,37 +495,29 @@ function PsychologicalTest() {
                   !m.content.startsWith("TEST_JSON"),
               )?.content || null
 
-            // 尝试从 accumulated 中提取分数
-            let totalScore: number | null = null
-            if (accumulated && typeof accumulated === "string") {
-              const scoreMatch = accumulated.match(
-                /(?:总分|得分|score)[：:]\s*(\d+)/i,
-              )
-              if (scoreMatch && scoreMatch[1]) {
-                totalScore = parseInt(scoreMatch[1], 10)
-              }
-            }
-
             // 调用 API 保存记录
             TestRecordsService.createTestRecord({
               requestBody: {
                 test_name: testName,
                 user_topic: userTopic,
-                total_score: totalScore,
+                total_score: capturedTotalScore,
+                total_max: capturedTest?.scoring?.total_max || null,
                 result_description: accumulated,
                 questions: questions,
                 answers: answers,
+                scoring_ranges: capturedTest?.scoring?.ranges || [],
                 conversation_id: activeConvId || undefined,
               },
             })
               .then(() => {
+                console.log("[测评调试] ✅ 保存测评记录成功，分数:", capturedTotalScore)
                 // 刷新测评记录列表
                 queryClient.invalidateQueries({ queryKey: ["test-records"] })
               })
               .catch((err: unknown) => {
                 // 只记录错误，不影响主流程
                 const message = err instanceof Error ? err.message : String(err)
-                console.error("保存测评记录失败:", message)
+                console.error("[测评调试] ❌ 保存测评记录失败:", message)
               })
           },
           onWorkflowStarted: () => {

@@ -120,16 +120,34 @@ function TestRecords() {
 
   const groupOrder = ["今天", "昨天", "7天内", "30天内", "30天外"]
 
-  const getScoreColor = (score: number | null | undefined) => {
+  const getScoreColor = (score: number | null | undefined, scoringRanges: {min: number; max: number; label: string}[] | null | undefined) => {
     if (score === null || score === undefined)
       return "bg-gray-100 text-gray-600"
+    if (scoringRanges?.length) {
+      for (const r of scoringRanges) {
+        if (score >= r.min && score <= r.max) {
+          if (r.label.includes("正常") || r.label.includes("良好")) return "bg-green-100 text-green-700"
+          if (r.label.includes("关注")) return "bg-yellow-100 text-yellow-700"
+          if (r.label.includes("寻求帮助") || r.label.includes("严重")) return "bg-red-100 text-red-700"
+        }
+      }
+    }
+    // fallback 硬编码（老数据）
     if (score >= 80) return "bg-green-100 text-green-700"
     if (score >= 60) return "bg-yellow-100 text-yellow-700"
     return "bg-red-100 text-red-700"
   }
 
-  const getScoreLabel = (score: number | null | undefined) => {
+  const getScoreLabel = (score: number | null | undefined, scoringRanges: {min: number; max: number; label: string}[] | null | undefined) => {
     if (score === null || score === undefined) return "待评估"
+    if (scoringRanges?.length) {
+      for (const r of scoringRanges) {
+        if (score >= r.min && score <= r.max) {
+          return r.label
+        }
+      }
+    }
+    // fallback 硬编码（老数据）
     if (score >= 80) return "良好"
     if (score >= 60) return "中等"
     return "需关注"
@@ -209,9 +227,10 @@ function TestRecords() {
                                 variant="outline"
                                 className={`text-xs ${getScoreColor(
                                   record.total_score,
+                                  record.scoring_ranges as {min: number; max: number; label: string}[] | null | undefined,
                                 )}`}
                               >
-                                {getScoreLabel(record.total_score)}
+                                {getScoreLabel(record.total_score, record.scoring_ranges as {min: number; max: number; label: string}[] | null | undefined)}
                               </Badge>
                             </div>
                             <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -301,9 +320,9 @@ function TestRecords() {
               {selectedRecordData && (
                 <Badge
                   variant="outline"
-                  className={getScoreColor(selectedRecordData.total_score)}
+                  className={getScoreColor(selectedRecordData.total_score, selectedRecordData.scoring_ranges as {min: number; max: number; label: string}[] | null | undefined)}
                 >
-                  {getScoreLabel(selectedRecordData.total_score)}
+                  {getScoreLabel(selectedRecordData.total_score, selectedRecordData.scoring_ranges as {min: number; max: number; label: string}[] | null | undefined)}
                 </Badge>
               )}
             </DialogTitle>
