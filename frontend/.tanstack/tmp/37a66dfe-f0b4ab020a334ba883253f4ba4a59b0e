@@ -1,0 +1,28 @@
+import { createFileRoute } from "@tanstack/react-router"
+
+export const Route = createFileRoute("/_layout-backup/analysis")({
+  component: Analysis,
+  head: () => ({
+    meta: [
+      {
+        title: "心理状况分析 - 心理测评系统",
+      },
+    ],
+  }),
+})
+
+export default function Analysis() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">心理状况分析</h1>
+        <p className="text-muted-foreground">
+          上传文本、音频或视频进行AI心理分析
+        </p>
+      </div>
+      <div className="flex items-center justify-center h-96 border-2 border-dashed rounded-lg">
+        <p className="text-muted-foreground">分析功能开发中...</p>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,421 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import {
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  FileText,
+  Filter,
+  Music,
+  RefreshCw,
+  Search,
+  Trash2,
+  User,
+  Video,
+  X,
+} from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
+import { type AnalysisRecord, AnalysisService } from "@/client/analysis"
+import useAuth from "@/hooks/useAuth"
+
+export const Route = createFileRoute("/_layout-backup/history")({
+  component: History,
+  head: () => ({
+    meta: [{ title: "历史分析记录 - 心芯智联" }],
+  }),
+})
+
+export default function History() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const [records, setRecords] = useState<AnalysisRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [expandedRecords, setExpandedRecords] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState("")
+  const [genderFilter, setGenderFilter] = useState<string>("")
+  const [ageFilter, setAgeFilter] = useState<string>("")
+  const [showFilters, setShowFilters] = useState(false)
+
+  const fetchRecords = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await AnalysisService.getRecords()
+      setRecords(data.data || [])
+    } catch (err) {
+      console.error("获取历史记录失败:", err)
+      setError(err instanceof Error ? err.message : "获取历史记录失败")
+    } finally {
+      setLoading(false)
+    }
+  }, [user?.id])
+
+  useEffect(() => {
+    fetchRecords()
+  }, [fetchRecords])
+
+  const toggleExpand = (recordId: string) => {
+    setExpandedRecords((prev) => {
+      const next = new Set(prev)
+      if (next.has(recordId)) next.delete(recordId)
+      else next.add(recordId)
+      return next
+    })
+  }
+
+  const handleDelete = async (recordId: string) => {
+    if (!confirm("确定要删除这条记录吗？此操作不可撤销。")) return
+    try {
+      await AnalysisService.deleteRecord(recordId)
+      setRecords((prev) => prev.filter((r) => r.record_id !== recordId))
+    } catch (err) {
+      console.error("删除失败:", err)
+      alert("删除失败，请重试")
+    }
+  }
+
+  const handleViewDetail = (recordId: string) => {
+    navigate({ to: "/analysis-result/$recordId", params: { recordId } })
+  }
+
+  const getGenderLabel = (gender: string) => {
+    switch (gender) {
+      case "male":
+        return "男"
+      case "female":
+        return "女"
+      default:
+        return "其他"
+    }
+  }
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "未知时间"
+    return new Date(dateStr).toLocaleString("zh-CN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  const filteredRecords = records
+    .filter((record) => {
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        if (
+          !record.person_name?.toLowerCase().includes(query) &&
+          !record.record_id.toLowerCase().includes(query)
+        )
+          return false
+      }
+      if (genderFilter && record.gender !== genderFilter) return false
+      if (ageFilter && record.age?.toString() !== ageFilter) return false
+      return true
+    })
+    .sort((a, b) => {
+      const dateA = a.record_time ? new Date(a.record_time).getTime() : 0
+      const dateB = b.record_time ? new Date(b.record_time).getTime() : 0
+      return dateB - dateA
+    })
+
+  const getResultSummary = (record: AnalysisRecord) => {
+    if (record.analysis_result)
+      return record.analysis_result.split("\n").slice(0, 3).join("\n")
+    if (record.text_analysis_result)
+      return `${record.text_analysis_result.slice(0, 100)}...`
+    if (record.audio_analysis_result)
+      return `${record.audio_analysis_result.slice(0, 100)}...`
+    if (record.video_analysis_result)
+      return `${record.video_analysis_result.slice(0, 100)}...`
+    return "暂无分析结果"
+  }
+
+  const getFileStats = (record: AnalysisRecord) => {
+    const textFiles =
+      record.files?.filter(
+        (f) =>
+          f.file_type?.includes("text") ||
+          f.file_name?.match(/\.(txt|doc|docx|pdf)$/i),
+      ) || []
+    const audioFiles =
+      record.files?.filter(
+        (f) =>
+          f.file_type?.includes("audio") ||
+          f.file_name?.match(/\.(mp3|wav|m4a|ogg)$/i),
+      ) || []
+    const videoFiles =
+      record.files?.filter(
+        (f) =>
+          f.file_type?.includes("video") ||
+          f.file_name?.match(/\.(mp4|mov|avi|wmv)$/i),
+      ) || []
+    return { text: textFiles, audio: audioFiles, video: videoFiles }
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">请先登录后查看历史记录</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto p-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">历史分析记录</h1>
+            <p className="text-muted-foreground mt-1">查看过往的心理分析记录</p>
+          </div>
+          <button
+            type="button"
+            onClick={fetchRecords}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? `animate-spin` : ``}`} />
+            刷新
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-4 border">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="搜索姓名或记录ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${showFilters ? `bg-blue-50 border-blue-500 text-blue-600` : `hover:bg-gray-50`}`}
+            >
+              <Filter className="w-4 h-4" />
+              筛选
+            </button>
+          </div>
+
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="gender-filter"
+                  className="text-sm text-gray-600"
+                >
+                  性别:
+                </label>
+                <select
+                  id="gender-filter"
+                  value={genderFilter}
+                  onChange={(e) => setGenderFilter(e.target.value)}
+                  className="px-3 py-1.5 border rounded-lg text-sm"
+                >
+                  <option value="">全部</option>
+                  <option value="male">男</option>
+                  <option value="female">女</option>
+                  <option value="other">其他</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label htmlFor="age-filter" className="text-sm text-gray-600">
+                  年龄:
+                </label>
+                <input
+                  id="age-filter"
+                  type="number"
+                  placeholder="输入年龄"
+                  value={ageFilter}
+                  onChange={(e) => setAgeFilter(e.target.value)}
+                  className="w-24 px-3 py-1.5 border rounded-lg text-sm"
+                />
+              </div>
+              {(searchQuery || genderFilter || ageFilter) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("")
+                    setGenderFilter("")
+                    setAgeFilter("")
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-lg"
+                >
+                  <X className="w-4 h-4" />
+                  清除筛选
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex items-center justify-center h-64">
+            <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+          </div>
+        )}
+
+        {!loading && filteredRecords.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-64 bg-white rounded-xl border">
+            <div className="text-6xl mb-4">📋</div>
+            <p className="text-gray-500 mb-4">暂无历史分析记录</p>
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/file-upload" })}
+              className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+            >
+              去上传文件
+            </button>
+          </div>
+        )}
+
+        {!loading && filteredRecords.length > 0 && (
+          <div className="space-y-4">
+            {filteredRecords.map((record, index) => {
+              const isExpanded = expandedRecords.has(record.record_id)
+              const fileStats = getFileStats(record)
+              return (
+                <div
+                  key={record.record_id}
+                  className="bg-white rounded-xl shadow-sm border overflow-hidden"
+                >
+                  <div className="p-4 border-b bg-gradient-to-r from-purple-50 to-blue-50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="px-3 py-1 bg-purple-500 text-white text-sm font-medium rounded-full">
+                          #{index + 1}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-400" />
+                          <span className="font-medium">
+                            {record.person_name}
+                          </span>
+                          <span className="text-gray-400">|</span>
+                          <span className="text-sm text-gray-500">
+                            {getGenderLabel(record.gender)}
+                          </span>
+                          {record.age && (
+                            <>
+                              <span className="text-gray-400">|</span>
+                              <span className="text-sm text-gray-500">
+                                {record.age}岁
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <Calendar className="w-4 h-4" />
+                          {formatDate(record.record_time)}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggleExpand(record.record_id)}
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="w-5 h-5" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-3 bg-gray-50 border-b flex flex-wrap gap-4">
+                    {fileStats.text.length > 0 && (
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <FileText className="w-4 h-4 text-green-500" />
+                        <span>文本 {fileStats.text.length} 个</span>
+                      </div>
+                    )}
+                    {fileStats.audio.length > 0 && (
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <Music className="w-4 h-4 text-blue-500" />
+                        <span>音频 {fileStats.audio.length} 个</span>
+                      </div>
+                    )}
+                    {fileStats.video.length > 0 && (
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <Video className="w-4 h-4 text-purple-500" />
+                        <span>视频 {fileStats.video.length} 个</span>
+                      </div>
+                    )}
+                    {record.files?.length === 0 && (
+                      <span className="text-sm text-gray-400">
+                        暂无上传文件
+                      </span>
+                    )}
+                  </div>
+
+                  <div
+                    className={`transition-all duration-300 ${isExpanded ? `max-h-[2000px] opacity-100` : `max-h-0 opacity-0 overflow-hidden`}`}
+                  >
+                    <div className="p-4 space-y-4">
+                      {getResultSummary(record) !== "暂无分析结果" && (
+                        <div className="p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border-l-4 border-orange-500">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">
+                            {record.analysis_result || getResultSummary(record)}
+                          </p>
+                        </div>
+                      )}
+                      {!record.analysis_result &&
+                        !record.text_analysis_result &&
+                        !record.audio_analysis_result &&
+                        !record.video_analysis_result && (
+                          <div className="p-4 bg-gray-100 rounded-lg text-center text-gray-500">
+                            暂无分析结果
+                          </div>
+                        )}
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-3 bg-gray-50 border-t flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleViewDetail(record.record_id)}
+                      className="flex items-center gap-1.5 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      查看详情
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(record.record_id)}
+                      className="flex items-center gap-1.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      删除
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {!loading && filteredRecords.length > 0 && (
+          <div className="text-center text-sm text-gray-500">
+            共 {filteredRecords.length} 条记录
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

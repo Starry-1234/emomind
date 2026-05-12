@@ -1,0 +1,289 @@
+import { createFileRoute, Link } from "@tanstack/react-router"
+import { useCallback, useEffect, useState } from "react"
+import { type AnalysisRecord, AnalysisService } from "@/client/analysis"
+import useAuth from "@/hooks/useAuth"
+
+export const Route = createFileRoute("/_layout-backup/analysis-result/$recordId")({
+  component: AnalysisResult,
+  head: () => ({
+    meta: [{ title: "分析结果 - 心芯智联" }],
+  }),
+})
+
+export default function AnalysisResult() {
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [record, setRecord] = useState<AnalysisRecord | null>(null)
+
+  const recordId = Route.useParams().recordId
+
+  const fetchRecord = useCallback(async () => {
+    if (!recordId) return
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await AnalysisService.getRecord(recordId)
+      setRecord(data)
+    } catch (err) {
+      console.error("获取分析记录失败:", err)
+      setError(err instanceof Error ? err.message : "获取分析记录失败")
+    } finally {
+      setLoading(false)
+    }
+  }, [recordId])
+
+  useEffect(() => {
+    fetchRecord()
+  }, [fetchRecord])
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "未提供"
+    return new Date(dateString).toLocaleDateString("zh-CN")
+  }
+
+  const formatDateTime = (dateString?: string) => {
+    if (!dateString) return "未提供"
+    return new Date(dateString).toLocaleString("zh-CN")
+  }
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "未知大小"
+    const k = 1024
+    const sizes = ["Bytes", "KB", "MB", "GB"]
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`
+  }
+
+  const getGenderLabel = (gender?: string) => {
+    const map: Record<string, string> = {
+      male: "男",
+      female: "女",
+      other: "其他",
+    }
+    return map[gender || ""] || gender || "未提供"
+  }
+
+  const getFileIcon = (fileType?: string) => {
+    if (!fileType) return "📄"
+    if (
+      fileType.includes("text") ||
+      fileType.includes("pdf") ||
+      fileType.includes("word")
+    )
+      return "📝"
+    if (fileType.includes("audio")) return "🎵"
+    if (fileType.includes("video")) return "🎬"
+    return "📄"
+  }
+
+  const hasFile = (type: "text" | "audio" | "video") => {
+    return record?.files?.some((f) => {
+      if (!f.file_type) return false
+      if (type === "text")
+        return (
+          f.file_type.includes("text") ||
+          f.file_type.includes("pdf") ||
+          f.file_type.includes("word")
+        )
+      if (type === "audio") return f.file_type.includes("audio")
+      if (type === "video") return f.file_type.includes("video")
+      return false
+    })
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">请先登录</p>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-muted-foreground">正在加载分析结果...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-red-500">{error}</p>
+        <Link
+          to="/file-upload"
+          className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+        >
+          返回
+        </Link>
+      </div>
+    )
+  }
+
+  if (!record) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-muted-foreground">未找到分析记录</p>
+        <Link
+          to="/file-upload"
+          className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+        >
+          返回
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto p-6 max-w-4xl">
+      <h1 className="text-3xl font-bold mb-8 text-center">心理分析结果</h1>
+
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border">
+        <h2 className="text-xl font-semibold mb-4 text-primary border-b pb-2">
+          基本信息
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <span className="text-gray-500">姓名：</span>
+            <span className="font-medium">{record.person_name}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">性别：</span>
+            <span className="font-medium">{getGenderLabel(record.gender)}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">年龄：</span>
+            <span className="font-medium">{record.age}岁</span>
+          </div>
+          <div>
+            <span className="text-gray-500">出生日期：</span>
+            <span className="font-medium">{formatDate(record.birth_date)}</span>
+          </div>
+          <div className="col-span-2">
+            <span className="text-gray-500">分析时间：</span>
+            <span className="font-medium">
+              {formatDateTime(record.record_time)}
+            </span>
+          </div>
+        </div>
+        {record.remarks && (
+          <div className="mt-4 pt-4 border-t">
+            <span className="text-gray-500">备注：</span>
+            <p className="mt-1 text-gray-700">{record.remarks}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border">
+        <h2 className="text-xl font-semibold mb-4 text-primary border-b pb-2">
+          分析结果
+        </h2>
+
+        {record.analysis_result && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border-l-4 border-orange-500">
+            <h3 className="font-medium text-orange-600 mb-2">
+              📊 综合分析结果
+            </h3>
+            <p className="text-gray-700 whitespace-pre-wrap">
+              {record.analysis_result}
+            </p>
+          </div>
+        )}
+
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border-l-4 border-green-500">
+          <h3 className="font-medium text-green-600 mb-2">文本分析结果</h3>
+          {hasFile("text") && record.text_analysis_result ? (
+            <p className="text-gray-700 whitespace-pre-wrap">
+              {record.text_analysis_result}
+            </p>
+          ) : hasFile("text") ? (
+            <p className="text-red-500">分析模型错误，分析失败</p>
+          ) : (
+            <p className="text-gray-400">未上传文本文件</p>
+          )}
+        </div>
+
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+          <h3 className="font-medium text-blue-600 mb-2">音频分析结果</h3>
+          {hasFile("audio") && record.audio_analysis_result ? (
+            <p className="text-gray-700 whitespace-pre-wrap">
+              {record.audio_analysis_result}
+            </p>
+          ) : hasFile("audio") ? (
+            <p className="text-red-500">分析模型错误，分析失败</p>
+          ) : (
+            <p className="text-gray-400">未上传录音文件</p>
+          )}
+        </div>
+
+        <div className="p-4 bg-gray-50 rounded-lg border-l-4 border-purple-500">
+          <h3 className="font-medium text-purple-600 mb-2">视频分析结果</h3>
+          {hasFile("video") && record.video_analysis_result ? (
+            <p className="text-gray-700 whitespace-pre-wrap">
+              {record.video_analysis_result}
+            </p>
+          ) : hasFile("video") ? (
+            <p className="text-red-500">分析模型错误，分析失败</p>
+          ) : (
+            <p className="text-gray-400">未上传视频文件</p>
+          )}
+        </div>
+      </div>
+
+      {record.files && record.files.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border">
+          <h2 className="text-xl font-semibold mb-4 text-primary border-b pb-2">
+            上传的文件
+          </h2>
+          <ul className="space-y-3">
+            {record.files.map((file) => (
+              <li
+                key={file.file_id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">
+                    {getFileIcon(file.file_type)}
+                  </span>
+                  <div>
+                    <p className="font-medium">{file.file_name}</p>
+                    <p className="text-sm text-gray-500">
+                      {formatFileSize(file.file_size)} |{" "}
+                      {formatDateTime(file.created_at)}
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href={AnalysisService.getFileDownloadUrl(file.file_id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  下载
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="flex justify-center gap-4">
+        <Link
+          to="/file-upload"
+          className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition-colors"
+        >
+          返回上传
+        </Link>
+        <Link
+          to="/"
+          className="px-6 py-3 bg-purple-500 text-white font-semibold rounded-xl hover:bg-purple-600 transition-colors"
+        >
+          返回首页
+        </Link>
+      </div>
+    </div>
+  )
+}

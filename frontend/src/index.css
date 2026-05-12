@@ -1,0 +1,467 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.5982 0.10687 182.4689);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.5982 0.10687 182.4689);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+/* 缤纷主题变量 */
+.colorful {
+  /* 基础背景色 - 彩虹渐变 */
+  --background: oklch(0.95 0.05 285);
+  --foreground: oklch(0.2 0.05 285);
+
+  /* 为整个页面添加动态背景 */
+  background: linear-gradient(45deg,
+    oklch(0.8 0.15 0 / 0.3) 0%,    /* 红色 - 30%透明度 */
+    oklch(0.8 0.15 60 / 0.3) 20%,  /* 橙色 - 30%透明度 */
+    oklch(0.8 0.15 120 / 0.3) 40%, /* 黄色 - 30%透明度 */
+    oklch(0.8 0.15 180 / 0.3) 60%, /* 绿色 - 30%透明度 */
+    oklch(0.8 0.15 240 / 0.3) 80%, /* 蓝色 - 30%透明度 */
+    oklch(0.8 0.15 300 / 0.3) 100% /* 紫色 - 30%透明度 */
+  ) !important;
+  background-size: 400% 400% !important;
+  animation: colorfulGradientShift 12s ease infinite !important;
+
+  /* 卡片和组件背景 - 半透明白色 */
+  --card: oklch(1 0 0 / 0.9);
+  --card-foreground: oklch(0.2 0.05 285);
+  --popover: oklch(1 0 0 / 0.95);
+  --popover-foreground: oklch(0.2 0.05 285);
+
+  /* 主色调 - 柔和的彩虹色 */
+  --primary: oklch(0.7 0.15 285);
+  --primary-foreground: oklch(0.98 0.02 285);
+
+  /* 次要颜色 */
+  --secondary: oklch(0.97 0.03 285);
+  --secondary-foreground: oklch(0.3 0.05 285);
+
+  /* 其他组件颜色 */
+  --muted: oklch(0.98 0.02 285);
+  --muted-foreground: oklch(0.4 0.05 285);
+  --accent: oklch(0.96 0.03 285);
+  --accent-foreground: oklch(0.3 0.05 285);
+  --destructive: oklch(0.65 0.25 25);
+
+  /* 边框和输入框 - 去除粉红色，使用柔和的颜色 */
+  --border: oklch(0.9 0.02 240);
+  --input: oklch(0.98 0.01 285);
+  --ring: oklch(0.7 0.15 285);
+
+  /* 侧边栏特殊颜色 */
+  --sidebar: oklch(1 0 0 / 0.95);
+  --sidebar-foreground: oklch(0.2 0.05 285);
+  --sidebar-primary: oklch(0.7 0.15 285);
+  --sidebar-primary-foreground: oklch(0.98 0.02 285);
+  --sidebar-accent: oklch(0.97 0.03 285);
+  --sidebar-accent-foreground: oklch(0.3 0.05 285);
+  --sidebar-border: oklch(0.9 0.02 240);
+  --sidebar-ring: oklch(0.7 0.15 285);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.65 0.10687 182.4689);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.65 0.10687 182.4689);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* 温馨主题变量 */
+.warm {
+  /* 基础背景色 - 温柔的紫色渐变 */
+  --background: oklch(0.95 0.03 285);
+  --foreground: oklch(0.3 0.05 285);
+
+  /* 卡片和组件背景 */
+  --card: oklch(0.97 0.02 285);
+  --card-foreground: oklch(0.3 0.05 285);
+  --popover: oklch(0.97 0.02 285);
+  --popover-foreground: oklch(0.3 0.05 285);
+
+  /* 主色调 - 温柔的紫色 */
+  --primary: oklch(0.65 0.15 285); /* 紫蓝色 */
+  --primary-foreground: oklch(0.98 0.02 285);
+
+  /* 次要颜色 - 淡紫色辅助色 */
+  --secondary: oklch(0.92 0.05 285);
+  --secondary-foreground: oklch(0.35 0.08 285);
+
+  /* 其他组件颜色 */
+  --muted: oklch(0.94 0.03 285);
+  --muted-foreground: oklch(0.5 0.08 285);
+  --accent: oklch(0.9 0.06 285);
+  --accent-foreground: oklch(0.35 0.08 285);
+  --destructive: oklch(0.65 0.25 25);
+
+  /* 边框和输入框 */
+  --border: oklch(0.85 0.04 285);
+  --input: oklch(0.85 0.04 285);
+  --ring: oklch(0.65 0.15 285);
+
+  /* 侧边栏特殊颜色 */
+  --sidebar: oklch(0.96 0.02 285);
+  --sidebar-foreground: oklch(0.3 0.05 285);
+  --sidebar-primary: oklch(0.65 0.15 285);
+  --sidebar-primary-foreground: oklch(0.98 0.02 285);
+  --sidebar-accent: oklch(0.92 0.05 285);
+  --sidebar-accent-foreground: oklch(0.35 0.08 285);
+  --sidebar-border: oklch(0.85 0.04 285);
+  --sidebar-ring: oklch(0.65 0.15 285);
+}
+
+/* 温馨主题渐变效果 */
+.warm-gradient-bg {
+  background: linear-gradient(135deg,
+    oklch(0.8 0.12 285) 0%,  /* 浅紫色 */
+    oklch(0.7 0.15 300) 50%, /* 粉紫色 */
+    oklch(0.65 0.18 270) 100% /* 深紫色 */
+  );
+}
+
+.warm-gradient-text {
+  background: linear-gradient(135deg,
+    oklch(0.8 0.12 285) 0%,
+    oklch(0.7 0.15 300) 50%,
+    oklch(0.65 0.18 270) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 温馨主题下的特殊组件样式 */
+.warm .warm-card {
+  background: linear-gradient(135deg,
+    oklch(0.97 0.02 285) 0%,
+    oklch(0.95 0.03 285) 100%
+  );
+  border: 1px solid oklch(0.85 0.04 285);
+  box-shadow: 0 4px 20px oklch(0.65 0.15 285 / 0.1);
+}
+
+/* 温馨主题下的按钮效果 */
+.warm .btn-warm-primary {
+  background: linear-gradient(135deg,
+    oklch(0.7 0.15 285) 0%,
+    oklch(0.6 0.18 300) 100%
+  );
+  color: oklch(0.98 0.02 285);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.warm .btn-warm-primary:hover {
+  background: linear-gradient(135deg,
+    oklch(0.75 0.15 285) 0%,
+    oklch(0.65 0.18 300) 100%
+  );
+  transform: translateY(-1px);
+  box-shadow: 0 6px 25px oklch(0.65 0.15 285 / 0.3);
+}
+
+/* 温馨主题动画效果 */
+.warm .warm-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.warm .warm-shadow {
+  box-shadow: 0 4px 20px oklch(0.7 0.15 285 / 0.1);
+}
+
+.warm .warm-shadow-lg {
+  box-shadow: 0 8px 32px oklch(0.7 0.15 285 / 0.15);
+}
+
+/* 缤纷主题动画效果 */
+.colorful-gradient-bg {
+  background: linear-gradient(45deg,
+    oklch(0.85 0.08 0) 0%,    /* 淡红色 */
+    oklch(0.85 0.08 60) 20%,  /* 淡橙色 */
+    oklch(0.85 0.08 120) 40%, /* 淡黄色 */
+    oklch(0.85 0.08 180) 60%, /* 淡绿色 */
+    oklch(0.85 0.08 240) 80%, /* 淡蓝色 */
+    oklch(0.85 0.08 300) 100% /* 淡紫色 */
+  );
+  background-size: 400% 400%;
+  animation: colorfulGradientShift 12s ease infinite;
+}
+
+@keyframes colorfulGradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+}
+
+/* 缤纷主题的浮动粒子效果 */
+.colorful-particles {
+  position: relative;
+  overflow: hidden;
+}
+
+.colorful-particles::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle at 20% 80%, oklch(0.85 0.08 0 / 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, oklch(0.85 0.08 240 / 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, oklch(0.85 0.08 120 / 0.3) 0%, transparent 50%);
+  background-size: 200% 200%;
+  animation: colorfulParticles 20s linear infinite;
+  opacity: 0.08; /* 降低到8%透明度 */
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes colorfulParticles {
+  0% {
+    background-position: 0% 0%, 100% 100%, 50% 50%;
+    transform: rotate(0deg);
+  }
+  100% {
+    background-position: 100% 100%, 0% 0%, 150% 150%;
+    transform: rotate(360deg);
+  }
+}
+
+/* 缤纷主题下的特殊组件样式 */
+.colorful .colorful-card {
+  background: linear-gradient(135deg,
+    oklch(1 0 0 / 0.95) 0%,
+    oklch(0.99 0.02 60 / 0.95) 100%
+  );
+  border: 1px solid oklch(0.92 0.03 285 / 0.5);
+  box-shadow: 0 8px 32px oklch(0.8 0.1 300 / 0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* 缤纷主题下的按钮效果 */
+.colorful .btn-colorful-primary {
+  background: linear-gradient(135deg,
+    oklch(0.8 0.12 0) 0%,
+    oklch(0.8 0.12 60) 25%,
+    oklch(0.8 0.12 120) 50%,
+    oklch(0.8 0.12 240) 75%,
+    oklch(0.8 0.12 300) 100%
+  );
+  color: oklch(0.98 0.02 285);
+  border: none;
+  transition: all 0.3s ease;
+  background-size: 200% 200%;
+  animation: colorfulButtonShift 4s ease infinite;
+}
+
+@keyframes colorfulButtonShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.colorful .btn-colorful-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px oklch(0.65 0.25 300 / 0.4);
+  animation-play-state: paused;
+}
+
+/* 缤纷主题动画效果 */
+.colorful .colorful-shadow {
+  box-shadow: 0 8px 32px oklch(0.65 0.25 300 / 0.3);
+}
+
+.colorful .colorful-shadow-lg {
+  box-shadow: 0 16px 64px oklch(0.65 0.25 300 / 0.4);
+}
+
+/* 缤纷主题过渡效果 */
+.colorful .colorful-transition {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 缤纷主题文字渐变 */
+.colorful-gradient-text {
+  background: linear-gradient(45deg,
+    oklch(0.8 0.12 0) 0%,
+    oklch(0.8 0.12 60) 20%,
+    oklch(0.8 0.12 120) 40%,
+    oklch(0.8 0.12 180) 60%,
+    oklch(0.8 0.12 240) 80%,
+    oklch(0.8 0.12 300) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: colorfulTextShift 6s ease infinite;
+}
+
+@keyframes colorfulTextShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* 缤纷主题的全局背景容器 */
+.colorful body {
+  background: linear-gradient(45deg,
+    oklch(0.8 0.15 0 / 0.2) 0%,    /* 红色 - 20%透明度 */
+    oklch(0.8 0.15 60 / 0.2) 20%,  /* 橙色 - 20%透明度 */
+    oklch(0.8 0.15 120 / 0.2) 40%, /* 黄色 - 20%透明度 */
+    oklch(0.8 0.15 180 / 0.2) 60%, /* 绿色 - 20%透明度 */
+    oklch(0.8 0.15 240 / 0.2) 80%, /* 蓝色 - 20%透明度 */
+    oklch(0.8 0.15 300 / 0.2) 100% /* 紫色 - 20%透明度 */
+  );
+  background-size: 400% 400%;
+  animation: colorfulGradientShift 12s ease infinite;
+  position: relative;
+}
+
+/* 缤纷主题的粒子背景覆盖层 */
+.colorful body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle at 20% 80%, oklch(0.85 0.08 0 / 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, oklch(0.85 0.08 240 / 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, oklch(0.85 0.08 120 / 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 60% 60%, oklch(0.85 0.08 300 / 0.3) 0%, transparent 50%);
+  background-size: 200% 200%;
+  animation: colorfulParticles 20s linear infinite;
+  opacity: 0.05; /* 降低整体透明度到5% */
+  pointer-events: none;
+  z-index: -1;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+}
