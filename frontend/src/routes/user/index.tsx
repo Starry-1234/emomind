@@ -55,26 +55,72 @@ function getQuoteOfTheDay() {
   return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length]
 }
 
-// ===== 分数等级颜色 =====
-function getScoreColor(score: number | null | undefined) {
+// ===== 分数等级颜色（使用测评记录中的 scoring_ranges）=====
+type ScoringRange = { min: number; max: number; label: string }
+
+function getScoreColor(
+  score: number | null | undefined,
+  scoringRanges: ScoringRange[] | null | undefined,
+) {
   if (score === null || score === undefined) return "text-muted-foreground"
-  if (score >= 80) return "text-emerald-600"
-  if (score >= 60) return "text-amber-600"
+  if (scoringRanges?.length) {
+    for (const r of scoringRanges) {
+      if (score >= r.min && score <= r.max) {
+        if (r.label.includes("正常") || r.label.includes("良好"))
+          return "text-emerald-600"
+        if (r.label.includes("关注"))
+          return "text-amber-600"
+        if (r.label.includes("严重") || r.label.includes("危险"))
+          return "text-rose-600"
+      }
+    }
+  }
+  // 兜底：百分比判断
+  const pct = score
+  if (pct >= 80) return "text-emerald-600"
+  if (pct >= 60) return "text-amber-600"
   return "text-rose-600"
 }
 
-function getLevelBadge(score: number | null | undefined) {
+function getLevelBadge(
+  score: number | null | undefined,
+  scoringRanges: ScoringRange[] | null | undefined,
+) {
   if (score === null || score === undefined)
     return "bg-muted text-muted-foreground"
-  if (score >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200"
-  if (score >= 60) return "bg-amber-50 text-amber-700 border-amber-200"
+  if (scoringRanges?.length) {
+    for (const r of scoringRanges) {
+      if (score >= r.min && score <= r.max) {
+        if (r.label.includes("正常") || r.label.includes("良好"))
+          return "bg-emerald-50 text-emerald-700 border-emerald-200"
+        if (r.label.includes("关注"))
+          return "bg-amber-50 text-amber-700 border-amber-200"
+        if (r.label.includes("严重") || r.label.includes("危险"))
+          return "bg-rose-50 text-rose-700 border-rose-200"
+      }
+    }
+  }
+  const pct = score
+  if (pct >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200"
+  if (pct >= 60) return "bg-amber-50 text-amber-700 border-amber-200"
   return "bg-rose-50 text-rose-700 border-rose-200"
 }
 
-function getLevelLabel(score: number | null | undefined) {
+function getLevelLabel(
+  score: number | null | undefined,
+  scoringRanges: ScoringRange[] | null | undefined,
+) {
   if (score === null || score === undefined) return "待评估"
-  if (score >= 80) return "良好"
-  if (score >= 60) return "中等"
+  if (scoringRanges?.length) {
+    for (const r of scoringRanges) {
+      if (score >= r.min && score <= r.max) {
+        return r.label
+      }
+    }
+  }
+  const pct = score
+  if (pct >= 80) return "良好"
+  if (pct >= 60) return "中等"
   return "需关注"
 }
 
@@ -82,11 +128,15 @@ function getLevelLabel(score: number | null | undefined) {
 function MiniChart({ data }: { data: { day: string; score: number }[] }) {
   const maxScore = 100
   const chartW = 400
-  const chartH = 160
+  const chartH = 200
   const padX = 40
-  const padY = 24
+  const padY = 32
   const innerW = chartW - padX * 2
   const innerH = chartH - padY * 2
+
+  // 健康区间（百分比）：60-80 为正常区间
+  const healthyMinY = padY + innerH - (80 / maxScore) * innerH
+  const healthyMaxY = padY + innerH - (60 / maxScore) * innerH
 
   const points = data.map((d, i) => ({
     x: padX + (i / (data.length - 1)) * innerW,
@@ -104,8 +154,19 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
     <svg
       viewBox={`0 0 ${chartW} ${chartH}`}
       className="w-full"
-      style={{ maxHeight: 180 }}
+      style={{ maxHeight: 200 }}
     >
+      {/* 健康区间背景色（60-80 分） */}
+      <rect
+        x={padX}
+        y={healthyMinY}
+        width={innerW}
+        height={healthyMaxY - healthyMinY}
+        fill="#22c55e"
+        opacity={0.06}
+        rx={4}
+      />
+
       {/* 网格线 */}
       {[0, 25, 50, 75, 100].map((v) => {
         const y = padY + innerH - (v / maxScore) * innerH
@@ -133,7 +194,7 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
       })}
 
       {/* 面积填充 */}
-      <path d={areaPath} fill="url(#trendGradient)" opacity={0.3} />
+      <path d={areaPath} fill="url(#trendGradient)" opacity={0.25} />
 
       {/* 折线 */}
       <path
@@ -145,7 +206,7 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
         strokeLinejoin="round"
       />
 
-      {/* 数据点 */}
+      {/* 数据点 + 百分比数值 */}
       {points.map((p, i) => (
         <g key={i}>
           <circle
@@ -156,6 +217,18 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
             stroke="white"
             strokeWidth={2}
           />
+          {/* 百分比数值 */}
+          <text
+            x={p.x}
+            y={p.y - 10}
+            textAnchor="middle"
+            className="fill-foreground"
+            fontSize={11}
+            fontWeight={600}
+          >
+            {p.value}%
+          </text>
+          {/* 日期标签 */}
           <text
             x={p.x}
             y={chartH - 4}
@@ -167,6 +240,26 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
           </text>
         </g>
       ))}
+
+      {/* 健康区间标注 */}
+      <text
+        x={chartW - padX + 4}
+        y={healthyMinY + 10}
+        className="fill-green-500"
+        fontSize={9}
+        opacity={0.7}
+      >
+        正常
+      </text>
+      <text
+        x={chartW - padX + 4}
+        y={padY + 12}
+        className="fill-red-400"
+        fontSize={9}
+        opacity={0.7}
+      >
+        预警
+      </text>
 
       {/* 渐变定义 */}
       <defs>
@@ -228,7 +321,7 @@ function UserHome() {
     fetchCounts()
   }, [userId, records.length])
 
-  // 从真实记录计算最近7天趋势
+  // 从真实记录计算最近7天趋势（归一化为百分比，多次测评取日均值）
   const trendData = useMemo(() => {
     const now = new Date()
     const days: { day: string; score: number }[] = []
@@ -237,11 +330,20 @@ function UserHome() {
       d.setDate(d.getDate() - i)
       const dateStr = d.toISOString().slice(0, 10)
       const dayLabel = d.toLocaleDateString("zh-CN", { weekday: "short" })
-      const dayRecord = records.find((r) => {
-        if (!r.created_at) return false
-        return r.created_at.slice(0, 10) === dateStr && r.total_score !== null
+      const dayRecords = records.filter((r) => {
+        if (!r.created_at || r.total_score === null) return false
+        return r.created_at.slice(0, 10) === dateStr
       })
-      days.push({ day: dayLabel, score: dayRecord?.total_score ?? 0 })
+      // 多次测评取百分比均值
+      const score = dayRecords.length > 0
+        ? Math.round(
+            dayRecords.reduce((sum, r) => {
+              const max = r.total_max ?? 100
+              return sum + (max > 0 ? (r.total_score! / max) * 100 : 0)
+            }, 0) / dayRecords.length,
+          )
+        : 0
+      days.push({ day: dayLabel, score })
     }
     return days
   }, [records])
@@ -313,9 +415,9 @@ function UserHome() {
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="size-5 text-primary" />
-            <CardTitle className="text-base">心理健康趋势</CardTitle>
+            <CardTitle className="text-base">心理健康指数趋势</CardTitle>
           </div>
-          <CardDescription>近 7 天综合评分变化</CardDescription>
+          <CardDescription>近 7 天心理健康指数（归一化百分比）</CardDescription>
         </CardHeader>
         <CardContent>
           <MiniChart data={trendData} />
@@ -408,21 +510,31 @@ function UserHome() {
                     </div>
                     <div className="flex items-center gap-3">
                       {record.total_score !== null &&
-                        record.total_score !== undefined && (
-                          <span
-                            className={`text-lg font-bold ${getScoreColor(record.total_score)}`}
-                          >
-                            {record.total_score}
-                            <span className="text-xs font-normal text-muted-foreground">
-                              /100
+                        record.total_score !== undefined && (() => {
+                          const max = record.total_max ?? 100
+                          const scoringRanges = (record.scoring_ranges as ScoringRange[] | null | undefined) ?? null
+                          return (
+                            <span
+                              className={`text-lg font-bold ${getScoreColor(record.total_score, scoringRanges)}`}
+                            >
+                              {record.total_score}
+                              <span className="text-xs font-normal text-muted-foreground">
+                                /{max}
+                              </span>
                             </span>
-                          </span>
-                        )}
-                      <span
-                        className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${getLevelBadge(record.total_score)}`}
-                      >
-                        {getLevelLabel(record.total_score)}
-                      </span>
+                          )
+                        })()}
+                      {record.total_score !== null &&
+                        record.total_score !== undefined && (() => {
+                          const scoringRanges = (record.scoring_ranges as ScoringRange[] | null | undefined) ?? null
+                          return (
+                            <span
+                              className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${getLevelBadge(record.total_score, scoringRanges)}`}
+                            >
+                              {getLevelLabel(record.total_score, scoringRanges)}
+                            </span>
+                          )
+                        })()}
                     </div>
                   </div>
                 )

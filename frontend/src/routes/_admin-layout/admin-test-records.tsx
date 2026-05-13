@@ -44,6 +44,7 @@ interface TestRecord {
   test_name: string
   user_topic?: string
   total_score?: number
+  total_max?: number
   created_at?: string
   result_description?: string
   questions?: {
@@ -429,7 +430,7 @@ function TestRecordsAdmin() {
                           {record.total_score !== null &&
                             record.total_score !== undefined && (
                               <span className="font-medium text-foreground">
-                                {record.total_score}/100
+                                {record.total_score}/{record.total_max ?? 100}
                               </span>
                             )}
                         </div>
