@@ -11,7 +11,6 @@ import { Card } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
 import { useCurrentTheme } from "@/hooks/useCurrentTheme"
 import {
-  DIFY_TEST_API_KEY,
   getMessages,
   sendMessageStream,
 } from "@/services/difyApi"
@@ -144,7 +143,7 @@ function PsychologicalTest() {
     async (convId: string) => {
       try {
         const result = await getMessages(userId, convId, {
-          apiKey: DIFY_TEST_API_KEY,
+          apiKeyName: "test",
         })
         const chatMsgs: ChatMessage[] = []
         const sorted = [...result.data].sort(
@@ -349,7 +348,7 @@ function PsychologicalTest() {
         },
         {
           conversationId: activeConvId || undefined,
-          apiKey: DIFY_TEST_API_KEY,
+          apiKeyName: "test",
         },
       )
     } catch (err) {
@@ -549,7 +548,7 @@ function PsychologicalTest() {
         },
         {
           conversationId: activeConvId || undefined,
-          apiKey: DIFY_TEST_API_KEY,
+          apiKeyName: "test",
         },
       )
     } catch (err) {

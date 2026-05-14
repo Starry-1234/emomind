@@ -19,7 +19,6 @@ import useAuth from "@/hooks/useAuth"
 import { useCurrentTheme } from "@/hooks/useCurrentTheme"
 import { createAnalysisReport } from "@/services/analysisApi"
 import {
-  DIFY_AI_DOCTOR_API_KEY,
   type DifyMessageFile,
   getMessages,
   sendMessageStream,
@@ -67,7 +66,7 @@ function AiDoctor() {
     async (convId: string) => {
       try {
         const result = await getMessages(userId, convId, {
-          apiKey: DIFY_AI_DOCTOR_API_KEY,
+          apiKeyName: "ai-doctor",
         })
         const chatMsgs: ChatMessage[] = []
         const sorted = [...result.data].sort(
@@ -143,7 +142,7 @@ function AiDoctor() {
     }[] = []
     for (const file of filesToSend) {
       try {
-        const result = await uploadFile(file, userId, DIFY_AI_DOCTOR_API_KEY)
+        const result = await uploadFile(file, userId, "ai-doctor")
         uploadedFiles.push({
           type: file.type.startsWith("audio")
             ? "audio"
@@ -231,7 +230,7 @@ function AiDoctor() {
         {
           conversationId: activeConvId || undefined,
           files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
-          apiKey: DIFY_AI_DOCTOR_API_KEY,
+          apiKeyName: "ai-doctor",
         },
       )
     } catch (err) {
@@ -734,7 +733,7 @@ function AiDoctor() {
                   const uploadResult = await uploadFile(
                     analysisFile,
                     userId,
-                    DIFY_AI_DOCTOR_API_KEY,
+                    "ai-doctor",
                   )
                   console.log("文件上传成功:", uploadResult)
 
@@ -885,7 +884,7 @@ function AiDoctor() {
                     {
                       inputs: inputs,
                       files: filesToSend,
-                      apiKey: DIFY_AI_DOCTOR_API_KEY,
+                      apiKeyName: "ai-doctor",
                     },
                   )
                 } catch (err) {

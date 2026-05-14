@@ -106,7 +106,7 @@ def generate_password_reset_token(email: str) -> str:
     expires = now + delta
     exp = expires.timestamp()
     encoded_jwt = jwt.encode(
-        {"exp": exp, "nbf": now, "sub": email},
+        {"exp": exp, "nbf": now, "sub": email, "purpose": "password_reset"},
         settings.SECRET_KEY,
         algorithm=security.ALGORITHM,
     )
@@ -118,6 +118,9 @@ def verify_password_reset_token(token: str) -> str | None:
         decoded_token = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
         )
+        # Verify the token purpose to prevent reuse for other operations
+        if decoded_token.get("purpose") != "password_reset":
+            return None
         return str(decoded_token["sub"])
     except InvalidTokenError:
         return None

@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
 import {
-  DIFY_AI_DOCTOR_API_KEY,
   getConversationCount,
 } from "@/services/difyApi"
 
@@ -308,7 +307,7 @@ function UserHome() {
   useEffect(() => {
     async function fetchCounts() {
       try {
-        const chat = await getConversationCount(userId, DIFY_AI_DOCTOR_API_KEY)
+        const chat = await getConversationCount(userId, "ai-doctor")
         setChatCount(chat)
         // 测评次数用真实的测评记录数，而不是对话次数
         setTestCount(records.length)

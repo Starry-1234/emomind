@@ -1,13 +1,17 @@
-const DIFY_BASE_URL = import.meta.env.VITE_DIFY_API_URL || "http://localhost/v1"
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-// 各工作流专用 API Key（从环境变量读取）
-const DIFY_AI_DOCTOR_API_KEY = import.meta.env.VITE_DIFY_AI_DOCTOR_API_KEY || ""
-const DIFY_TEST_API_KEY = import.meta.env.VITE_DIFY_TEST_API_KEY || ""
+// API Key 由后端管理，前端不持有
+// 可选指定使用哪个 key (apiKeyName: "ai-doctor" | "test")
+const DIFY_API_KEY_NAME = "ai-doctor"
 
-/** 兼容旧代码的默认 Key（指向智能心理医生） */
-const DIFY_API_KEY = DIFY_AI_DOCTOR_API_KEY
-
-export { DIFY_AI_DOCTOR_API_KEY, DIFY_API_KEY, DIFY_TEST_API_KEY }
+// 获取认证 token
+function getAuthHeader(): Record<string, string> {
+  const token = localStorage.getItem("access_token")
+  if (token) {
+    return { Authorization: `Bearer ${token}` }
+  }
+  return {}
+}
 
 export interface DifyMessage {
   id: string
@@ -76,11 +80,11 @@ export async function sendMessageStream(
       url: string
       upload_file_id?: string
     }[]
-    apiKey?: string
+    apiKeyName?: string
   },
 ): Promise<void> {
   console.log("sendMessageStream 被调用，参数:", { query, user, options })
-  const key = options?.apiKey || DIFY_API_KEY
+  const apiKeyName = options?.apiKeyName || DIFY_API_KEY_NAME
   const body: Record<string, unknown> = {
     inputs: options?.inputs || {},
     query,
@@ -95,18 +99,21 @@ export async function sendMessageStream(
   }
 
   console.log("请求 body:", body)
-  console.log("请求 URL:", `${DIFY_BASE_URL}/chat-messages`)
+  console.log("请求 URL:", `${API_BASE_URL}/api/v1/dify/chat-messages`)
 
   let response: Response
   try {
-    response = await fetch(`${DIFY_BASE_URL}/chat-messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
+    response = await fetch(
+      `${API_BASE_URL}/api/v1/dify/chat-messages?api_key_name=${apiKeyName}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    })
+    )
     console.log("收到响应，状态码:", response.status)
   } catch (err) {
     console.error("网络请求失败:", err)
@@ -223,20 +230,33 @@ export async function sendMessageStream(
 export async function uploadFile(
   file: File,
   user: string,
-  apiKey?: string,
+  apiKeyName?: string,
 ): Promise<DifyUploadResult> {
-  const key = apiKey || DIFY_API_KEY
-  const formData = new FormData()
-  formData.append("file", file)
-  formData.append("user", user)
+  const keyName = apiKeyName || DIFY_API_KEY_NAME
+  // Convert file to base64 for backend proxy
+  const arrayBuffer = await file.arrayBuffer()
+  const base64 = btoa(
+    new Uint8Array(arrayBuffer).reduce(
+      (data, byte) => data + String.fromCharCode(byte),
+      "",
+    ),
+  )
 
-  const response = await fetch(`${DIFY_BASE_URL}/files/upload`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/dify/files/upload?api_key_name=${keyName}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({
+        file_name: file.name,
+        file_data: base64,
+        user: user,
+      }),
     },
-    body: formData,
-  })
+  )
 
   if (!response.ok) {
     const errorText = await response.text()
@@ -248,9 +268,9 @@ export async function uploadFile(
 
 export async function getConversations(
   user: string,
-  options?: { lastId?: string; limit?: number; apiKey?: string },
+  options?: { lastId?: string; limit?: number; apiKeyName?: string },
 ): Promise<{ data: DifyConversation[]; has_more: boolean }> {
-  const key = options?.apiKey || DIFY_API_KEY
+  const keyName = options?.apiKeyName || DIFY_API_KEY_NAME
   const params = new URLSearchParams()
   params.set("user", user)
   params.set("limit", String(options?.limit || 20))
@@ -258,11 +278,14 @@ export async function getConversations(
     params.set("last_id", options.lastId)
   }
 
-  const response = await fetch(`${DIFY_BASE_URL}/conversations?${params}`, {
-    headers: {
-      Authorization: `Bearer ${key}`,
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/dify/conversations?${params}&api_key_name=${keyName}`,
+    {
+      headers: {
+        ...getAuthHeader(),
+      },
     },
-  })
+  )
 
   if (!response.ok) {
     throw new Error(`获取会话列表失败 (${response.status})`)
@@ -273,14 +296,18 @@ export async function getConversations(
 
 export async function getConversationCount(
   user: string,
-  apiKey?: string,
+  apiKeyName?: string,
 ): Promise<number> {
   let count = 0
   let lastId: string | undefined
   let hasMore = true
 
   while (hasMore) {
-    const result = await getConversations(user, { lastId, limit: 100, apiKey })
+    const result = await getConversations(user, {
+      lastId,
+      limit: 100,
+      apiKeyName,
+    })
     count += result.data.length
     hasMore = result.has_more
     if (result.data.length > 0) {
@@ -294,9 +321,9 @@ export async function getConversationCount(
 export async function getMessages(
   user: string,
   conversationId: string,
-  options?: { firstId?: string; limit?: number; apiKey?: string },
+  options?: { firstId?: string; limit?: number; apiKeyName?: string },
 ): Promise<{ data: DifyMessage[]; has_more: boolean }> {
-  const key = options?.apiKey || DIFY_API_KEY
+  const keyName = options?.apiKeyName || DIFY_API_KEY_NAME
   const params = new URLSearchParams()
   params.set("user", user)
   params.set("conversation_id", conversationId)
@@ -305,11 +332,14 @@ export async function getMessages(
     params.set("first_id", options.firstId)
   }
 
-  const response = await fetch(`${DIFY_BASE_URL}/messages?${params}`, {
-    headers: {
-      Authorization: `Bearer ${key}`,
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/dify/messages?${params}&api_key_name=${keyName}`,
+    {
+      headers: {
+        ...getAuthHeader(),
+      },
     },
-  })
+  )
 
   if (!response.ok) {
     throw new Error(`获取消息历史失败 (${response.status})`)
@@ -321,18 +351,17 @@ export async function getMessages(
 export async function deleteConversation(
   conversationId: string,
   user: string,
-  apiKey?: string,
+  apiKeyName?: string,
 ): Promise<void> {
-  const key = apiKey || DIFY_API_KEY
+  const keyName = apiKeyName || DIFY_API_KEY_NAME
   const response = await fetch(
-    `${DIFY_BASE_URL}/conversations/${conversationId}`,
+    `${API_BASE_URL}/api/v1/dify/conversations/${conversationId}?user=${user}&api_key_name=${keyName}`,
     {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
+        ...getAuthHeader(),
       },
-      body: JSON.stringify({ user }),
     },
   )
 
