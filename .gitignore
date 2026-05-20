@@ -10,3 +10,4 @@ frontend/.env
 backend/uploads/
 .workbuddy/
 .playwright-mcp/
+".idea/" 
