@@ -1,3 +1,4 @@
+import { useRouterState } from "@tanstack/react-router"
 import {
   createContext,
   type ReactNode,
@@ -7,7 +8,6 @@ import {
   useMemo,
   useState,
 } from "react"
-import { useRouterState } from "@tanstack/react-router"
 import useAuth from "@/hooks/useAuth"
 import {
   type DifyConversation,
@@ -56,7 +56,10 @@ export interface ConversationContextValue {
   loadConversations: () => Promise<void>
   loadAllConversations: () => Promise<void>
   selectConversation: (convId: string) => void
-  selectConversationById: (convId: string, moduleType: ConversationModuleType) => void
+  selectConversationById: (
+    convId: string,
+    moduleType: ConversationModuleType,
+  ) => void
   deleteConversationById: (convId: string) => Promise<void>
   newConversation: () => void
   setActiveConvId: (id: string) => void
@@ -103,7 +106,10 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
   // ── 统一会话列表：合并两模块，按 updated_at 降序 ────────────────────────────
   const allConversations: TypedConversation[] = useMemo(() => {
     const typed: TypedConversation[] = [
-      ...aiDoctorConversations.map((c) => ({ ...c, moduleType: "ai-doctor" as const })),
+      ...aiDoctorConversations.map((c) => ({
+        ...c,
+        moduleType: "ai-doctor" as const,
+      })),
       ...testConversations.map((c) => ({ ...c, moduleType: "test" as const })),
     ]
     return typed.sort((a, b) => b.updated_at - a.updated_at)
@@ -219,7 +225,9 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
             sessionStorage.removeItem("dify_active_conv_id_test")
           }
         } else {
-          const result = await getConversations(userId, { apiKeyName: "ai-doctor" })
+          const result = await getConversations(userId, {
+            apiKeyName: "ai-doctor",
+          })
           setAiDoctorConversations(result.data)
           if (aiDoctorActiveId === convId) {
             setAiDoctorActiveId("")
@@ -230,7 +238,7 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
         // silent
       }
     },
-    [userId, testConversations, aiDoctorConversations, testActiveId, aiDoctorActiveId],
+    [userId, testConversations, testActiveId, aiDoctorActiveId],
   )
 
   // ── 新会话创建回调（Dify API 返回真实 conversationId 后调用）───────────────

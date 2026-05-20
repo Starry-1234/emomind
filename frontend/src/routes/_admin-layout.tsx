@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { ApiError, type UserPublic, UsersService } from "@/client"
 import { Footer } from "@/components/Common/Footer"
+import { ConversationProvider } from "@/components/contexts/ConversationContext"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
 import {
   SidebarInset,
@@ -39,9 +40,10 @@ export const Route = createFileRoute("/_admin-layout")({
 
 export default function AdminLayout() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className="flex flex-col">
+    <ConversationProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="flex flex-col">
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1 text-muted-foreground" />
         </header>
@@ -51,5 +53,6 @@ export default function AdminLayout() {
         <Footer />
       </SidebarInset>
     </SidebarProvider>
+    </ConversationProvider>
   )
 }

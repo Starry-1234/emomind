@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 import {
   type DifyMessageFile,
   getMessages,
@@ -11,6 +17,10 @@ export interface ChatMessage {
   content: string
   files?: DifyMessageFile[]
   isStreaming?: boolean
+  isPaused?: boolean
+  userQuery?: string
+  versions?: string[]
+  currentVersion?: number
 }
 
 const CACHE_TTL = 30 * 60 * 1000 // 30 分钟
@@ -282,8 +292,14 @@ export function useChat(
                 setMessages(entry.messages)
               }
               unregisterStream(userId, sessionId)
-              // 加载服务器完整消息
-              loadMessages(sessionId)
+              // 关键修复：检查是否为用户主动暂停，若是则不调用 loadMessages
+              const lastAssistant = entry?.messages
+                ?.slice()
+                .reverse()
+                .find((m) => m.role === "assistant")
+              if (!lastAssistant?.isPaused) {
+                loadMessages(sessionId)
+              }
             } else {
               // 流式请求仍在进行，更新消息内容
               setMessages(entry.messages)
@@ -319,7 +335,14 @@ export function useChat(
                 if (pollingTimer) clearInterval(pollingTimer)
                 pollingTimer = null
                 setIsStreaming(false)
-                loadMessages(sessionId)
+                // 关键修复：检查是否为用户主动暂停，若是则不调用 loadMessages
+                const lastAssistant = entry?.messages
+                  ?.slice()
+                  .reverse()
+                  .find((m) => m.role === "assistant")
+                if (!lastAssistant?.isPaused) {
+                  loadMessages(sessionId)
+                }
               } else if (entry.messages.length > 0) {
                 setMessages(entry.messages)
               }
@@ -387,7 +410,7 @@ export function useChat(
       cancelled = true
       if (pollingTimer) clearInterval(pollingTimer)
     }
-  }, [sessionId, loadMessages, userId])
+  }, [sessionId, loadMessages, userId, apiKeyName, setActiveConvId])
 
   // 挂载状态跟踪 + 组件卸载时保存缓存
   useEffect(() => {
@@ -414,6 +437,13 @@ export function useChat(
           abortControllerRef.current = registryEntry.abortController
           return
         }
+        // 关键修复：如果有消息处于用户主动暂停状态，不要调用 loadMessages
+        const hasPausedMessage = messagesRef.current.some(
+          (m) => m.role === "assistant" && m.isPaused,
+        )
+        if (hasPausedMessage) {
+          return
+        }
         if (isStreaming) {
           setIsStreaming(false)
           abortControllerRef.current = null
@@ -432,6 +462,24 @@ export function useChat(
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [])
 
+  // 辅助函数：同时更新 ref、注册表和缓存
+  const updateMessagesAndCache = (
+    updatedMessages: ChatMessage[],
+    streaming: boolean,
+  ) => {
+    messagesRef.current = updatedMessages
+    const sid = sessionIdRef.current || ""
+    updateStreamMessages(userId, sid, updatedMessages)
+    if (!streaming) {
+      setStreamNotStreaming(userId, sid)
+    }
+    setChatCache(userId, sid, {
+      messages: updatedMessages,
+      isStreaming: streaming,
+      timestamp: Date.now(),
+    })
+  }
+
   // 发送消息
   const handleSend = async (extraFiles?: File[]) => {
     const text = inputText.trim()
@@ -446,6 +494,7 @@ export function useChat(
       role: "assistant",
       content: "",
       isStreaming: true,
+      userQuery: text,
     }
 
     // 先更新 messagesRef.current（保留历史消息），再 setMessages
@@ -507,24 +556,6 @@ export function useChat(
 
     let accumulated = ""
     let streamHandledEnd = false
-
-    // 辅助函数：同时更新 ref、注册表和缓存
-    const updateMessagesAndCache = (
-      updatedMessages: ChatMessage[],
-      streaming: boolean,
-    ) => {
-      messagesRef.current = updatedMessages
-      const sid = sessionIdRef.current || ""
-      updateStreamMessages(userId, sid, updatedMessages)
-      if (!streaming) {
-        setStreamNotStreaming(userId, sid)
-      }
-      setChatCache(userId, sid, {
-        messages: updatedMessages,
-        isStreaming: streaming,
-        timestamp: Date.now(),
-      })
-    }
 
     try {
       await sendMessageStream(
@@ -736,25 +767,519 @@ export function useChat(
     setIsStreaming(false)
     sessionStorage.removeItem(`${apiKeyName}_streaming`)
 
-    // 更新 messagesRef：标记所有流式消息为非流式
-    messagesRef.current = messagesRef.current.map((m) =>
-      m.isStreaming ? { ...m, isStreaming: false } : m,
-    )
-
-    // 清理注册表和缓存
-    if (registryEntry) {
-      registryEntry.isStreaming = false
-      registryEntry.messages = messagesRef.current
+    // 找到最后一个 streaming 的 assistant 消息
+    let streamingIdx = -1
+    for (let i = messagesRef.current.length - 1; i >= 0; i--) {
+      if (
+        messagesRef.current[i]?.role === "assistant" &&
+        messagesRef.current[i]?.isStreaming
+      ) {
+        streamingIdx = i
+        break
+      }
     }
+
+    // 区分 Case A（无内容）/ Case B（有内容）
+    const streamingMsg =
+      streamingIdx !== -1 ? messagesRef.current[streamingIdx] : null
+    const isCaseA =
+      !streamingMsg?.content ||
+      streamingMsg.content === "正在分析中，请稍候...\n" ||
+      streamingMsg.content === "思考中..."
+    const stoppedContent = isCaseA ? "咨询已停止" : streamingMsg?.content || ""
+
+    // 更新 messagesRef
+    messagesRef.current = messagesRef.current.map((m, idx) => {
+      if (idx === streamingIdx) {
+        return {
+          ...m,
+          content: stoppedContent,
+          isStreaming: false,
+          isPaused: true,
+        }
+      }
+      return m.isStreaming ? { ...m, isStreaming: false } : m
+    })
+
+    // 清理注册表：unregisterStream 以阻止轮询调用 loadMessages（Bug 修复）
+    unregisterStream(userId, currentSessionId)
+
     setChatCache(userId, currentSessionId, {
       messages: messagesRef.current,
       isStreaming: false,
       wasStopped: true,
       timestamp: Date.now(),
     })
-    setMessages((prev) =>
-      prev.map((m) => (m.isStreaming ? { ...m, isStreaming: false } : m)),
-    )
+    setMessages((prev) => {
+      const newPrev = [...prev]
+      let prevStreamingIdx = -1
+      for (let i = newPrev.length - 1; i >= 0; i--) {
+        if (newPrev[i]?.role === "assistant" && newPrev[i]?.isStreaming) {
+          prevStreamingIdx = i
+          break
+        }
+      }
+      if (prevStreamingIdx !== -1) {
+        newPrev[prevStreamingIdx] = {
+          ...newPrev[prevStreamingIdx],
+          content: stoppedContent,
+          isStreaming: false,
+          isPaused: true,
+        }
+      }
+      return newPrev
+    })
+  }
+
+  // 继续生成
+  const handleContinue = async (messageIndex: number) => {
+    const msg = messagesRef.current[messageIndex]
+    if (!msg || msg.role !== "assistant" || !msg.isPaused) return
+
+    // 如果处于历史版本，切回最新版本
+    if (
+      msg.versions &&
+      msg.currentVersion !== undefined &&
+      msg.currentVersion < msg.versions.length - 1
+    ) {
+      const latestContent = msg.versions[msg.versions.length - 1]
+      messagesRef.current = messagesRef.current.map((m, idx) => {
+        if (idx === messageIndex) {
+          return {
+            ...m,
+            content: latestContent,
+            currentVersion: msg.versions!.length - 1,
+          }
+        }
+        return m
+      })
+    }
+
+    const isCaseA = msg.content === "咨询已停止"
+    const continueContent = isCaseA ? "" : msg.content
+    const query = msg.userQuery
+
+    if (!query) {
+      // fallback: 向前查找最近的 user 消息
+      let foundQuery = ""
+      for (let i = messageIndex - 1; i >= 0; i--) {
+        if (messagesRef.current[i]?.role === "user") {
+          foundQuery = messagesRef.current[i].content
+          break
+        }
+      }
+      if (!foundQuery) return
+      // 更新 userQuery
+      messagesRef.current = messagesRef.current.map((m, idx) => {
+        if (idx === messageIndex) {
+          return { ...m, userQuery: foundQuery }
+        }
+        return m
+      })
+    }
+
+    const actualQuery = query || messagesRef.current[messageIndex].userQuery
+    if (!actualQuery) return
+
+    setIsStreaming(true)
+    stoppedRef.current = false
+    sessionStorage.setItem(`${apiKeyName}_streaming`, "true")
+
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    messagesRef.current = messagesRef.current.map((m, idx) => {
+      if (idx === messageIndex) {
+        return {
+          ...m,
+          content: continueContent,
+          isStreaming: true,
+          isPaused: false,
+        }
+      }
+      return m
+    })
+    setMessages([...messagesRef.current])
+
+    const cacheSessionId = sessionIdRef.current || ""
+    registerStream(userId, cacheSessionId, {
+      abortController,
+      isStreaming: true,
+      messages: messagesRef.current,
+    })
+
+    let accumulated = continueContent
+    let streamHandledEnd = false
+
+    try {
+      await sendMessageStream(
+        actualQuery,
+        userId,
+        {
+          onMessage(answer) {
+            if (stoppedRef.current) return
+            accumulated += answer
+            if (
+              accumulated.startsWith("正在分析中，请稍候...\n") &&
+              answer.trim().length > 0
+            ) {
+              accumulated = accumulated.replace(/^正在分析中，请稍候...\n?/, "")
+            }
+            const updatedMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return { ...m, content: accumulated }
+              }
+              return m
+            })
+            messagesRef.current = updatedMessages
+            updateStreamMessages(userId, cacheSessionId, updatedMessages)
+            setChatCache(userId, cacheSessionId, {
+              messages: updatedMessages,
+              isStreaming: true,
+              timestamp: Date.now(),
+            })
+            setMessages(updatedMessages)
+          },
+          onMessageEnd(_messageId, conversationId) {
+            streamHandledEnd = true
+            isStreamingRef.current = false
+            setIsStreaming(false)
+            sessionStorage.removeItem(`${apiKeyName}_streaming`)
+            abortControllerRef.current = null
+
+            const finalContent = accumulated.replace(
+              /^正在分析中，请稍候...\n?/,
+              "",
+            )
+            const finalMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return {
+                  ...m,
+                  content: finalContent,
+                  isStreaming: false,
+                  isPaused: false,
+                }
+              }
+              return m
+            })
+            messagesRef.current = finalMessages
+            updateMessagesAndCache(finalMessages, false)
+
+            if (conversationId && !sessionIdRef.current) {
+              const oldCache = getChatCache(userId, "")
+              if (oldCache) clearChatCache(userId, "")
+              unregisterStream(userId, "")
+              registerStream(userId, conversationId, {
+                abortController,
+                isStreaming: false,
+                messages:
+                  messagesRef.current.length > 0
+                    ? messagesRef.current
+                    : oldCache?.messages || [],
+              })
+              setChatCache(userId, conversationId, {
+                messages:
+                  messagesRef.current.length > 0
+                    ? messagesRef.current
+                    : oldCache?.messages || [],
+                isStreaming: false,
+                timestamp: Date.now(),
+              })
+              justResolvedRef.current = conversationId
+              onSessionCreatedRef.current?.(conversationId)
+            }
+
+            setMessages(finalMessages)
+            loadConversationsRef.current()
+          },
+          onError(message) {
+            streamHandledEnd = true
+            isStreamingRef.current = false
+            setIsStreaming(false)
+            sessionStorage.removeItem(`${apiKeyName}_streaming`)
+            abortControllerRef.current = null
+
+            const errorMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return {
+                  ...m,
+                  content: `错误: ${message}`,
+                  isStreaming: false,
+                  isPaused: false,
+                }
+              }
+              return m
+            })
+            messagesRef.current = errorMessages
+            updateMessagesAndCache(errorMessages, false)
+            setMessages(errorMessages)
+          },
+        },
+        {
+          conversationId: sessionIdRef.current || undefined,
+          apiKeyName,
+          signal: abortController.signal,
+        },
+      )
+    } catch (err) {
+      abortControllerRef.current = null
+      if (!streamHandledEnd) {
+        setIsStreaming(false)
+        sessionStorage.removeItem(`${apiKeyName}_streaming`)
+        const sid = sessionIdRef.current || ""
+        unregisterStream(userId, sid)
+        const errorMessages = messagesRef.current.map((m, idx) => {
+          if (idx === messageIndex) {
+            return {
+              ...m,
+              content: `继续生成失败: ${err instanceof Error ? err.message : "未知错误"}`,
+              isStreaming: false,
+              isPaused: false,
+            }
+          }
+          return m
+        })
+        messagesRef.current = errorMessages
+        setChatCache(userId, sid, {
+          messages: errorMessages,
+          isStreaming: false,
+          timestamp: Date.now(),
+        })
+        setMessages(errorMessages)
+      }
+    }
+  }
+
+  // 重新生成
+  const handleRegenerate = async (messageIndex: number) => {
+    const msg = messagesRef.current[messageIndex]
+    if (!msg || msg.role !== "assistant") return
+
+    // 如果处于历史版本，先切回最新版本
+    const versions = msg.versions ? [...msg.versions] : [msg.content]
+    const latestContent = versions[versions.length - 1]
+
+    messagesRef.current = messagesRef.current.map((m, idx) => {
+      if (idx === messageIndex) {
+        return {
+          ...m,
+          versions,
+          currentVersion: versions.length - 1,
+          content: latestContent,
+        }
+      }
+      return m
+    })
+
+    const query = msg.userQuery
+    if (!query) {
+      let foundQuery = ""
+      for (let i = messageIndex - 1; i >= 0; i--) {
+        if (messagesRef.current[i]?.role === "user") {
+          foundQuery = messagesRef.current[i].content
+          break
+        }
+      }
+      if (!foundQuery) return
+      messagesRef.current = messagesRef.current.map((m, idx) => {
+        if (idx === messageIndex) {
+          return { ...m, userQuery: foundQuery }
+        }
+        return m
+      })
+    }
+
+    const actualQuery = query || messagesRef.current[messageIndex].userQuery
+    if (!actualQuery) return
+
+    setIsStreaming(true)
+    stoppedRef.current = false
+    sessionStorage.setItem(`${apiKeyName}_streaming`, "true")
+
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    messagesRef.current = messagesRef.current.map((m, idx) => {
+      if (idx === messageIndex) {
+        return { ...m, content: "", isStreaming: true, isPaused: false }
+      }
+      return m
+    })
+    setMessages([...messagesRef.current])
+
+    const cacheSessionId = sessionIdRef.current || ""
+    registerStream(userId, cacheSessionId, {
+      abortController,
+      isStreaming: true,
+      messages: messagesRef.current,
+    })
+
+    let accumulated = ""
+    let streamHandledEnd = false
+
+    try {
+      await sendMessageStream(
+        actualQuery,
+        userId,
+        {
+          onMessage(answer) {
+            if (stoppedRef.current) return
+            accumulated += answer
+            if (
+              accumulated.startsWith("正在分析中，请稍候...\n") &&
+              answer.trim().length > 0
+            ) {
+              accumulated = accumulated.replace(/^正在分析中，请稍候...\n?/, "")
+            }
+            const updatedMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return { ...m, content: accumulated }
+              }
+              return m
+            })
+            messagesRef.current = updatedMessages
+            updateStreamMessages(userId, cacheSessionId, updatedMessages)
+            setChatCache(userId, cacheSessionId, {
+              messages: updatedMessages,
+              isStreaming: true,
+              timestamp: Date.now(),
+            })
+            setMessages(updatedMessages)
+          },
+          onMessageEnd(_messageId, conversationId) {
+            streamHandledEnd = true
+            isStreamingRef.current = false
+            setIsStreaming(false)
+            sessionStorage.removeItem(`${apiKeyName}_streaming`)
+            abortControllerRef.current = null
+
+            const finalContent = accumulated.replace(
+              /^正在分析中，请稍候...\n?/,
+              "",
+            )
+            const newVersions = [...versions, finalContent]
+            const finalMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return {
+                  ...m,
+                  content: finalContent,
+                  isStreaming: false,
+                  isPaused: false,
+                  versions: newVersions,
+                  currentVersion: newVersions.length - 1,
+                }
+              }
+              return m
+            })
+            messagesRef.current = finalMessages
+            updateMessagesAndCache(finalMessages, false)
+
+            if (conversationId && !sessionIdRef.current) {
+              const oldCache = getChatCache(userId, "")
+              if (oldCache) clearChatCache(userId, "")
+              unregisterStream(userId, "")
+              registerStream(userId, conversationId, {
+                abortController,
+                isStreaming: false,
+                messages:
+                  messagesRef.current.length > 0
+                    ? messagesRef.current
+                    : oldCache?.messages || [],
+              })
+              setChatCache(userId, conversationId, {
+                messages:
+                  messagesRef.current.length > 0
+                    ? messagesRef.current
+                    : oldCache?.messages || [],
+                isStreaming: false,
+                timestamp: Date.now(),
+              })
+              justResolvedRef.current = conversationId
+              onSessionCreatedRef.current?.(conversationId)
+            }
+
+            setMessages(finalMessages)
+            loadConversationsRef.current()
+          },
+          onError(message) {
+            streamHandledEnd = true
+            isStreamingRef.current = false
+            setIsStreaming(false)
+            sessionStorage.removeItem(`${apiKeyName}_streaming`)
+            abortControllerRef.current = null
+
+            const errorMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return {
+                  ...m,
+                  content: `错误: ${message}`,
+                  isStreaming: false,
+                  isPaused: false,
+                  versions,
+                  currentVersion: versions.length - 1,
+                }
+              }
+              return m
+            })
+            messagesRef.current = errorMessages
+            updateMessagesAndCache(errorMessages, false)
+            setMessages(errorMessages)
+          },
+        },
+        {
+          conversationId: sessionIdRef.current || undefined,
+          apiKeyName,
+          signal: abortController.signal,
+        },
+      )
+    } catch (err) {
+      abortControllerRef.current = null
+      if (!streamHandledEnd) {
+        setIsStreaming(false)
+        sessionStorage.removeItem(`${apiKeyName}_streaming`)
+        const sid = sessionIdRef.current || ""
+        unregisterStream(userId, sid)
+        const errorMessages = messagesRef.current.map((m, idx) => {
+          if (idx === messageIndex) {
+            return {
+              ...m,
+              content: `重新生成失败: ${err instanceof Error ? err.message : "未知错误"}`,
+              isStreaming: false,
+              isPaused: false,
+              versions,
+              currentVersion: versions.length - 1,
+            }
+          }
+          return m
+        })
+        messagesRef.current = errorMessages
+        setChatCache(userId, sid, {
+          messages: errorMessages,
+          isStreaming: false,
+          timestamp: Date.now(),
+        })
+        setMessages(errorMessages)
+      }
+    }
+  }
+
+  // 切换版本
+  const handleSwitchVersion = (messageIndex: number, direction: -1 | 1) => {
+    const msg = messagesRef.current[messageIndex]
+    if (!msg.versions || msg.versions.length <= 1) return
+    const newVersion = (msg.currentVersion || 0) + direction
+    if (newVersion < 0 || newVersion >= msg.versions.length) return
+
+    const newContent = msg.versions[newVersion]
+    const updatedMessages = messagesRef.current.map((m, idx) => {
+      if (idx === messageIndex) {
+        return { ...m, content: newContent, currentVersion: newVersion }
+      }
+      return m
+    })
+    messagesRef.current = updatedMessages
+    updateMessagesAndCache(updatedMessages, false)
+    setMessages(updatedMessages)
   }
 
   // 文件选择
@@ -805,6 +1330,9 @@ export function useChat(
     messagesEndRef,
     handleSend,
     handleStop,
+    handleContinue,
+    handleRegenerate,
+    handleSwitchVersion,
     handleKeyDown,
     handleFileSelect,
     categorizeFile,

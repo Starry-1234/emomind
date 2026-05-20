@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import { AnalysisService } from "@/client"
 import { useConversation } from "@/components/contexts/ConversationContext"
+import { MessageActions } from "@/components/MessageActions"
 import { StreamingMessage } from "@/components/StreamingMessage"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -62,10 +63,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
     if (propSessionId && propSessionId !== activeConvId) {
       // 如果 activeConvId 曾被设为非空后又变空（404 导致），且 propSessionId 是真实 ID
       // → 该会话不存在，导航离开过时 URL
-      if (
-        activeConvId === "" &&
-        hadActiveIdRef.current
-      ) {
+      if (activeConvId === "" && hadActiveIdRef.current) {
         navigate({ to: "/user/ai-doctor", replace: true })
         return
       }
@@ -104,6 +102,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
     messagesEndRef,
     handleSend,
     handleStop,
+    handleContinue,
+    handleRegenerate,
+    handleSwitchVersion,
     handleKeyDown,
     handleFileSelect,
     categorizeFile,
@@ -128,7 +129,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
         setMessages([])
       }
     }
-  }, [propSessionId, messages.length])
+  }, [propSessionId, messages.length, messages, setMessages])
 
   // UI refs
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -274,6 +275,23 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                         msg.content || (msg.isStreaming ? "" : "...")
                       )}
                     </div>
+                    {msg.role === "assistant" && (
+                      <MessageActions
+                        isPaused={msg.isPaused || false}
+                        isStreaming={msg.isStreaming || false}
+                        versions={msg.versions}
+                        currentVersion={msg.currentVersion}
+                        onContinue={() => handleContinue(idx)}
+                        onCopy={() =>
+                          navigator.clipboard.writeText(msg.content)
+                        }
+                        onRegenerate={() => handleRegenerate(idx)}
+                        onSwitchVersion={(direction) =>
+                          handleSwitchVersion(idx, direction)
+                        }
+                        disabled={isStreaming}
+                      />
+                    )}
                   </div>
                   {msg.role === "user" && (
                     <Avatar className="mt-0.5 size-8 flex-shrink-0">

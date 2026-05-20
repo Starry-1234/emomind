@@ -1,5 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 import { TestRecordsService } from "@/client"
 import { getMessages, sendMessageStream } from "@/services/difyApi"
 
@@ -7,6 +13,10 @@ export interface ChatMessage {
   role: "user" | "assistant"
   content: string
   isStreaming?: boolean
+  isPaused?: boolean
+  userQuery?: string
+  versions?: string[]
+  currentVersion?: number
 }
 
 const CACHE_TTL = 30 * 60 * 1000 // 30 分钟
@@ -309,7 +319,14 @@ export function usePsychologicalTest(
                 setMessages(entry.messages)
               }
               unregisterStream(userId, sessionId)
-              loadMessages(sessionId)
+              // 关键修复：检查是否为用户主动暂停，若是则不调用 loadMessages
+              const lastAssistant = entry?.messages
+                ?.slice()
+                .reverse()
+                .find((m) => m.role === "assistant")
+              if (!lastAssistant?.isPaused) {
+                loadMessages(sessionId)
+              }
             } else {
               setMessages(entry.messages)
             }
@@ -341,7 +358,14 @@ export function usePsychologicalTest(
                 if (pollingTimer) clearInterval(pollingTimer)
                 pollingTimer = null
                 setIsStreaming(false)
-                loadMessages(sessionId)
+                // 关键修复：检查是否为用户主动暂停，若是则不调用 loadMessages
+                const lastAssistant = entry?.messages
+                  ?.slice()
+                  .reverse()
+                  .find((m) => m.role === "assistant")
+                if (!lastAssistant?.isPaused) {
+                  loadMessages(sessionId)
+                }
               } else if (entry.messages.length > 0) {
                 setMessages(entry.messages)
               }
@@ -410,7 +434,7 @@ export function usePsychologicalTest(
       cancelled = true
       if (pollingTimer) clearInterval(pollingTimer)
     }
-  }, [sessionId, loadMessages, userId])
+  }, [sessionId, loadMessages, userId, setActiveConvId])
 
   // 挂载状态跟踪 + 组件卸载时保存缓存
   useEffect(() => {
@@ -435,6 +459,13 @@ export function usePsychologicalTest(
         if (registryEntry?.isStreaming) {
           setMessages(registryEntry.messages)
           abortControllerRef.current = registryEntry.abortController
+          return
+        }
+        // 关键修复：如果有消息处于用户主动暂停状态，不要调用 loadMessages
+        const hasPausedMessage = messagesRef.current.some(
+          (m) => m.role === "assistant" && m.isPaused,
+        )
+        if (hasPausedMessage) {
           return
         }
         if (isStreaming) {
@@ -511,6 +542,7 @@ export function usePsychologicalTest(
       role: "assistant",
       content: "",
       isStreaming: true,
+      userQuery: text,
     }
     let nextMessages: ChatMessage[]
     if (!silent) {
@@ -815,7 +847,12 @@ export function usePsychologicalTest(
 
     setMessages((prev) => [
       ...prev,
-      { role: "assistant", content: "", isStreaming: true },
+      {
+        role: "assistant",
+        content: "",
+        isStreaming: true,
+        userQuery: resultText,
+      },
     ])
 
     messagesRef.current = [
@@ -827,7 +864,12 @@ export function usePsychologicalTest(
             }
           : m,
       ),
-      { role: "assistant", content: "", isStreaming: true },
+      {
+        role: "assistant",
+        content: "",
+        isStreaming: true,
+        userQuery: resultText,
+      },
     ]
 
     // 在模块级注册表中注册此流
@@ -949,14 +991,45 @@ export function usePsychologicalTest(
 
             // 情感标签库
             const EMOTION_KEYWORDS = [
-              "反刍思维", "自杀意念", "情绪波动", "述情障碍", "心理韧性",
-              "物质使用", "自我形象", "人际关系", "躯体化", "情绪",
-              "兴趣", "睡眠", "焦虑", "认知", "压力",
-              "易怒", "社交", "动力", "精力", "躯体",
-              "应对", "行为", "求助", "自尊", "退缩",
-              "未来", "回避", "恐慌", "家庭", "适应",
-              "支持", "敏感", "工作", "存在", "创伤",
-              "冲动", "反应", "沟通", "解离",
+              "反刍思维",
+              "自杀意念",
+              "情绪波动",
+              "述情障碍",
+              "心理韧性",
+              "物质使用",
+              "自我形象",
+              "人际关系",
+              "躯体化",
+              "情绪",
+              "兴趣",
+              "睡眠",
+              "焦虑",
+              "认知",
+              "压力",
+              "易怒",
+              "社交",
+              "动力",
+              "精力",
+              "躯体",
+              "应对",
+              "行为",
+              "求助",
+              "自尊",
+              "退缩",
+              "未来",
+              "回避",
+              "恐慌",
+              "家庭",
+              "适应",
+              "支持",
+              "敏感",
+              "工作",
+              "存在",
+              "创伤",
+              "冲动",
+              "反应",
+              "沟通",
+              "解离",
             ]
 
             let userTopic: string | null = null
@@ -1112,23 +1185,499 @@ export function usePsychologicalTest(
     sessionStorage.removeItem("test_streaming")
     setWorkflowRunning(false)
 
-    messagesRef.current = messagesRef.current.map((m) =>
-      m.isStreaming ? { ...m, isStreaming: false } : m,
-    )
-
-    if (registryEntry) {
-      registryEntry.isStreaming = false
-      registryEntry.messages = messagesRef.current
+    // 找到最后一个 streaming 的 assistant 消息
+    let streamingIdx = -1
+    for (let i = messagesRef.current.length - 1; i >= 0; i--) {
+      if (
+        messagesRef.current[i]?.role === "assistant" &&
+        messagesRef.current[i]?.isStreaming
+      ) {
+        streamingIdx = i
+        break
+      }
     }
+
+    // 区分 Case A（无内容）/ Case B（有内容）
+    const streamingMsg =
+      streamingIdx !== -1 ? messagesRef.current[streamingIdx] : null
+    const isCaseA =
+      !streamingMsg?.content ||
+      streamingMsg.content === "正在生成测评题目..." ||
+      streamingMsg.content === "思考中..."
+    const stoppedContent = isCaseA ? "测评已停止" : streamingMsg?.content || ""
+
+    // 更新 messagesRef
+    messagesRef.current = messagesRef.current.map((m, idx) => {
+      if (idx === streamingIdx) {
+        return {
+          ...m,
+          content: stoppedContent,
+          isStreaming: false,
+          isPaused: true,
+        }
+      }
+      return m.isStreaming ? { ...m, isStreaming: false } : m
+    })
+
+    // 清理注册表：unregisterStream 以阻止轮询调用 loadMessages（Bug 修复）
+    unregisterStream(userId, currentSessionId)
+
     setTestCache(userId, currentSessionId, {
       messages: messagesRef.current,
       isStreaming: false,
       wasStopped: true,
       timestamp: Date.now(),
     })
-    setMessages((prev) =>
-      prev.map((m) => (m.isStreaming ? { ...m, isStreaming: false } : m)),
-    )
+    setMessages((prev) => {
+      const newPrev = [...prev]
+      let prevStreamingIdx = -1
+      for (let i = newPrev.length - 1; i >= 0; i--) {
+        if (newPrev[i]?.role === "assistant" && newPrev[i]?.isStreaming) {
+          prevStreamingIdx = i
+          break
+        }
+      }
+      if (prevStreamingIdx !== -1) {
+        newPrev[prevStreamingIdx] = {
+          ...newPrev[prevStreamingIdx],
+          content: stoppedContent,
+          isStreaming: false,
+          isPaused: true,
+        }
+      }
+      return newPrev
+    })
+  }
+
+  // 继续生成
+  const handleContinue = async (messageIndex: number) => {
+    const msg = messagesRef.current[messageIndex]
+    if (!msg || msg.role !== "assistant" || !msg.isPaused) return
+
+    // 如果处于历史版本，切回最新版本
+    if (
+      msg.versions &&
+      msg.currentVersion !== undefined &&
+      msg.currentVersion < msg.versions.length - 1
+    ) {
+      const latestContent = msg.versions[msg.versions.length - 1]
+      messagesRef.current = messagesRef.current.map((m, idx) => {
+        if (idx === messageIndex) {
+          return {
+            ...m,
+            content: latestContent,
+            currentVersion: msg.versions!.length - 1,
+          }
+        }
+        return m
+      })
+    }
+
+    const isCaseA = msg.content === "测评已停止"
+    const continueContent = isCaseA ? "" : msg.content
+    const query = msg.userQuery
+
+    if (!query) {
+      // fallback: 向前查找最近的 user 消息
+      let foundQuery = ""
+      for (let i = messageIndex - 1; i >= 0; i--) {
+        if (messagesRef.current[i]?.role === "user") {
+          foundQuery = messagesRef.current[i].content
+          break
+        }
+      }
+      if (!foundQuery) return
+      // 更新 userQuery
+      messagesRef.current = messagesRef.current.map((m, idx) => {
+        if (idx === messageIndex) {
+          return { ...m, userQuery: foundQuery }
+        }
+        return m
+      })
+    }
+
+    const actualQuery = query || messagesRef.current[messageIndex].userQuery
+    if (!actualQuery) return
+
+    setIsStreaming(true)
+    stoppedRef.current = false
+    sessionStorage.setItem("test_streaming", "true")
+
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    messagesRef.current = messagesRef.current.map((m, idx) => {
+      if (idx === messageIndex) {
+        return {
+          ...m,
+          content: continueContent,
+          isStreaming: true,
+          isPaused: false,
+        }
+      }
+      return m
+    })
+    setMessages([...messagesRef.current])
+
+    const cacheSessionId = sessionIdRef.current || ""
+    registerStream(userId, cacheSessionId, {
+      abortController,
+      isStreaming: true,
+      messages: messagesRef.current,
+    })
+
+    let accumulated = continueContent
+    let streamHandledEnd = false
+
+    try {
+      await sendMessageStream(
+        actualQuery,
+        userId,
+        {
+          onMessage(answer) {
+            if (stoppedRef.current) return
+            accumulated += answer
+            const updatedMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return { ...m, content: accumulated }
+              }
+              return m
+            })
+            messagesRef.current = updatedMessages
+            updateStreamMessages(userId, cacheSessionId, updatedMessages)
+            setTestCache(userId, cacheSessionId, {
+              messages: updatedMessages,
+              isStreaming: true,
+              timestamp: Date.now(),
+            })
+            setMessages(updatedMessages)
+          },
+          onMessageEnd(_messageId, conversationId) {
+            streamHandledEnd = true
+            isStreamingRef.current = false
+            setIsStreaming(false)
+            sessionStorage.removeItem("test_streaming")
+            abortControllerRef.current = null
+
+            const finalMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return {
+                  ...m,
+                  content: accumulated,
+                  isStreaming: false,
+                  isPaused: false,
+                }
+              }
+              return m
+            })
+            messagesRef.current = finalMessages
+            updateMessagesAndCache(finalMessages, false)
+
+            if (conversationId && !sessionIdRef.current) {
+              const oldCache = getTestCache(userId, "")
+              if (oldCache) clearTestCache(userId, "")
+              unregisterStream(userId, "")
+              registerStream(userId, conversationId, {
+                abortController,
+                isStreaming: false,
+                messages:
+                  messagesRef.current.length > 0
+                    ? messagesRef.current
+                    : oldCache?.messages || [],
+              })
+              setTestCache(userId, conversationId, {
+                messages:
+                  messagesRef.current.length > 0
+                    ? messagesRef.current
+                    : oldCache?.messages || [],
+                isStreaming: false,
+                timestamp: Date.now(),
+              })
+              justResolvedRef.current = conversationId
+              onSessionCreatedRef.current?.(conversationId)
+            }
+
+            setMessages(finalMessages)
+            loadConversationsRef.current()
+          },
+          onError(message) {
+            streamHandledEnd = true
+            isStreamingRef.current = false
+            setIsStreaming(false)
+            sessionStorage.removeItem("test_streaming")
+            abortControllerRef.current = null
+
+            const errorMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return {
+                  ...m,
+                  content: `错误: ${message}`,
+                  isStreaming: false,
+                  isPaused: false,
+                }
+              }
+              return m
+            })
+            messagesRef.current = errorMessages
+            updateMessagesAndCache(errorMessages, false)
+            setMessages(errorMessages)
+          },
+        },
+        {
+          conversationId: sessionIdRef.current || undefined,
+          apiKeyName: "test",
+          signal: abortController.signal,
+        },
+      )
+    } catch (err) {
+      abortControllerRef.current = null
+      if (!streamHandledEnd) {
+        setIsStreaming(false)
+        sessionStorage.removeItem("test_streaming")
+        const sid = sessionIdRef.current || ""
+        unregisterStream(userId, sid)
+        const errorMessages = messagesRef.current.map((m, idx) => {
+          if (idx === messageIndex) {
+            return {
+              ...m,
+              content: `继续生成失败: ${err instanceof Error ? err.message : "未知错误"}`,
+              isStreaming: false,
+              isPaused: false,
+            }
+          }
+          return m
+        })
+        messagesRef.current = errorMessages
+        setTestCache(userId, sid, {
+          messages: errorMessages,
+          isStreaming: false,
+          timestamp: Date.now(),
+        })
+        setMessages(errorMessages)
+      }
+    }
+  }
+
+  // 重新生成
+  const handleRegenerate = async (messageIndex: number) => {
+    const msg = messagesRef.current[messageIndex]
+    if (!msg || msg.role !== "assistant") return
+
+    // 如果处于历史版本，先切回最新版本
+    const versions = msg.versions ? [...msg.versions] : [msg.content]
+    const latestContent = versions[versions.length - 1]
+
+    messagesRef.current = messagesRef.current.map((m, idx) => {
+      if (idx === messageIndex) {
+        return {
+          ...m,
+          versions,
+          currentVersion: versions.length - 1,
+          content: latestContent,
+        }
+      }
+      return m
+    })
+
+    const query = msg.userQuery
+    if (!query) {
+      let foundQuery = ""
+      for (let i = messageIndex - 1; i >= 0; i--) {
+        if (messagesRef.current[i]?.role === "user") {
+          foundQuery = messagesRef.current[i].content
+          break
+        }
+      }
+      if (!foundQuery) return
+      messagesRef.current = messagesRef.current.map((m, idx) => {
+        if (idx === messageIndex) {
+          return { ...m, userQuery: foundQuery }
+        }
+        return m
+      })
+    }
+
+    const actualQuery = query || messagesRef.current[messageIndex].userQuery
+    if (!actualQuery) return
+
+    setIsStreaming(true)
+    stoppedRef.current = false
+    sessionStorage.setItem("test_streaming", "true")
+
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    messagesRef.current = messagesRef.current.map((m, idx) => {
+      if (idx === messageIndex) {
+        return { ...m, content: "", isStreaming: true, isPaused: false }
+      }
+      return m
+    })
+    setMessages([...messagesRef.current])
+
+    const cacheSessionId = sessionIdRef.current || ""
+    registerStream(userId, cacheSessionId, {
+      abortController,
+      isStreaming: true,
+      messages: messagesRef.current,
+    })
+
+    let accumulated = ""
+    let streamHandledEnd = false
+
+    try {
+      await sendMessageStream(
+        actualQuery,
+        userId,
+        {
+          onMessage(answer) {
+            if (stoppedRef.current) return
+            accumulated += answer
+            const updatedMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return { ...m, content: accumulated }
+              }
+              return m
+            })
+            messagesRef.current = updatedMessages
+            updateStreamMessages(userId, cacheSessionId, updatedMessages)
+            setTestCache(userId, cacheSessionId, {
+              messages: updatedMessages,
+              isStreaming: true,
+              timestamp: Date.now(),
+            })
+            setMessages(updatedMessages)
+          },
+          onMessageEnd(_messageId, conversationId) {
+            streamHandledEnd = true
+            isStreamingRef.current = false
+            setIsStreaming(false)
+            sessionStorage.removeItem("test_streaming")
+            abortControllerRef.current = null
+
+            const newVersions = [...versions, accumulated]
+            const finalMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return {
+                  ...m,
+                  content: accumulated,
+                  isStreaming: false,
+                  isPaused: false,
+                  versions: newVersions,
+                  currentVersion: newVersions.length - 1,
+                }
+              }
+              return m
+            })
+            messagesRef.current = finalMessages
+            updateMessagesAndCache(finalMessages, false)
+
+            if (conversationId && !sessionIdRef.current) {
+              const oldCache = getTestCache(userId, "")
+              if (oldCache) clearTestCache(userId, "")
+              unregisterStream(userId, "")
+              registerStream(userId, conversationId, {
+                abortController,
+                isStreaming: false,
+                messages:
+                  messagesRef.current.length > 0
+                    ? messagesRef.current
+                    : oldCache?.messages || [],
+              })
+              setTestCache(userId, conversationId, {
+                messages:
+                  messagesRef.current.length > 0
+                    ? messagesRef.current
+                    : oldCache?.messages || [],
+                isStreaming: false,
+                timestamp: Date.now(),
+              })
+              justResolvedRef.current = conversationId
+              onSessionCreatedRef.current?.(conversationId)
+            }
+
+            setMessages(finalMessages)
+            loadConversationsRef.current()
+          },
+          onError(message) {
+            streamHandledEnd = true
+            isStreamingRef.current = false
+            setIsStreaming(false)
+            sessionStorage.removeItem("test_streaming")
+            abortControllerRef.current = null
+
+            const errorMessages = messagesRef.current.map((m, idx) => {
+              if (idx === messageIndex) {
+                return {
+                  ...m,
+                  content: `错误: ${message}`,
+                  isStreaming: false,
+                  isPaused: false,
+                  versions,
+                  currentVersion: versions.length - 1,
+                }
+              }
+              return m
+            })
+            messagesRef.current = errorMessages
+            updateMessagesAndCache(errorMessages, false)
+            setMessages(errorMessages)
+          },
+        },
+        {
+          conversationId: sessionIdRef.current || undefined,
+          apiKeyName: "test",
+          signal: abortController.signal,
+        },
+      )
+    } catch (err) {
+      abortControllerRef.current = null
+      if (!streamHandledEnd) {
+        setIsStreaming(false)
+        sessionStorage.removeItem("test_streaming")
+        const sid = sessionIdRef.current || ""
+        unregisterStream(userId, sid)
+        const errorMessages = messagesRef.current.map((m, idx) => {
+          if (idx === messageIndex) {
+            return {
+              ...m,
+              content: `重新生成失败: ${err instanceof Error ? err.message : "未知错误"}`,
+              isStreaming: false,
+              isPaused: false,
+              versions,
+              currentVersion: versions.length - 1,
+            }
+          }
+          return m
+        })
+        messagesRef.current = errorMessages
+        setTestCache(userId, sid, {
+          messages: errorMessages,
+          isStreaming: false,
+          timestamp: Date.now(),
+        })
+        setMessages(errorMessages)
+      }
+    }
+  }
+
+  // 切换版本
+  const handleSwitchVersion = (messageIndex: number, direction: -1 | 1) => {
+    const msg = messagesRef.current[messageIndex]
+    if (!msg.versions || msg.versions.length <= 1) return
+    const newVersion = (msg.currentVersion || 0) + direction
+    if (newVersion < 0 || newVersion >= msg.versions.length) return
+
+    const newContent = msg.versions[newVersion]
+    const updatedMessages = messagesRef.current.map((m, idx) => {
+      if (idx === messageIndex) {
+        return { ...m, content: newContent, currentVersion: newVersion }
+      }
+      return m
+    })
+    messagesRef.current = updatedMessages
+    updateMessagesAndCache(updatedMessages, false)
+    setMessages(updatedMessages)
   }
 
   // ── 答题进度 ────────────────────────────────────────────────────────────────
@@ -1156,6 +1705,9 @@ export function usePsychologicalTest(
     loadMessages,
     handleSend,
     handleStop,
+    handleContinue,
+    handleRegenerate,
+    handleSwitchVersion,
     handleTestSubmit,
     handleKeyDown,
     answeredCount,

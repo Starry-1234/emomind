@@ -10,6 +10,7 @@ import {
 import { useEffect, useRef } from "react"
 import ReactMarkdown from "react-markdown"
 import { useConversation } from "@/components/contexts/ConversationContext"
+import { MessageActions } from "@/components/MessageActions"
 import { StreamingMessage } from "@/components/StreamingMessage"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -83,7 +84,11 @@ function preprocessMarkdown(text: string | undefined | null): string {
   return result.join("\n")
 }
 
-export function PsychologicalTestInner({ sessionId: propSessionId }: { sessionId?: string }) {
+export function PsychologicalTestInner({
+  sessionId: propSessionId,
+}: {
+  sessionId?: string
+}) {
   const { user } = useAuth()
   const userId = user?.id || "anonymous"
   const {
@@ -109,10 +114,7 @@ export function PsychologicalTestInner({ sessionId: propSessionId }: { sessionId
 
   useEffect(() => {
     if (propSessionId && propSessionId !== activeConvId) {
-      if (
-        activeConvId === "" &&
-        hadActiveIdRef.current
-      ) {
+      if (activeConvId === "" && hadActiveIdRef.current) {
         navigate({ to: "/user/test", replace: true })
         return
       }
@@ -157,6 +159,9 @@ export function PsychologicalTestInner({ sessionId: propSessionId }: { sessionId
     inputRef,
     handleSend,
     handleStop,
+    handleContinue,
+    handleRegenerate,
+    handleSwitchVersion,
     handleTestSubmit,
     handleKeyDown,
     answeredCount,
@@ -181,7 +186,14 @@ export function PsychologicalTestInner({ sessionId: propSessionId }: { sessionId
         setTestAnswers({})
       }
     }
-  }, [propSessionId, messages.length])
+  }, [
+    propSessionId,
+    messages.length,
+    setActiveTest,
+    setMessages,
+    messages,
+    setTestAnswers,
+  ])
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border bg-card">
@@ -342,6 +354,23 @@ export function PsychologicalTestInner({ sessionId: propSessionId }: { sessionId
                         msg.content
                       )}
                     </div>
+                    {msg.role === "assistant" && (
+                      <MessageActions
+                        isPaused={msg.isPaused || false}
+                        isStreaming={msg.isStreaming || false}
+                        versions={msg.versions}
+                        currentVersion={msg.currentVersion}
+                        onContinue={() => handleContinue(idx)}
+                        onCopy={() =>
+                          navigator.clipboard.writeText(msg.content)
+                        }
+                        onRegenerate={() => handleRegenerate(idx)}
+                        onSwitchVersion={(direction) =>
+                          handleSwitchVersion(idx, direction)
+                        }
+                        disabled={isStreaming}
+                      />
+                    )}
                   </div>
                   {msg.role === "user" && (
                     <Avatar className="mt-0.5 size-8 flex-shrink-0">

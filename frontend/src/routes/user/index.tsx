@@ -282,7 +282,11 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
 async function smartNavigate(
   userId: string,
   contextKey: "ai-doctor" | "test",
-  navigate: (opts: { to: string; params?: Record<string, string>; replace?: boolean }) => void,
+  navigate: (opts: {
+    to: string
+    params?: Record<string, string>
+    replace?: boolean
+  }) => void,
 ) {
   const result = await getConversations(userId, {
     apiKeyName: contextKey,
@@ -293,13 +297,15 @@ async function smartNavigate(
     const mostRecent = result.data.reduce((latest, conv) =>
       conv.updated_at > latest.updated_at ? conv : latest,
     )
-    const chatRoute = contextKey === "ai-doctor"
-      ? "/user/ai-doctor/chat/$sessionId"
-      : "/user/test/chat/$sessionId"
+    const chatRoute =
+      contextKey === "ai-doctor"
+        ? "/user/ai-doctor/chat/$sessionId"
+        : "/user/test/chat/$sessionId"
     navigate({ to: chatRoute, params: { sessionId: mostRecent.id } })
   } else {
     // 无历史会话 → 导航到基础路由（新对话模式）
-    const modulePath = contextKey === "ai-doctor" ? "/user/ai-doctor" : "/user/test"
+    const modulePath =
+      contextKey === "ai-doctor" ? "/user/ai-doctor" : "/user/test"
     navigate({ to: modulePath })
   }
 }
@@ -476,11 +482,7 @@ function UserHome() {
                 if (navLoading) return
                 setNavLoading("ai-doctor")
                 try {
-                  await smartNavigate(
-                    userId,
-                    "ai-doctor",
-                    navigate,
-                  )
+                  await smartNavigate(userId, "ai-doctor", navigate)
                 } catch {
                   navigate({ to: "/user/ai-doctor" })
                 } finally {
@@ -524,11 +526,7 @@ function UserHome() {
                 if (navLoading) return
                 setNavLoading("test")
                 try {
-                  await smartNavigate(
-                    userId,
-                    "test",
-                    navigate,
-                  )
+                  await smartNavigate(userId, "test", navigate)
                 } catch {
                   navigate({ to: "/user/test" })
                 } finally {

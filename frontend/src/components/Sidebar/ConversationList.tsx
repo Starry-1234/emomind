@@ -6,7 +6,6 @@ import {
   type TypedConversation,
   useConversation,
 } from "@/components/contexts/ConversationContext"
-import useAuth from "@/hooks/useAuth"
 import { Badge } from "@/components/ui/badge"
 import {
   SidebarGroup,
@@ -19,10 +18,17 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import useAuth from "@/hooks/useAuth"
 
 // ── 模块路由配置：根据 moduleType 解析对应的 chat 路由和 modulePath ──────────
-const MODULE_ROUTES: Record<ConversationModuleType, { chatRoute: string; modulePath: string }> = {
-  "ai-doctor": { chatRoute: "/user/ai-doctor/chat/$sessionId", modulePath: "/user/ai-doctor" },
+const MODULE_ROUTES: Record<
+  ConversationModuleType,
+  { chatRoute: string; modulePath: string }
+> = {
+  "ai-doctor": {
+    chatRoute: "/user/ai-doctor/chat/$sessionId",
+    modulePath: "/user/ai-doctor",
+  },
   test: { chatRoute: "/user/test/chat/$sessionId", modulePath: "/user/test" },
 }
 
@@ -56,15 +62,16 @@ export function ConversationList() {
   )
 
   const handleNewConversation = () => {
-    const moduleType: ConversationModuleType = modulePath.startsWith("/user/test")
+    const moduleType: ConversationModuleType = modulePath.startsWith(
+      "/user/test",
+    )
       ? "test"
       : "ai-doctor"
 
     // 清除基础路由的 sessionStorage 缓存，确保显示干净的模板页面
     // key 格式：emomind_chat_messages_${userId}_new / emomind_test_messages_${userId}_new
-    const cachePrefix = moduleType === "test"
-      ? "emomind_test_messages"
-      : "emomind_chat_messages"
+    const cachePrefix =
+      moduleType === "test" ? "emomind_test_messages" : "emomind_chat_messages"
     sessionStorage.removeItem(`${cachePrefix}_${userId}_new`)
 
     navigate({ to: modulePath })
@@ -124,9 +131,7 @@ export function ConversationList() {
           {conv.moduleType === "ai-doctor" ? "医生" : "测评"}
         </Badge>
       </SidebarMenuButton>
-      <SidebarMenuAction
-        onClick={(e) => handleDeleteConversation(conv.id, e)}
-      >
+      <SidebarMenuAction onClick={(e) => handleDeleteConversation(conv.id, e)}>
         <X />
       </SidebarMenuAction>
     </SidebarMenuItem>
