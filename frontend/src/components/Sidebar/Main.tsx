@@ -1,6 +1,10 @@
-import { Link as RouterLink, useRouterState } from "@tanstack/react-router"
+import { useNavigate, useRouterState } from "@tanstack/react-router"
 import type { LucideIcon } from "lucide-react"
 
+import {
+  type ConversationModuleType,
+  useConversation,
+} from "@/components/contexts/ConversationContext"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -20,15 +24,48 @@ interface MainProps {
   items: Item[]
 }
 
+const MODULE_PATHS = new Set(["/user/ai-doctor", "/user/test"])
+
+const MODULE_TYPES: Record<string, ConversationModuleType> = {
+  "/user/ai-doctor": "ai-doctor",
+  "/user/test": "test",
+}
+
 export function Main({ items }: MainProps) {
   const { isMobile, setOpenMobile } = useSidebar()
   const router = useRouterState()
   const currentPath = router.location.pathname
+  const navigate = useNavigate()
+  const { allConversations, selectConversationById } = useConversation()
 
-  const handleMenuClick = () => {
+  const handleMenuClick = (item: Item) => {
     if (isMobile) {
       setOpenMobile(false)
     }
+
+    // ── 心理医生 / 心理测评：有记录时跳转到最近更新的会话 ──────────────────
+    if (MODULE_PATHS.has(item.path)) {
+      const moduleType = MODULE_TYPES[item.path]
+      const moduleConvs = allConversations.filter(
+        (c) => c.moduleType === moduleType,
+      )
+      if (moduleConvs.length > 0) {
+        const latest = moduleConvs[0]
+        const routePath =
+          moduleType === "ai-doctor"
+            ? "/user/ai-doctor/chat/$sessionId"
+            : "/user/test/chat/$sessionId"
+        navigate({ to: routePath, params: { sessionId: latest.id } })
+        selectConversationById(latest.id, moduleType)
+        return
+      }
+      // 无记录 → 导航到基础路由（欢迎页）
+      navigate({ to: item.path })
+      return
+    }
+
+    // ── 普通导航项 ──────────────────────────────────────────────────────────
+    navigate({ to: item.path })
   }
 
   return (
@@ -36,7 +73,7 @@ export function Main({ items }: MainProps) {
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
-            const isActive = currentPath === item.path
+            const isActive = currentPath.startsWith(item.path)
 
             return (
               <SidebarMenuItem key={item.title}>
@@ -45,10 +82,14 @@ export function Main({ items }: MainProps) {
                   isActive={isActive}
                   asChild
                 >
-                  <RouterLink to={item.path} onClick={handleMenuClick}>
+                  <button
+                    type="button"
+                    onClick={() => handleMenuClick(item)}
+                    className="w-full"
+                  >
                     <item.icon />
                     <span>{item.title}</span>
-                  </RouterLink>
+                  </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )

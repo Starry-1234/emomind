@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
 import {
   Brain,
   FileText,
@@ -6,301 +6,169 @@ import {
   Mic,
   Paperclip,
   Send,
+  Square,
   Stethoscope,
   Video,
   X,
 } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
+import { AnalysisService } from "@/client"
 import { useConversation } from "@/components/contexts/ConversationContext"
+import { StreamingMessage } from "@/components/StreamingMessage"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import useAuth from "@/hooks/useAuth"
+import { useChat } from "@/hooks/useChat"
 import { useCurrentTheme } from "@/hooks/useCurrentTheme"
-import { createAnalysisReport } from "@/services/analysisApi"
-import {
-  type DifyMessageFile,
-  getMessages,
-  sendMessageStream,
-  uploadFile,
-} from "@/services/difyApi"
+import { sendMessageStream, uploadFile } from "@/services/difyApi"
 
 export const Route = createFileRoute("/user/ai-doctor")({
-  component: AiDoctor,
+  component: AiDoctorLayout,
   head: () => ({
     meta: [{ title: "智能心理医生" }],
   }),
 })
 
-interface ChatMessage {
-  role: "user" | "assistant"
-  content: string
-  files?: DifyMessageFile[]
-  isStreaming?: boolean
+function AiDoctorLayout() {
+  return <Outlet />
 }
 
-function AiDoctor() {
+export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
   const { user } = useAuth()
   const userId = user?.id || "anonymous"
-  const { activeConvId, setActiveConvId, loadConversations } = useConversation()
+  const {
+    activeConvId,
+    setActiveConvId,
+    loadConversations,
+    selectConversationById,
+  } = useConversation()
   const { isWarmTheme } = useCurrentTheme()
+  const navigate = useNavigate()
 
-  // 消息
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [inputText, setInputText] = useState("")
-  const [isStreaming, setIsStreaming] = useState(false)
-  const [_streamingContent, setStreamingContent] = useState("")
-  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+  // 挂载状态跟踪
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
-  // UI
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  // ── 同步 URL sessionId 和 Context activeConvId ─────────────────────────────
+  const hadActiveIdRef = useRef(false)
+
+  useEffect(() => {
+    if (propSessionId && propSessionId !== activeConvId) {
+      // 如果 activeConvId 曾被设为非空后又变空（404 导致），且 propSessionId 是真实 ID
+      // → 该会话不存在，导航离开过时 URL
+      if (
+        activeConvId === "" &&
+        hadActiveIdRef.current
+      ) {
+        navigate({ to: "/user/ai-doctor", replace: true })
+        return
+      }
+      setActiveConvId(propSessionId)
+    }
+
+    if (activeConvId) {
+      hadActiveIdRef.current = true
+    }
+  }, [propSessionId, activeConvId, setActiveConvId, navigate])
+
+  // 基础路由（propSessionId 为 undefined）时用空字符串，表示"新对话"模式
+  const effectiveSessionId = propSessionId ?? ""
+
+  // 新会话创建回调：仅当组件仍挂载时导航
+  const handleSessionCreated = (conversationId: string) => {
+    // 用 selectConversationById 确保写到正确模块，避免 currentContext 竞态
+    selectConversationById(conversationId, "ai-doctor")
+    loadConversations()
+    if (isMountedRef.current) {
+      navigate({
+        to: "/user/ai-doctor/chat/$sessionId",
+        params: { sessionId: conversationId },
+        replace: true,
+      })
+    }
+  }
+
+  const {
+    messages,
+    setMessages,
+    inputText,
+    setInputText,
+    isStreaming,
+    attachedFiles,
+    messagesEndRef,
+    handleSend,
+    handleStop,
+    handleKeyDown,
+    handleFileSelect,
+    categorizeFile,
+    removeAttachment,
+  } = useChat(
+    userId,
+    effectiveSessionId,
+    setActiveConvId,
+    loadConversations,
+    handleSessionCreated,
+    "ai-doctor",
+  )
+
+  // ── 基础路由安全网：确保没有 stale 消息残留 ──────────────────────────────
+  // useChat 内部已有 sessionId="" 清消息逻辑，但作为双重保险：
+  // 如果组件因 React 复用而非 remount，内部 useLayoutEffect 可能不触发
+  useEffect(() => {
+    if (!propSessionId && messages.length > 0) {
+      // 检查是否有正在进行的流式请求，避免中断
+      const hasStreaming = messages.some((m) => m.isStreaming)
+      if (!hasStreaming) {
+        setMessages([])
+      }
+    }
+  }, [propSessionId, messages.length])
+
+  // UI refs
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const analysisFileRef = useRef<HTMLInputElement>(null)
+  const analysisAbortControllerRef = useRef<AbortController | null>(null)
+
+  // 分析模态框状态
   const [showAnalysisUpload, setShowAnalysisUpload] = useState(false)
   const [analysisFile, setAnalysisFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
-  // 加载某个会话的消息
-  const loadMessages = useCallback(
-    async (convId: string) => {
-      try {
-        const result = await getMessages(userId, convId, {
-          apiKeyName: "ai-doctor",
-        })
-        const chatMsgs: ChatMessage[] = []
-        const sorted = [...result.data].sort(
-          (a, b) => a.created_at - b.created_at,
-        )
-        for (const msg of sorted) {
-          if (msg.query) {
-            chatMsgs.push({
-              role: "user",
-              content: msg.query,
-              files: msg.message_files,
-            })
-          }
-          if (msg.answer) {
-            chatMsgs.push({
-              role: "assistant",
-              content: msg.answer,
-              files: msg.message_files,
-            })
-          }
-        }
-        setMessages(chatMsgs)
-      } catch (error) {
-        // 404 表示会话不存在（可能被删除），重置 activeConvId
-        if (error instanceof Error && error.message.includes("404")) {
-          setActiveConvId("")
-        }
-        setMessages([])
-      }
-    },
-    [userId, setActiveConvId],
-  )
-
-  // 当 activeConvId 变化时加载消息
-  useEffect(() => {
-    if (activeConvId) {
-      loadMessages(activeConvId)
-    } else {
-      setMessages([])
-    }
-  }, [activeConvId, loadMessages])
-
-  // 自动滚动到底部
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [])
-
-  // 发送消息
-  const handleSend = async (extraFiles?: File[]) => {
-    const text = inputText.trim()
-    const filesToSend = [...(extraFiles || []), ...attachedFiles]
-    if (!text && filesToSend.length === 0) return
-    if (isStreaming) return
-
-    const userMsg: ChatMessage = { role: "user", content: text }
-    setMessages((prev) => [...prev, userMsg])
-    setInputText("")
-    setStreamingContent("")
-    setIsStreaming(true)
-
-    const assistantMsg: ChatMessage = {
-      role: "assistant",
-      content: "",
-      isStreaming: true,
-    }
-    setMessages((prev) => [...prev, assistantMsg])
-
-    const uploadedFiles: {
-      type: string
-      transfer_method: string
-      url: string
-      upload_file_id?: string
-    }[] = []
-    for (const file of filesToSend) {
-      try {
-        const result = await uploadFile(file, userId, "ai-doctor")
-        uploadedFiles.push({
-          type: file.type.startsWith("audio")
-            ? "audio"
-            : file.type.startsWith("video")
-              ? "video"
-              : file.type.startsWith("image")
-                ? "image"
-                : "document",
-          transfer_method: "local_file",
-          url: result.id,
-          upload_file_id: result.id,
-        })
-      } catch {
-        // skip
-      }
-    }
-    setAttachedFiles([])
-
-    let accumulated = ""
-    let streamHandledEnd = false
-
-    try {
-      await sendMessageStream(
-        text,
-        userId,
-        {
-          onMessage(answer) {
-            accumulated += answer
-            setMessages((prev) => {
-              const newMsgs = [...prev]
-              const last = newMsgs[newMsgs.length - 1]
-              if (last?.isStreaming) {
-                newMsgs[newMsgs.length - 1] = { ...last, content: accumulated }
-              }
-              return newMsgs
-            })
-          },
-          onMessageEnd(_messageId, conversationId) {
-            streamHandledEnd = true
-            setIsStreaming(false)
-            setMessages((prev) => {
-              const newMsgs = [...prev]
-              const last = newMsgs[newMsgs.length - 1]
-              if (last?.isStreaming) {
-                newMsgs[newMsgs.length - 1] = { ...last, isStreaming: false }
-              }
-              return newMsgs
-            })
-            if (conversationId && !activeConvId) {
-              setActiveConvId(conversationId)
-            }
-            loadConversations()
-          },
-          onWorkflowStarted() {
-            setMessages((prev) => {
-              const newMsgs = [...prev]
-              const last = newMsgs[newMsgs.length - 1]
-              if (last?.isStreaming) {
-                newMsgs[newMsgs.length - 1] = {
-                  ...last,
-                  content: "正在分析中，请稍候...\n",
-                }
-              }
-              return newMsgs
-            })
-            accumulated = "正在分析中，请稍候...\n"
-          },
-          onError(message) {
-            streamHandledEnd = true
-            setIsStreaming(false)
-            setMessages((prev) => {
-              const newMsgs = [...prev]
-              const last = newMsgs[newMsgs.length - 1]
-              if (last?.isStreaming) {
-                newMsgs[newMsgs.length - 1] = {
-                  ...last,
-                  content: `错误: ${message}`,
-                  isStreaming: false,
-                }
-              }
-              return newMsgs
-            })
-          },
-        },
-        {
-          conversationId: activeConvId || undefined,
-          files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
-          apiKeyName: "ai-doctor",
-        },
-      )
-    } catch (err) {
-      if (!streamHandledEnd) {
-        setIsStreaming(false)
-        setMessages((prev) => {
-          const newMsgs = [...prev]
-          const last = newMsgs[newMsgs.length - 1]
-          if (last?.isStreaming) {
-            newMsgs[newMsgs.length - 1] = {
-              ...last,
-              content: `发送失败: ${err instanceof Error ? err.message : "未知错误"}`,
-              isStreaming: false,
-            }
-          }
-          return newMsgs
-        })
-      }
-    }
-  }
-
-  // 键盘事件
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
-
-  // 文件选择
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files.length > 0) {
-      setAttachedFiles((prev) => [...prev, ...Array.from(files)])
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
-    }
-  }
-
-  // 根据文件类型分类
-  const categorizeFile = (file: File) => {
-    if (file.type.startsWith("audio")) {
-      return "audio"
-    } else if (file.type.startsWith("video")) {
-      return "video"
-    } else if (file.type.startsWith("text") ||
-               file.name.endsWith(".txt") ||
-               file.name.endsWith(".md") ||
-               file.name.endsWith(".doc") ||
-               file.name.endsWith(".docx") ||
-               file.name.endsWith(".pdf")) {
-      return "text"
-    }
-    return "document"
-  }
-
-  // 移除附件
-  const removeAttachment = (index: number) => {
-    setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
-  }
-
   // 文件图标
   const getFileIcon = (file: File) => {
     if (file.type.startsWith("audio"))
-      return <Mic className={`size-4 ${isWarmTheme ? 'text-warm-primary' : 'text-purple-400'}`} />
+      return (
+        <Mic
+          className={`size-4 ${isWarmTheme ? "text-warm-primary" : "text-purple-400"}`}
+        />
+      )
     if (file.type.startsWith("video"))
-      return <Video className={`size-4 ${isWarmTheme ? 'text-warm-primary' : 'text-blue-400'}`} />
-    return <FileText className={`size-4 ${isWarmTheme ? 'text-warm-primary' : 'text-green-400'}`} />
+      return (
+        <Video
+          className={`size-4 ${isWarmTheme ? "text-warm-primary" : "text-blue-400"}`}
+        />
+      )
+    return (
+      <FileText
+        className={`size-4 ${isWarmTheme ? "text-warm-primary" : "text-green-400"}`}
+      />
+    )
   }
+
+  // 组件卸载时中止正在进行的分析
+  useEffect(() => {
+    return () => {
+      analysisAbortControllerRef.current?.abort()
+      analysisAbortControllerRef.current = null
+    }
+  }, [])
 
   // 开场白
   const openingStatement =
@@ -329,10 +197,14 @@ function AiDoctor() {
         <div className="flex-1 overflow-y-auto px-4 py-4">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-6">
-              <div className={`flex size-16 items-center justify-center rounded-full ${
-                isWarmTheme ? 'warm-gradient-bg warm-shadow' : 'bg-primary/10'
-              }`}>
-                <Brain className={`size-8 ${isWarmTheme ? 'text-white' : 'text-primary'}`} />
+              <div
+                className={`flex size-16 items-center justify-center rounded-full ${
+                  isWarmTheme ? "warm-gradient-bg warm-shadow" : "bg-primary/10"
+                }`}
+              >
+                <Brain
+                  className={`size-8 ${isWarmTheme ? "text-white" : "text-primary"}`}
+                />
               </div>
               <div className="max-w-md text-center">
                 <h2 className="mb-2 text-lg font-semibold">
@@ -387,16 +259,19 @@ function AiDoctor() {
                       className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                     >
                       {msg.role === "assistant" ? (
-                        <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
-                          <ReactMarkdown>{msg.content || ""}</ReactMarkdown>
-                        </div>
+                        msg.isStreaming ? (
+                          <StreamingMessage
+                            content={msg.content || ""}
+                            isStreaming={msg.isStreaming}
+                            className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground"
+                          />
+                        ) : (
+                          <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
+                            <ReactMarkdown>{msg.content || ""}</ReactMarkdown>
+                          </div>
+                        )
                       ) : (
                         msg.content || (msg.isStreaming ? "" : "...")
-                      )}
-                      {msg.isStreaming && msg.content && (
-                        <span className="ml-0.5 inline-block animate-pulse">
-                          |
-                        </span>
                       )}
                     </div>
                   </div>
@@ -409,32 +284,35 @@ function AiDoctor() {
                   )}
                 </div>
               ))}
-              {isStreaming && !messages[messages.length - 1]?.content && (
-                <div className="flex gap-3">
-                  <Avatar className="mt-0.5 size-8 flex-shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      <Stethoscope className="size-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-2.5">
-                    <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      思考中...
-                    </span>
+              {/* 思考中指示器 */}
+              {isStreaming &&
+                !messages.some(
+                  (m) => m.role === "assistant" && m.isStreaming && m.content,
+                ) && (
+                  <div className="flex gap-3">
+                    <Avatar className="mt-0.5 size-8 flex-shrink-0">
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        <Stethoscope className="size-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-2.5">
+                      <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        思考中...
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               <div ref={messagesEndRef} />
             </div>
           )}
         </div>
 
-        {/* 输入区域 - 豆包风格 */}
+        {/* 输入区域 */}
         <div className="border-t bg-background p-4">
           <div className="mx-auto max-w-3xl">
-            {/* 输入框容器 - 豆包风格 */}
             <div className="rounded-2xl border border-border/60 bg-card shadow-sm transition-all hover:border-border">
-              {/* 附件预览区域 - 在输入框上方 */}
+              {/* 附件预览区域 */}
               {attachedFiles.length > 0 && (
                 <div className="border-b border-border/60 px-4 py-3">
                   <div className="flex flex-wrap gap-2">
@@ -448,7 +326,6 @@ function AiDoctor() {
                           key={`${file.name}-${idx}`}
                           className={`group relative flex items-center gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 text-xs transition-all hover:border-border ${isImage ? "pr-2" : "max-w-[200px]"}`}
                         >
-                          {/* 文件图标或预览图 */}
                           <div className="shrink-0">
                             {isImage && previewUrl ? (
                               <div className="size-10 overflow-hidden rounded-md">
@@ -465,8 +342,6 @@ function AiDoctor() {
                               </div>
                             )}
                           </div>
-
-                          {/* 文件信息 */}
                           {!isImage && (
                             <div className="min-w-0 flex-1">
                               <div className="truncate text-sm font-medium text-foreground">
@@ -477,8 +352,6 @@ function AiDoctor() {
                               </div>
                             </div>
                           )}
-
-                          {/* 删除按钮 */}
                           <button
                             type="button"
                             className="absolute right-1 top-1 rounded-full bg-background/80 p-0.5 opacity-0 shadow-sm transition-opacity hover:bg-destructive/10 group-hover:opacity-100"
@@ -496,7 +369,7 @@ function AiDoctor() {
                 </div>
               )}
 
-              {/* 文本输入区域 - 上方 */}
+              {/* 文本输入区域 */}
               <div className="px-4 py-3">
                 <textarea
                   ref={inputRef}
@@ -516,9 +389,8 @@ function AiDoctor() {
                 />
               </div>
 
-              {/* 工具栏区域 - 下方 */}
+              {/* 工具栏区域 */}
               <div className="flex items-center justify-between border-t border-border/60 px-4 py-2">
-                {/* 左侧：文件上传按钮 + 心理状况分析按钮 */}
                 <div className="flex items-center gap-2">
                   <input
                     ref={fileInputRef}
@@ -539,7 +411,6 @@ function AiDoctor() {
                     <Paperclip className="size-4 text-muted-foreground" />
                   </Button>
 
-                  {/* 心理状况分析按钮 */}
                   <Button
                     type="button"
                     variant="ghost"
@@ -553,18 +424,41 @@ function AiDoctor() {
                   </Button>
                 </div>
 
-                {/* 右侧：发送按钮 */}
                 <Button
                   size="icon-sm"
                   className="rounded-lg bg-primary hover:bg-primary/90"
-                  onClick={() => handleSend()}
+                  onClick={() => {
+                    if (isAnalyzing) {
+                      analysisAbortControllerRef.current?.abort()
+                      analysisAbortControllerRef.current = null
+                      setIsAnalyzing(false)
+                      sessionStorage.removeItem("ai-doctor_streaming")
+                      setMessages((prev) => {
+                        const newMsgs = [...prev]
+                        const last = newMsgs[newMsgs.length - 1]
+                        if (last?.isStreaming) {
+                          newMsgs[newMsgs.length - 1] = {
+                            ...last,
+                            isStreaming: false,
+                          }
+                        }
+                        return newMsgs
+                      })
+                    } else if (isStreaming) {
+                      handleStop()
+                    } else {
+                      handleSend()
+                    }
+                  }}
                   disabled={
-                    isStreaming ||
-                    (!inputText.trim() && attachedFiles.length === 0)
+                    !isAnalyzing &&
+                    !isStreaming &&
+                    !inputText.trim() &&
+                    attachedFiles.length === 0
                   }
                 >
-                  {isStreaming ? (
-                    <Loader2 className="size-4 animate-spin" />
+                  {isAnalyzing || isStreaming ? (
+                    <Square className="size-4 fill-current" />
                   ) : (
                     <Send className="size-4" />
                   )}
@@ -578,18 +472,17 @@ function AiDoctor() {
       {/* 心理状况分析 - 文件上传模态框 */}
       {showAnalysisUpload && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* 背景遮罩 */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => {
+              analysisAbortControllerRef.current?.abort()
+              analysisAbortControllerRef.current = null
               setShowAnalysisUpload(false)
               setAnalysisFile(null)
+              setIsAnalyzing(false)
             }}
           />
-
-          {/* 模态框内容 */}
           <div className="relative z-10 w-full max-w-md rounded-2xl bg-background p-6 shadow-2xl">
-            {/* 标题 */}
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold">心理状况分析</h3>
               <Button
@@ -597,15 +490,17 @@ function AiDoctor() {
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => {
+                  analysisAbortControllerRef.current?.abort()
+                  analysisAbortControllerRef.current = null
                   setShowAnalysisUpload(false)
                   setAnalysisFile(null)
+                  setIsAnalyzing(false)
                 }}
               >
                 <X className="size-4" />
               </Button>
             </div>
 
-            {/* 文件上传区域 */}
             <div className="mb-4">
               <input
                 ref={analysisFileRef}
@@ -635,11 +530,13 @@ function AiDoctor() {
                       }}
                       className={`flex flex-col items-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all ${
                         isWarmTheme
-                          ? 'border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition'
-                          : 'border-muted-foreground/30 hover:border-primary hover:bg-primary/5'
+                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
+                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
                       }`}
                     >
-                      <FileText className={`size-8 ${isWarmTheme ? 'text-primary' : 'text-blue-500'}`} />
+                      <FileText
+                        className={`size-8 ${isWarmTheme ? "text-primary" : "text-blue-500"}`}
+                      />
                       <span className="text-sm font-medium">文档</span>
                     </button>
 
@@ -653,11 +550,13 @@ function AiDoctor() {
                       }}
                       className={`flex flex-col items-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all ${
                         isWarmTheme
-                          ? 'border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition'
-                          : 'border-muted-foreground/30 hover:border-primary hover:bg-primary/5'
+                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
+                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
                       }`}
                     >
-                      <Mic className={`size-8 ${isWarmTheme ? 'text-primary' : 'text-purple-500'}`} />
+                      <Mic
+                        className={`size-8 ${isWarmTheme ? "text-primary" : "text-purple-500"}`}
+                      />
                       <span className="text-sm font-medium">音频</span>
                     </button>
 
@@ -671,29 +570,43 @@ function AiDoctor() {
                       }}
                       className={`flex flex-col items-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all ${
                         isWarmTheme
-                          ? 'border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition'
-                          : 'border-muted-foreground/30 hover:border-primary hover:bg-primary/5'
+                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
+                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
                       }`}
                     >
-                      <Video className={`size-8 ${isWarmTheme ? 'text-primary' : 'text-green-500'}`} />
+                      <Video
+                        className={`size-8 ${isWarmTheme ? "text-primary" : "text-green-500"}`}
+                      />
                       <span className="text-sm font-medium">视频</span>
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className={`rounded-lg border p-4 ${
-                  isWarmTheme ? 'bg-primary/10 border-primary/20' : 'bg-muted/30'
-                }`}>
+                <div
+                  className={`rounded-lg border p-4 ${
+                    isWarmTheme
+                      ? "bg-primary/10 border-primary/20"
+                      : "bg-muted/30"
+                  }`}
+                >
                   <div className="flex items-center gap-3">
-                    <div className={`flex size-10 items-center justify-center rounded-lg ${
-                      isWarmTheme ? 'bg-primary/20' : 'bg-primary/10'
-                    }`}>
+                    <div
+                      className={`flex size-10 items-center justify-center rounded-lg ${
+                        isWarmTheme ? "bg-primary/20" : "bg-primary/10"
+                      }`}
+                    >
                       {analysisFile.type.startsWith("audio") ? (
-                        <Mic className={`size-5 ${isWarmTheme ? 'text-primary' : 'text-purple-500'}`} />
+                        <Mic
+                          className={`size-5 ${isWarmTheme ? "text-primary" : "text-purple-500"}`}
+                        />
                       ) : analysisFile.type.startsWith("video") ? (
-                        <Video className={`size-5 ${isWarmTheme ? 'text-primary' : 'text-green-500'}`} />
+                        <Video
+                          className={`size-5 ${isWarmTheme ? "text-primary" : "text-green-500"}`}
+                        />
                       ) : (
-                        <FileText className={`size-5 ${isWarmTheme ? 'text-primary' : 'text-blue-500'}`} />
+                        <FileText
+                          className={`size-5 ${isWarmTheme ? "text-primary" : "text-blue-500"}`}
+                        />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -716,7 +629,6 @@ function AiDoctor() {
               )}
             </div>
 
-            {/* 分析按钮 */}
             <Button
               className="w-full"
               disabled={!analysisFile || isAnalyzing}
@@ -729,67 +641,75 @@ function AiDoctor() {
                 let streamHandledEnd = false
 
                 try {
-                  console.log("开始上传文件...", analysisFile)
+                  const abortController = new AbortController()
+                  analysisAbortControllerRef.current = abortController
+
                   const uploadResult = await uploadFile(
                     analysisFile,
                     userId,
                     "ai-doctor",
                   )
-                  console.log("文件上传成功:", uploadResult)
 
                   const fileCategory = categorizeFile(analysisFile)
-                  console.log("文件分类:", fileCategory)
 
-                  const userMsg: ChatMessage = {
-                    role: "user",
+                  const userMsg = {
+                    role: "user" as const,
                     content: `【心理状况分析】上传${fileCategory === "audio" ? "音频" : fileCategory === "video" ? "视频" : "文档"}文件：${analysisFile.name}`,
                   }
                   setMessages((prev) => [...prev, userMsg])
 
-                  const assistantMsg: ChatMessage = {
-                    role: "assistant",
+                  const assistantMsg = {
+                    role: "assistant" as const,
                     content: "",
                     isStreaming: true,
                   }
                   setMessages((prev) => [...prev, assistantMsg])
 
-                  // 构建 inputs 参数，根据文件类型传递到对应字段
                   const fileData = {
-                    type: fileCategory === "audio" ? "audio" : fileCategory === "video" ? "video" : "document",
+                    type:
+                      fileCategory === "audio"
+                        ? "audio"
+                        : fileCategory === "video"
+                          ? "video"
+                          : "document",
                     transfer_method: "local_file",
                     url: uploadResult.id,
                     upload_file_id: uploadResult.id,
                   }
-                  
+
                   const inputs: Record<string, unknown> = {
                     video: fileCategory === "video" ? fileData : undefined,
                     audio: fileCategory === "audio" ? fileData : undefined,
-                    text: fileCategory === "text" || fileCategory === "document" ? fileData : undefined,
+                    text:
+                      fileCategory === "text" || fileCategory === "document"
+                        ? fileData
+                        : undefined,
                     userinput: {
-                      query: "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
-                      files: []
-                    }
+                      query:
+                        "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
+                      files: [],
+                    },
                   }
-                  console.log("构建的 inputs 参数:", inputs)
 
-                  // 构建 files 参数，根据文件类型传递
                   const filesToSend = [
                     {
-                      type: fileCategory === "audio" ? "audio" : fileCategory === "video" ? "video" : "document",
+                      type:
+                        fileCategory === "audio"
+                          ? "audio"
+                          : fileCategory === "video"
+                            ? "video"
+                            : "document",
                       transfer_method: "local_file",
                       url: uploadResult.id,
                       upload_file_id: uploadResult.id,
-                    }
+                    },
                   ]
-                  console.log("构建的 filesToSend 参数:", filesToSend)
 
-                  console.log("开始调用 sendMessageStream...")
                   await sendMessageStream(
                     "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
                     userId,
                     {
                       onWorkflowStarted() {
-                        console.log("工作流开始")
                         setMessages((prev) => {
                           const newMsgs = [...prev]
                           const last = newMsgs[newMsgs.length - 1]
@@ -804,8 +724,16 @@ function AiDoctor() {
                         accumulated = "正在分析中，请稍候...\n"
                       },
                       onMessage(answer) {
-                        console.log("收到消息:", answer)
                         accumulated += answer
+                        if (
+                          accumulated.startsWith("正在分析中，请稍候...\n") &&
+                          answer.trim().length > 0
+                        ) {
+                          accumulated = accumulated.replace(
+                            /^正在分析中，请稍候...\n?/,
+                            "",
+                          )
+                        }
                         setMessages((prev) => {
                           const newMsgs = [...prev]
                           const last = newMsgs[newMsgs.length - 1]
@@ -819,44 +747,59 @@ function AiDoctor() {
                         })
                       },
                       onMessageEnd(_messageId, conversationId) {
-                        console.log("消息结束, conversationId:", conversationId)
                         streamHandledEnd = true
                         setIsAnalyzing(false)
                         setMessages((prev) => {
                           const newMsgs = [...prev]
                           const last = newMsgs[newMsgs.length - 1]
                           if (last?.isStreaming) {
+                            const finalContent = last.content.replace(
+                              /^正在分析中，请稍候...\n?/,
+                              "",
+                            )
                             newMsgs[newMsgs.length - 1] = {
                               ...last,
+                              content: finalContent,
                               isStreaming: false,
                             }
                           }
                           return newMsgs
                         })
 
-                        const token = localStorage.getItem("access_token") || ""
-                        // 移除开头的提示文本，只保存实际的分析结果
-                        const actualAnalysisResult = accumulated.replace(/^正在分析中，请稍候...\n?/, "").trim()
+                        const actualAnalysisResult = accumulated
+                          .replace(/^正在分析中，请稍候...\n?/, "")
+                          .trim()
                         const reportData = {
-                          file_name: analysisFile!.name,
+                          file_name: analysisFile.name,
                           file_type: fileCategory,
-                          file_size: analysisFile!.size,
+                          file_size: analysisFile.size,
                           analysis_result: actualAnalysisResult,
                           conversation_id:
                             conversationId || activeConvId || null,
                         }
-                        console.log("准备保存分析报告，数据:", reportData)
-                        console.log("token 存在:", !!token)
-                        createAnalysisReport(reportData, token)
+                        AnalysisService.createAnalysisReport({
+                          requestBody: reportData,
+                        })
                           .then((result) => {
                             console.log("保存分析报告成功:", result)
                           })
                           .catch((err) => {
-                            console.error("保存分析报告到数据库失败，错误:", err)
+                            console.error(
+                              "保存分析报告到数据库失败，错误:",
+                              err,
+                            )
                           })
 
-                        if (conversationId && !activeConvId) {
-                          setActiveConvId(conversationId)
+                        if (conversationId) {
+                          selectConversationById(conversationId, "ai-doctor")
+                          loadConversations()
+                          if (isMountedRef.current) {
+                            navigate({
+                              to: "/user/ai-doctor/chat/$sessionId",
+                              params: { sessionId: conversationId },
+                              replace: true,
+                            })
+                          }
                         }
                         loadConversations()
                       },
@@ -864,7 +807,6 @@ function AiDoctor() {
                         console.log("工作流结束")
                       },
                       onError(message) {
-                        console.error("发生错误:", message)
                         streamHandledEnd = true
                         setIsAnalyzing(false)
                         setMessages((prev) => {
@@ -885,10 +827,10 @@ function AiDoctor() {
                       inputs: inputs,
                       files: filesToSend,
                       apiKeyName: "ai-doctor",
+                      signal: abortController.signal,
                     },
                   )
                 } catch (err) {
-                  console.error("捕获到异常:", err)
                   if (!streamHandledEnd) {
                     setIsAnalyzing(false)
                     setMessages((prev) => {
@@ -919,7 +861,6 @@ function AiDoctor() {
               )}
             </Button>
 
-            {/* 分析中的提示 */}
             {isAnalyzing && (
               <div className="mt-3 text-center text-sm text-muted-foreground">
                 AI 正在分析您的档案，请稍候...

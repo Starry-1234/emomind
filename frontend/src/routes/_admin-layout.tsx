@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
-import { UsersService } from "@/client"
+import { ApiError, type UserPublic, UsersService } from "@/client"
 import { Footer } from "@/components/Common/Footer"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
 import {
@@ -17,11 +17,16 @@ export const Route = createFileRoute("/_admin-layout")({
         to: "/login",
       })
     }
-    let user
+    let user: UserPublic | undefined
     try {
       user = await UsersService.readUserMe()
-    } catch {
-      localStorage.removeItem("access_token")
+    } catch (error) {
+      if (
+        error instanceof ApiError &&
+        (error.status === 401 || error.status === 403)
+      ) {
+        localStorage.removeItem("access_token")
+      }
       throw redirect({ to: "/login" })
     }
     if (!user.is_superuser) {

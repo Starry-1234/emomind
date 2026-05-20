@@ -1,4 +1,4 @@
-import { Heart, Monitor, Moon, Sun, Circle, Sparkles } from "lucide-react"
+import { Circle, Heart, Monitor, Moon, Sparkles, Sun } from "lucide-react"
 
 import { type Theme, useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
@@ -46,8 +46,7 @@ export const SidebarAppearance = () => {
           className="w-(--radix-dropdown-menu-trigger-width) min-w-56"
         >
           <DropdownMenuItem onClick={() => setTheme("none")}>
-            <Circle className="mr-2 h-4 w-4" />
-            无
+            <Circle className="mr-2 h-4 w-4" />无
           </DropdownMenuItem>
           <DropdownMenuItem
             data-testid="light-mode"
@@ -96,8 +95,7 @@ export const Appearance = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setTheme("none")}>
-            <Circle className="mr-2 h-4 w-4" />
-            无
+            <Circle className="mr-2 h-4 w-4" />无
           </DropdownMenuItem>
           <DropdownMenuItem
             data-testid="light-mode"

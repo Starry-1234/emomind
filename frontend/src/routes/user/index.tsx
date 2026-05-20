@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import {
   Brain,
   Calendar,
   ChevronRight,
   ClipboardCheck,
+  Loader2,
   MessageSquare,
   Stethoscope,
   TrendingUp,
@@ -21,9 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
-import {
-  getConversationCount,
-} from "@/services/difyApi"
+import { getConversationCount, getConversations } from "@/services/difyApi"
 
 export const Route = createFileRoute("/user/")({
   component: UserHome,
@@ -67,8 +66,7 @@ function getScoreColor(
       if (score >= r.min && score <= r.max) {
         if (r.label.includes("正常") || r.label.includes("良好"))
           return "text-emerald-600"
-        if (r.label.includes("关注"))
-          return "text-amber-600"
+        if (r.label.includes("关注")) return "text-amber-600"
         if (r.label.includes("严重") || r.label.includes("危险"))
           return "text-rose-600"
       }
@@ -279,15 +277,44 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
   )
 }
 
+// ===== 智能导航辅助函数 =====
+// 简化版：不再创建本地会话，直接导航到基础路由或最近的远程会话
+async function smartNavigate(
+  userId: string,
+  contextKey: "ai-doctor" | "test",
+  navigate: (opts: { to: string; params?: Record<string, string>; replace?: boolean }) => void,
+) {
+  const result = await getConversations(userId, {
+    apiKeyName: contextKey,
+  })
+
+  if (result.data.length > 0) {
+    // 有历史会话 → 跳转到最近的
+    const mostRecent = result.data.reduce((latest, conv) =>
+      conv.updated_at > latest.updated_at ? conv : latest,
+    )
+    const chatRoute = contextKey === "ai-doctor"
+      ? "/user/ai-doctor/chat/$sessionId"
+      : "/user/test/chat/$sessionId"
+    navigate({ to: chatRoute, params: { sessionId: mostRecent.id } })
+  } else {
+    // 无历史会话 → 导航到基础路由（新对话模式）
+    const modulePath = contextKey === "ai-doctor" ? "/user/ai-doctor" : "/user/test"
+    navigate({ to: modulePath })
+  }
+}
+
 // ===== 主页面 =====
 function UserHome() {
   const { user } = useAuth()
   const userId = user?.id || "anonymous"
+  const navigate = useNavigate()
 
   const [chatCount, setChatCount] = useState(0)
   const [testCount, setTestCount] = useState(0)
   const [streakDays] = useState(0)
   const [countsLoading, setCountsLoading] = useState(true)
+  const [navLoading, setNavLoading] = useState<string | null>(null)
   const quote = getQuoteOfTheDay()
   const today = new Date()
   const dateStr = today.toLocaleDateString("zh-CN", {
@@ -334,14 +361,15 @@ function UserHome() {
         return r.created_at.slice(0, 10) === dateStr
       })
       // 多次测评取百分比均值
-      const score = dayRecords.length > 0
-        ? Math.round(
-            dayRecords.reduce((sum, r) => {
-              const max = r.total_max ?? 100
-              return sum + (max > 0 ? (r.total_score! / max) * 100 : 0)
-            }, 0) / dayRecords.length,
-          )
-        : 0
+      const score =
+        dayRecords.length > 0
+          ? Math.round(
+              dayRecords.reduce((sum, r) => {
+                const max = r.total_max ?? 100
+                return sum + (max > 0 ? (r.total_score! / max) * 100 : 0)
+              }, 0) / dayRecords.length,
+            )
+          : 0
       days.push({ day: dayLabel, score })
     }
     return days
@@ -440,12 +468,35 @@ function UserHome() {
             </div>
           </CardHeader>
           <CardFooter>
-            <Link to="/user/ai-doctor" className="w-full">
-              <Button className="w-full gap-2" variant="outline">
-                开始对话
-                <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-              </Button>
-            </Link>
+            <Button
+              className="w-full gap-2"
+              variant="outline"
+              disabled={navLoading === "ai-doctor"}
+              onClick={async () => {
+                if (navLoading) return
+                setNavLoading("ai-doctor")
+                try {
+                  await smartNavigate(
+                    userId,
+                    "ai-doctor",
+                    navigate,
+                  )
+                } catch {
+                  navigate({ to: "/user/ai-doctor" })
+                } finally {
+                  setNavLoading(null)
+                }
+              }}
+            >
+              {navLoading === "ai-doctor" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <>
+                  开始对话
+                  <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </>
+              )}
+            </Button>
           </CardFooter>
           <div className="pointer-events-none absolute -right-6 -top-6 size-28 rounded-full bg-primary/5" />
         </Card>
@@ -465,12 +516,35 @@ function UserHome() {
             </div>
           </CardHeader>
           <CardFooter>
-            <Link to="/user/test" className="w-full">
-              <Button className="w-full gap-2" variant="outline">
-                开始测评
-                <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-              </Button>
-            </Link>
+            <Button
+              className="w-full gap-2"
+              variant="outline"
+              disabled={navLoading === "test"}
+              onClick={async () => {
+                if (navLoading) return
+                setNavLoading("test")
+                try {
+                  await smartNavigate(
+                    userId,
+                    "test",
+                    navigate,
+                  )
+                } catch {
+                  navigate({ to: "/user/test" })
+                } finally {
+                  setNavLoading(null)
+                }
+              }}
+            >
+              {navLoading === "test" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <>
+                  开始测评
+                  <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </>
+              )}
+            </Button>
           </CardFooter>
           <div className="pointer-events-none absolute -right-6 -top-6 size-28 rounded-full bg-violet-50" />
         </Card>
@@ -509,9 +583,14 @@ function UserHome() {
                     </div>
                     <div className="flex items-center gap-3">
                       {record.total_score !== null &&
-                        record.total_score !== undefined && (() => {
+                        record.total_score !== undefined &&
+                        (() => {
                           const max = record.total_max ?? 100
-                          const scoringRanges = (record.scoring_ranges as ScoringRange[] | null | undefined) ?? null
+                          const scoringRanges =
+                            (record.scoring_ranges as
+                              | ScoringRange[]
+                              | null
+                              | undefined) ?? null
                           return (
                             <span
                               className={`text-lg font-bold ${getScoreColor(record.total_score, scoringRanges)}`}
@@ -524,8 +603,13 @@ function UserHome() {
                           )
                         })()}
                       {record.total_score !== null &&
-                        record.total_score !== undefined && (() => {
-                          const scoringRanges = (record.scoring_ranges as ScoringRange[] | null | undefined) ?? null
+                        record.total_score !== undefined &&
+                        (() => {
+                          const scoringRanges =
+                            (record.scoring_ranges as
+                              | ScoringRange[]
+                              | null
+                              | undefined) ?? null
                           return (
                             <span
                               className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${getLevelBadge(record.total_score, scoringRanges)}`}

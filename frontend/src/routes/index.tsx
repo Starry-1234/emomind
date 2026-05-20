@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
-import { UsersService } from "@/client"
+import { ApiError, UsersService } from "@/client"
 import { isLoggedIn } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/")({
@@ -18,9 +18,14 @@ export const Route = createFileRoute("/")({
         throw redirect({ to: "/admin" })
       }
       throw redirect({ to: "/user" })
-    } catch (_error) {
-      // Token 无效或过期，清除 token 并重定向到登录页
-      localStorage.removeItem("access_token")
+    } catch (error) {
+      // 仅当认证失败时才清除 token
+      if (
+        error instanceof ApiError &&
+        (error.status === 401 || error.status === 403)
+      ) {
+        localStorage.removeItem("access_token")
+      }
       throw redirect({ to: "/login" })
     }
   },

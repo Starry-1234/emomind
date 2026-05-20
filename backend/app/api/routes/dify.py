@@ -1,13 +1,12 @@
 from typing import Any
 
-import httpx
+import base64
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated
 
-from app.api.deps import CurrentUser, SessionDep
-from app.core.config import settings
+from app.api.deps import CurrentUser
+from app.services import DifyService, ServiceError
 
 router = APIRouter(prefix="/dify", tags=["dify"])
 
@@ -36,13 +35,6 @@ class DifyUploadResponse(BaseModel):
     mime_type: str
 
 
-def _get_api_key(api_key_name: str | None) -> str:
-    """Get API key based on name, fallback to AI doctor key"""
-    if api_key_name == "test":
-        return settings.DIFY_TEST_API_KEY
-    return settings.DIFY_AI_DOCTOR_API_KEY
-
-
 def _verify_user_access(requested_user: str, current_user: CurrentUser) -> None:
     """Verify the requested user matches the current authenticated user."""
     if requested_user != str(current_user.id):
@@ -64,45 +56,19 @@ async def send_chat_message(
     Returns streaming response for SSE.
     Requires authentication.
     """
-    # Verify user access
     _verify_user_access(request.user, current_user)
 
-    api_key = _get_api_key(api_key_name)
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Dify API key not configured",
+    service = DifyService()
+    try:
+        return StreamingResponse(
+            content=service.send_chat_message_stream(
+                request.model_dump(exclude_none=True),
+                api_key_name,
+            ),
+            media_type="text/event-stream",
         )
-
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.post(
-                f"{settings.DIFY_API_URL}/chat-messages",
-                json=request.model_dump(exclude_none=True),
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                follow_redirects=True,
-            )
-            response.raise_for_status()
-
-            # For streaming responses, return the stream directly
-            return StreamingResponse(
-                content=response.aiter_bytes(),
-                media_type="text/event-stream",
-                headers=dict(response.headers),
-            )
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(
-                status_code=e.response.status_code,
-                detail=f"Dify API error: {e.response.text}",
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to connect to Dify: {str(e)}",
-            )
+    except ServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e
 
 
 @router.post("/files/upload")
@@ -115,179 +81,92 @@ async def upload_file(
     Proxy for Dify file upload endpoint.
     Requires authentication.
     """
-    # Verify user access
     _verify_user_access(request.user, current_user)
 
-    api_key = _get_api_key(api_key_name)
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Dify API key not configured",
+    service = DifyService()
+    try:
+        result = await service.upload_file(
+            file_name=request.file_name,
+            file_data=base64.b64decode(request.file_data),
+            user_id=request.user,
+            api_key_name=api_key_name,
         )
-
-    import base64
-
-    files = {
-        "file": (request.file_name, base64.b64decode(request.file_data)),
-    }
-    data = {"user": request.user}
-
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.post(
-                f"{settings.DIFY_API_URL}/files/upload",
-                files=files,
-                data=data,
-                headers={"Authorization": f"Bearer {api_key}"},
-            )
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(
-                status_code=e.response.status_code,
-                detail=f"Dify API error: {e.response.text}",
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to upload file to Dify: {str(e)}",
-            )
+        return result
+    except ServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e
 
 
 @router.get("/conversations")
 async def get_conversations(
     current_user: CurrentUser,
+    user: str | None = None,
     last_id: str | None = None,
     limit: int = 20,
     api_key_name: str | None = None,
 ):
     """
     Proxy for Dify conversations list endpoint.
-    Requires authentication. User ID is taken from JWT token, not request params.
+    Requires authentication. Admin can specify any user ID.
     """
-    user_id = str(current_user.id)
-
-    api_key = _get_api_key(api_key_name)
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Dify API key not configured",
+    user_id = user if current_user.is_superuser and user else str(current_user.id)
+    service = DifyService()
+    try:
+        return await service.get_conversations(
+            user_id=user_id,
+            limit=limit,
+            last_id=last_id,
+            api_key_name=api_key_name,
         )
-
-    params = {"user": user_id, "limit": limit}
-    if last_id:
-        params["last_id"] = last_id
-
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.get(
-                f"{settings.DIFY_API_URL}/conversations",
-                params=params,
-                headers={"Authorization": f"Bearer {api_key}"},
-            )
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(
-                status_code=e.response.status_code,
-                detail=f"Dify API error: {e.response.text}",
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to get conversations from Dify: {str(e)}",
-            )
+    except ServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e
 
 
 @router.get("/messages")
 async def get_messages(
     current_user: CurrentUser,
     conversation_id: str,
+    user: str | None = None,
     first_id: str | None = None,
     limit: int = 20,
     api_key_name: str | None = None,
 ):
     """
     Proxy for Dify messages list endpoint.
-    Requires authentication. User ID is taken from JWT token, not request params.
+    Requires authentication. Admin can specify any user ID.
     """
-    user_id = str(current_user.id)
-
-    api_key = _get_api_key(api_key_name)
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Dify API key not configured",
+    user_id = user if current_user.is_superuser and user else str(current_user.id)
+    service = DifyService()
+    try:
+        return await service.get_messages(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            limit=limit,
+            first_id=first_id,
+            api_key_name=api_key_name,
         )
-
-    params = {
-        "user": user_id,
-        "conversation_id": conversation_id,
-        "limit": limit,
-    }
-    if first_id:
-        params["first_id"] = first_id
-
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.get(
-                f"{settings.DIFY_API_URL}/messages",
-                params=params,
-                headers={"Authorization": f"Bearer {api_key}"},
-            )
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(
-                status_code=e.response.status_code,
-                detail=f"Dify API error: {e.response.text}",
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to get messages from Dify: {str(e)}",
-            )
+    except ServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e
 
 
 @router.delete("/conversations/{conversation_id}")
 async def delete_conversation(
     conversation_id: str,
     current_user: CurrentUser,
+    user: str | None = None,
     api_key_name: str | None = None,
 ):
     """
     Proxy for Dify conversation deletion endpoint.
-    Requires authentication. User ID is taken from JWT token, not request params.
+    Requires authentication. Admin can specify any user ID.
     """
-    user_id = str(current_user.id)
-
-    api_key = _get_api_key(api_key_name)
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Dify API key not configured",
+    user_id = user if current_user.is_superuser and user else str(current_user.id)
+    service = DifyService()
+    try:
+        await service.delete_conversation(
+            conversation_id=conversation_id,
+            user_id=user_id,
+            api_key_name=api_key_name,
         )
-
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.delete(
-                f"{settings.DIFY_API_URL}/conversations/{conversation_id}",
-                json={"user": user_id},
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-            )
-            if response.status_code != 204:
-                response.raise_for_status()
-            return {"status": "ok"}
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(
-                status_code=e.response.status_code,
-                detail=f"Dify API error: {e.response.text}",
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to delete conversation from Dify: {str(e)}",
-            )
+        return {"status": "ok"}
+    except ServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e

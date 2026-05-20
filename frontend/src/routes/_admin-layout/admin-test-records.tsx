@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import axios from "axios"
 import {
   Calendar,
   ChevronDown,
@@ -47,6 +46,7 @@ interface TestRecord {
   total_max?: number
   created_at?: string
   result_description?: string
+  scoring_ranges?: { min: number; max: number; label: string }[] | null
   questions?: {
     id: string
     text: string
@@ -79,15 +79,47 @@ function formatDate(dateStr: string | null | undefined) {
   })
 }
 
-function getScoreColor(score: number | null | undefined) {
+function getScoreColor(
+  score: number | null | undefined,
+  scoringRanges:
+    | { min: number; max: number; label: string }[]
+    | null
+    | undefined,
+) {
   if (score === null || score === undefined) return "bg-gray-100 text-gray-600"
+  if (scoringRanges?.length) {
+    for (const r of scoringRanges) {
+      if (score >= r.min && score <= r.max) {
+        if (r.label.includes("正常") || r.label.includes("良好"))
+          return "bg-emerald-100 text-emerald-700"
+        if (r.label.includes("关注")) return "bg-amber-100 text-amber-700"
+        if (r.label.includes("寻求帮助") || r.label.includes("严重"))
+          return "bg-rose-100 text-rose-700"
+      }
+    }
+  }
+  // 兼容老数据：无 scoring_ranges 时回退到硬编码
   if (score >= 80) return "bg-emerald-100 text-emerald-700"
   if (score >= 60) return "bg-amber-100 text-amber-700"
   return "bg-rose-100 text-rose-700"
 }
 
-function getScoreLabel(score: number | null | undefined) {
+function getScoreLabel(
+  score: number | null | undefined,
+  scoringRanges:
+    | { min: number; max: number; label: string }[]
+    | null
+    | undefined,
+) {
   if (score === null || score === undefined) return "待评估"
+  if (scoringRanges?.length) {
+    for (const r of scoringRanges) {
+      if (score >= r.min && score <= r.max) {
+        return r.label
+      }
+    }
+  }
+  // 兼容老数据：无 scoring_ranges 时回退到硬编码
   if (score >= 80) return "良好"
   if (score >= 60) return "中等"
   return "需关注"
@@ -118,9 +150,12 @@ function RecordDetailPanel({ record }: { record: TestRecord | null }) {
             </span>
             <Badge
               variant="outline"
-              className={getScoreColor(record.total_score)}
+              className={getScoreColor(
+                record.total_score,
+                record.scoring_ranges,
+              )}
             >
-              {getScoreLabel(record.total_score)}
+              {getScoreLabel(record.total_score, record.scoring_ranges)}
             </Badge>
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">
@@ -255,15 +290,11 @@ function TestRecordsAdmin() {
   const { data: recordsRes, isLoading: recordsLoading } = useQuery({
     queryKey: ["admin-test-records", selectedUserId],
     queryFn: async () => {
-      const baseUrl = import.meta.env.VITE_API_URL || ""
-      const token = localStorage.getItem("access_token") || ""
-      const params = new URLSearchParams({ skip: "0", limit: "100" })
-      if (selectedUserId) params.append("user_id", selectedUserId)
-      const { data } = await axios.get(
-        `${baseUrl}/api/v1/admin/test-records?${params}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
-      )
-      return data as TestRecordsResponse
+      return AdminService.readAdminTestRecords({
+        userId: selectedUserId || undefined,
+        skip: 0,
+        limit: 100,
+      }) as Promise<TestRecordsResponse>
     },
     enabled: true,
   })
@@ -417,9 +448,12 @@ function TestRecordsAdmin() {
                           </span>
                           <Badge
                             variant="outline"
-                            className={`text-xs ${getScoreColor(record.total_score)}`}
+                            className={`text-xs ${getScoreColor(record.total_score, record.scoring_ranges)}`}
                           >
-                            {getScoreLabel(record.total_score)}
+                            {getScoreLabel(
+                              record.total_score,
+                              record.scoring_ranges,
+                            )}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">

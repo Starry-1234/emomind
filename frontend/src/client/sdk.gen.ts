@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AdminReadAdminTestRecordsData, AdminReadAdminTestRecordsResponse, AdminDeleteAdminTestRecordData, AdminDeleteAdminTestRecordResponse, AdminGetAdminStatsResponse, AnalysisReadAnalysisReportsData, AnalysisReadAnalysisReportsResponse, AnalysisCreateAnalysisReportData, AnalysisCreateAnalysisReportResponse, AnalysisReadAnalysisReportData, AnalysisReadAnalysisReportResponse, AnalysisDeleteAnalysisReportData, AnalysisDeleteAnalysisReportResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, TestRecordsReadTestRecordsData, TestRecordsReadTestRecordsResponse, TestRecordsCreateTestRecordData, TestRecordsCreateTestRecordResponse, TestRecordsReadTestRecordData, TestRecordsReadTestRecordResponse, TestRecordsUpdateTestRecordData, TestRecordsUpdateTestRecordResponse, TestRecordsDeleteTestRecordData, TestRecordsDeleteTestRecordResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AdminReadAdminTestRecordsData, AdminReadAdminTestRecordsResponse, AdminDeleteAdminTestRecordData, AdminDeleteAdminTestRecordResponse, AdminGetAdminStatsResponse, AnalysisReadAnalysisReportsData, AnalysisReadAnalysisReportsResponse, AnalysisCreateAnalysisReportData, AnalysisCreateAnalysisReportResponse, AnalysisReadAnalysisReportData, AnalysisReadAnalysisReportResponse, AnalysisDeleteAnalysisReportData, AnalysisDeleteAnalysisReportResponse, DifySendChatMessageData, DifySendChatMessageResponse, DifyUploadFileData, DifyUploadFileResponse, DifyGetConversationsData, DifyGetConversationsResponse, DifyGetMessagesData, DifyGetMessagesResponse, DifyDeleteConversationData, DifyDeleteConversationResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, TestRecordsReadTestRecordsData, TestRecordsReadTestRecordsResponse, TestRecordsCreateTestRecordData, TestRecordsCreateTestRecordResponse, TestRecordsReadTestRecordData, TestRecordsReadTestRecordResponse, TestRecordsUpdateTestRecordData, TestRecordsUpdateTestRecordResponse, TestRecordsDeleteTestRecordData, TestRecordsDeleteTestRecordResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AdminService {
     /**
@@ -56,7 +56,7 @@ export class AdminService {
     /**
      * Get Admin Stats
      * Get admin dashboard statistics.
-     * @returns unknown Successful Response
+     * @returns AdminStatsResponse Successful Response
      * @throws ApiError
      */
     public static getAdminStats(): CancelablePromise<AdminGetAdminStatsResponse> {
@@ -146,6 +146,140 @@ export class AnalysisService {
             url: '/api/v1/analysis/reports/{report_id}',
             path: {
                 report_id: data.reportId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class DifyService {
+    /**
+     * Send Chat Message
+     * Proxy for Dify chat-messages endpoint.
+     * API key is managed server-side, not exposed to frontend.
+     * Returns streaming response for SSE.
+     * Requires authentication.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @param data.apiKeyName
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static sendChatMessage(data: DifySendChatMessageData): CancelablePromise<DifySendChatMessageResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/dify/chat-messages',
+            query: {
+                api_key_name: data.apiKeyName
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Upload File
+     * Proxy for Dify file upload endpoint.
+     * Requires authentication.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @param data.apiKeyName
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static uploadFile(data: DifyUploadFileData): CancelablePromise<DifyUploadFileResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/dify/files/upload',
+            query: {
+                api_key_name: data.apiKeyName
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Conversations
+     * Proxy for Dify conversations list endpoint.
+     * Requires authentication. User ID is taken from JWT token.
+     * @param data The data for the request.
+     * @param data.lastId
+     * @param data.limit
+     * @param data.apiKeyName
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static getConversations(data: DifyGetConversationsData = {}): CancelablePromise<DifyGetConversationsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/dify/conversations',
+            query: {
+                last_id: data.lastId,
+                limit: data.limit,
+                api_key_name: data.apiKeyName
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Messages
+     * Proxy for Dify messages list endpoint.
+     * Requires authentication. User ID is taken from JWT token.
+     * @param data The data for the request.
+     * @param data.conversationId
+     * @param data.firstId
+     * @param data.limit
+     * @param data.apiKeyName
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static getMessages(data: DifyGetMessagesData): CancelablePromise<DifyGetMessagesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/dify/messages',
+            query: {
+                conversation_id: data.conversationId,
+                first_id: data.firstId,
+                limit: data.limit,
+                api_key_name: data.apiKeyName
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Conversation
+     * Proxy for Dify conversation deletion endpoint.
+     * Requires authentication. User ID is taken from JWT token.
+     * @param data The data for the request.
+     * @param data.conversationId
+     * @param data.apiKeyName
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static deleteConversation(data: DifyDeleteConversationData): CancelablePromise<DifyDeleteConversationResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/dify/conversations/{conversation_id}',
+            path: {
+                conversation_id: data.conversationId
+            },
+            query: {
+                api_key_name: data.apiKeyName
             },
             errors: {
                 422: 'Validation Error'

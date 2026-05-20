@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import type { Body_login_login_access_token as AccessToken } from "@/client"
-import { UsersService } from "@/client"
+import { ApiError, type UserPublic, UsersService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
   Form,
@@ -37,12 +37,17 @@ export const Route = createFileRoute("/login")({
   component: Login,
   beforeLoad: async () => {
     if (isLoggedIn()) {
-      let user
+      let user: UserPublic | undefined
       try {
         user = await UsersService.readUserMe()
-      } catch {
-        // Token 无效或过期，清除 token 并留在登录页
-        localStorage.removeItem("access_token")
+      } catch (error) {
+        // 仅当认证失败时才清除 token
+        if (
+          error instanceof ApiError &&
+          (error.status === 401 || error.status === 403)
+        ) {
+          localStorage.removeItem("access_token")
+        }
         return
       }
       // 只有成功获取用户信息后才重定向

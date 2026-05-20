@@ -36,17 +36,30 @@ export function Logo({
   const content =
     variant === "responsive" ? (
       <div className={cn("flex items-center ml-8", className)}>
-        <span className={cn("font-black text-3xl group-data-[collapsible=icon]:hidden tracking-wide", getTextStyle())}>
+        <span
+          className={cn(
+            "font-black text-3xl group-data-[collapsible=icon]:hidden tracking-wide",
+            getTextStyle(),
+          )}
+        >
           心驿智通
         </span>
       </div>
     ) : variant === "icon" ? (
-      <span className={cn("font-black text-2xl tracking-wide ml-8", getTextStyle(), className)}>
+      <span
+        className={cn(
+          "font-black text-2xl tracking-wide ml-8",
+          getTextStyle(),
+          className,
+        )}
+      >
         心驿智通
       </span>
     ) : (
       <div className={cn("flex items-center ml-8", className)}>
-        <span className={cn("font-black text-4xl tracking-wide", getTextStyle())}>
+        <span
+          className={cn("font-black text-4xl tracking-wide", getTextStyle())}
+        >
           心驿智通
         </span>
       </div>

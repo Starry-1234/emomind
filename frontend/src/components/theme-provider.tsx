@@ -38,18 +38,21 @@ export function ThemeProvider({
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme,
   )
 
-  const getResolvedTheme = useCallback((theme: Theme): "dark" | "light" | "warm" | "none" | "colorful" => {
-    if (theme === "system") {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-    }
-    return theme
-  }, [])
-
-  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light" | "warm" | "none" | "colorful">(() =>
-    getResolvedTheme(theme),
+  const getResolvedTheme = useCallback(
+    (theme: Theme): "dark" | "light" | "warm" | "none" | "colorful" => {
+      if (theme === "system") {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light"
+      }
+      return theme
+    },
+    [],
   )
+
+  const [resolvedTheme, setResolvedTheme] = useState<
+    "dark" | "light" | "warm" | "none" | "colorful"
+  >(() => getResolvedTheme(theme))
 
   const updateTheme = useCallback((newTheme: Theme) => {
     const root = window.document.documentElement

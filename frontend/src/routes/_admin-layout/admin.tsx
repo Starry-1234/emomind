@@ -1,12 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import axios from "axios"
-import {
-  ClipboardCheck,
-  FileText,
-  MessageSquare,
-  Users,
-} from "lucide-react"
+import { ClipboardCheck, FileText, MessageSquare, Users } from "lucide-react"
+import { AdminService } from "@/client"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
 
@@ -30,12 +25,7 @@ interface AdminStats {
 }
 
 async function fetchAdminStats(): Promise<AdminStats> {
-  const baseUrl = import.meta.env.VITE_API_URL || ""
-  const token = localStorage.getItem("access_token") || ""
-  const { data } = await axios.get(`${baseUrl}/api/v1/admin/stats`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  })
-  return data
+  return AdminService.getAdminStats() as Promise<AdminStats>
 }
 
 function StatCard({

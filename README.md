@@ -55,7 +55,7 @@ python app/initial_data.py
 
 Default superuser credentials (change after first login):
 
-- Email: `admin@fastapi`
+- Email: `admin@example.com`
 - Password: `changethis`
 
 ## Dev Commands
@@ -78,10 +78,11 @@ bash ./scripts/generate-client.sh
 
 ```
 backend/app/
-  main.py          # FastAPI app factory
-  models.py        # SQLModel models (User, Item, TestRecord, etc.)
-  crud.py          # Database operations
-  api/routes/      # API endpoints
+  main.py               # FastAPI app factory
+  models/               # SQLModel models (User, Item, TestRecord, FileAnalysisReport, etc.)
+  repositories/         # Repository pattern (CRUD operations)
+  services/             # Business logic layer (Dify, Admin, User)
+  api/routes/           # API endpoints
 
 frontend/src/
   routes/          # Page components by route

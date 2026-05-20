@@ -23,6 +23,7 @@ openapi.json
 *.njsproj
 *.sln
 *.sw?
+.env
 /test-results/
 /playwright-report/
 /blob-report/

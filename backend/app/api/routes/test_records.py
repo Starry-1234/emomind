@@ -13,6 +13,7 @@ from app.models import (
     TestRecordsPublic,
     TestRecordUpdate,
 )
+from app.repositories import test_record_repo
 
 router = APIRouter(prefix="/test-records", tags=["test-records"])
 
@@ -63,10 +64,9 @@ def create_test_record(
     """
     Create new test record.
     """
-    record = TestRecord.model_validate(test_record_in, update={"owner_id": current_user.id})
-    session.add(record)
-    session.commit()
-    session.refresh(record)
+    record = test_record_repo.create_with_owner(
+        session, obj_in=test_record_in, owner_id=current_user.id
+    )
     return record
 
 
@@ -86,11 +86,9 @@ def update_test_record(
         raise HTTPException(status_code=404, detail="Test record not found")
     if record.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    update_dict = test_record_in.model_dump(exclude_unset=True)
-    record.sqlmodel_update(update_dict)
-    session.add(record)
-    session.commit()
-    session.refresh(record)
+    record = test_record_repo.update(
+        session, db_obj=record, obj_in=test_record_in
+    )
     return record
 
 
@@ -106,6 +104,5 @@ def delete_test_record(
         raise HTTPException(status_code=404, detail="Test record not found")
     if record.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    session.delete(record)
-    session.commit()
+    test_record_repo.delete(session, id=id)
     return Message(message="Test record deleted successfully")

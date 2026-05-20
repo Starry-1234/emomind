@@ -7,11 +7,11 @@ import { useTheme } from "@/components/theme-provider"
 export const useCurrentTheme = () => {
   const { resolvedTheme } = useTheme()
 
-  const isWarmTheme = resolvedTheme === 'warm'
-  const isDarkTheme = resolvedTheme === 'dark'
-  const isLightTheme = resolvedTheme === 'light'
-  const isNoneTheme = resolvedTheme === 'none'
-  const isColorfulTheme = resolvedTheme === 'colorful'
+  const isWarmTheme = resolvedTheme === "warm"
+  const isDarkTheme = resolvedTheme === "dark"
+  const isLightTheme = resolvedTheme === "light"
+  const isNoneTheme = resolvedTheme === "none"
+  const isColorfulTheme = resolvedTheme === "colorful"
 
   return {
     isWarmTheme,
@@ -21,13 +21,16 @@ export const useCurrentTheme = () => {
     isColorfulTheme,
     resolvedTheme,
     // 便捷的主题类名生成器
-    getThemeClassNames: (baseClass: string, options?: {
-      warm?: string
-      dark?: string
-      light?: string
-      none?: string
-      colorful?: string
-    }) => {
+    getThemeClassNames: (
+      baseClass: string,
+      options?: {
+        warm?: string
+        dark?: string
+        light?: string
+        none?: string
+        colorful?: string
+      },
+    ) => {
       const classNames = [baseClass]
 
       if (isWarmTheme && options?.warm) {
@@ -42,7 +45,7 @@ export const useCurrentTheme = () => {
         classNames.push(options.colorful)
       }
 
-      return classNames.join(' ')
+      return classNames.join(" ")
     },
     // 判断是否为高对比度主题（深色或温馨）
     isHighContrast: isDarkTheme || isWarmTheme,
@@ -53,6 +56,6 @@ export const useCurrentTheme = () => {
     // 判断是否使用了自定义主题
     isCustomTheme: isWarmTheme || isColorfulTheme,
     // 判断是否为动画主题
-    isAnimatedTheme: isColorfulTheme
+    isAnimatedTheme: isColorfulTheme,
   }
 }

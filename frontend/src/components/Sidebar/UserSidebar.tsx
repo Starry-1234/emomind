@@ -17,8 +17,8 @@ const userItems: Item[] = [
   { icon: Home, title: "首页", path: "/user" },
   { icon: Stethoscope, title: "智能心理医生", path: "/user/ai-doctor" },
   { icon: Brain, title: "心理测评", path: "/user/test" },
-  { icon: History, title: "测评记录", path: "/user/test-records" },
-  { icon: MessageSquare, title: "咨询记录", path: "/user/consultations" },
+  { icon: History, title: "测评报告历史", path: "/user/test-records" },
+  { icon: MessageSquare, title: "咨询报告历史", path: "/user/consultations" },
 ]
 
 export function UserSidebar() {

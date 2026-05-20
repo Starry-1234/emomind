@@ -81,9 +81,9 @@ export async function sendMessageStream(
       upload_file_id?: string
     }[]
     apiKeyName?: string
+    signal?: AbortSignal
   },
 ): Promise<void> {
-  console.log("sendMessageStream 被调用，参数:", { query, user, options })
   const apiKeyName = options?.apiKeyName || DIFY_API_KEY_NAME
   const body: Record<string, unknown> = {
     inputs: options?.inputs || {},
@@ -98,9 +98,6 @@ export async function sendMessageStream(
     body.files = options.files
   }
 
-  console.log("请求 body:", body)
-  console.log("请求 URL:", `${API_BASE_URL}/api/v1/dify/chat-messages`)
-
   let response: Response
   try {
     response = await fetch(
@@ -112,11 +109,13 @@ export async function sendMessageStream(
           ...getAuthHeader(),
         },
         body: JSON.stringify(body),
+        signal: options?.signal,
       },
     )
-    console.log("收到响应，状态码:", response.status)
   } catch (err) {
-    console.error("网络请求失败:", err)
+    if (err instanceof Error && err.name === "AbortError") {
+      return
+    }
     callbacks.onError?.(
       `网络连接失败: ${err instanceof Error ? err.message : "未知错误"}`,
     )
@@ -130,7 +129,6 @@ export async function sendMessageStream(
     return
   }
 
-  console.log("响应 OK，开始读取响应流")
   const reader = response.body?.getReader()
   if (!reader) {
     callbacks.onError?.("无法读取响应流")
@@ -139,40 +137,83 @@ export async function sendMessageStream(
 
   const decoder = new TextDecoder()
   let buffer = ""
+  let readerClosed = false
+
+  // 监听 abort 信号，立即取消 reader
+  // 核心修复：fetch 收到响应后，abort() 不会自动取消 ReadableStream 的 reader
+  // 必须显式调用 reader.cancel() 才能让阻塞的 reader.read() 立即返回
+  if (options?.signal) {
+    if (options.signal.aborted) {
+      // 信号已中止，直接清理
+      try {
+        reader.cancel("abort")
+      } catch {
+        /* ignore */
+      }
+      try {
+        reader.releaseLock()
+      } catch {
+        /* ignore */
+      }
+      return
+    }
+    options.signal.addEventListener(
+      "abort",
+      () => {
+        if (!readerClosed) {
+          readerClosed = true
+          try {
+            reader.cancel("abort")
+          } catch {
+            /* ignore */
+          }
+          try {
+            reader.releaseLock()
+          } catch {
+            /* ignore */
+          }
+        }
+      },
+      { once: true },
+    )
+  }
 
   try {
     while (true) {
-      console.log("等待读取响应流数据...")
+      // 用户主动中止时，立即停止读取新数据
+      if (options?.signal?.aborted) {
+        break
+      }
       const { done, value } = await reader.read()
-      console.log("读取到数据，done:", done, "value长度:", value?.length)
+      // 用户主动中止时，丢弃已读取的 value
+      if (options?.signal?.aborted) {
+        break
+      }
       if (done) {
-        console.log("响应流读取完成")
         break
       }
 
       const decoded = decoder.decode(value, { stream: true })
-      console.log("解码后的数据:", decoded)
       buffer += decoded
       const lines = buffer.split("\n")
       buffer = lines.pop() || ""
-      console.log("分割后的行数:", lines.length)
 
       for (const line of lines) {
-        console.log("处理行:", line)
+        // 用户主动中止时，立即停止处理已缓冲的数据
+        if (options?.signal?.aborted) {
+          break
+        }
+
         const data = parseSSEData(line)
         if (!data) {
-          console.log("行不是 SSE 数据，跳过")
           continue
         }
-        console.log("解析到 SSE 数据:", data)
 
         try {
           const parsed = JSON.parse(data)
-          console.log("解析后的 JSON:", parsed)
 
           switch (parsed.event) {
             case "message":
-              console.log("触发 onMessage")
               callbacks.onMessage?.(
                 parsed.answer || "",
                 parsed.message_id,
@@ -180,7 +221,6 @@ export async function sendMessageStream(
               )
               break
             case "message_end":
-              console.log("触发 onMessageEnd")
               callbacks.onMessageEnd?.(
                 parsed.message_id,
                 parsed.conversation_id,
@@ -197,33 +237,46 @@ export async function sendMessageStream(
               }
               break
             case "workflow_started":
-              console.log("触发 onWorkflowStarted")
               callbacks.onWorkflowStarted?.()
               break
             case "workflow_finished":
-              console.log("触发 onWorkflowFinished")
               callbacks.onWorkflowFinished?.()
               break
             case "error":
-              console.log("触发 onError")
               callbacks.onError?.(parsed.message || "发生错误")
               break
-            default:
-              console.log("未知事件类型:", parsed.event)
           }
-        } catch (e) {
-          console.error("解析 JSON 失败:", e, "data:", data)
+        } catch {
+          // 忽略解析失败的行
         }
       }
     }
   } catch (err) {
-    console.error("读取响应流时出错:", err)
-    callbacks.onError?.(
-      `读取响应流时出错: ${err instanceof Error ? err.message : "未知错误"}`,
-    )
+    // 用户主动中止（abort 信号已触发），静默退出
+    if (options?.signal?.aborted) {
+      // 用户点击了停止按钮，静默退出
+    } else if (err instanceof Error && err.name === "AbortError") {
+      // fetch 层面的 AbortError，静默退出
+    } else {
+      callbacks.onError?.(
+        `读取响应流时出错: ${err instanceof Error ? err.message : "未知错误"}`,
+      )
+    }
   } finally {
-    console.log("释放 reader")
-    reader.releaseLock()
+    // 无论如何都释放 reader，确保 stream 被正确关闭
+    if (!readerClosed) {
+      readerClosed = true
+      try {
+        await reader.cancel("cleanup")
+      } catch {
+        // 已取消或已释放则忽略
+      }
+      try {
+        reader.releaseLock()
+      } catch {
+        // 已释放则忽略
+      }
+    }
   }
 }
 
@@ -359,7 +412,6 @@ export async function deleteConversation(
     {
       method: "DELETE",
       headers: {
-        "Content-Type": "application/json",
         ...getAuthHeader(),
       },
     },

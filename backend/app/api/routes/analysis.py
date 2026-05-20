@@ -12,6 +12,7 @@ from app.models import (
     FileAnalysisReportsPublic,
     Message,
 )
+from app.repositories import analysis_repo
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
@@ -66,12 +67,9 @@ def create_analysis_report(
     report_in: FileAnalysisReportCreate,
 ) -> Any:
     """创建分析报告（由前端调用，接收 JSON 请求体）"""
-    report = FileAnalysisReport.model_validate(
-        report_in, update={"owner_id": current_user.id}
+    report = analysis_repo.create_with_owner(
+        session, obj_in=report_in, owner_id=current_user.id
     )
-    session.add(report)
-    session.commit()
-    session.refresh(report)
     return report
 
 
@@ -87,6 +85,5 @@ def delete_analysis_report(
         raise HTTPException(status_code=404, detail="Report not found")
     if not current_user.is_superuser and (report.owner_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    session.delete(report)
-    session.commit()
+    analysis_repo.delete(session, id=report_id)
     return Message(message="Report deleted successfully")

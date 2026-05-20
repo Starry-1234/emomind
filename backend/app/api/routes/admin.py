@@ -1,15 +1,15 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends
-from sqlmodel import func, select
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from app.api.deps import SessionDep, get_current_active_superuser
-from app.models import FileAnalysisReport, TestRecord, User
+from app.services import ServiceError, admin_stats_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-class AdminStatsResponse:
+class AdminStatsResponse(BaseModel):
     total_users: int
     total_test_records: int
     total_analysis_reports: int
@@ -28,19 +28,16 @@ def read_admin_test_records(
     Retrieve all test records (superadmin only).
     Optionally filter by user_id.
     """
-    from sqlmodel import col
-
-    count_query = select(func.count()).select_from(TestRecord)
-    query = select(TestRecord).order_by(col(TestRecord.created_at).desc()).offset(skip).limit(limit)
-
-    if user_id:
-        count_query = count_query.where(TestRecord.owner_id == user_id)
-        query = query.where(TestRecord.owner_id == user_id)
-
-    count = session.exec(count_query).one()
-    records = session.exec(query).all()
-
-    return {"data": records, "count": count}
+    try:
+        records, count = admin_stats_service.get_test_records(
+            session=session,
+            user_id=user_id,
+            skip=skip,
+            limit=limit,
+        )
+        return {"data": records, "count": count}
+    except ServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e
 
 
 @router.delete("/test-records/{id}", dependencies=[Depends(get_current_active_superuser)])
@@ -51,9 +48,11 @@ def delete_admin_test_record(
     """
     Delete any test record (superadmin only).
     """
+    from sqlmodel import select
+    from app.models import TestRecord
+
     record = session.get(TestRecord, id)
     if not record:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Test record not found")
     session.delete(record)
     session.commit()
@@ -61,38 +60,9 @@ def delete_admin_test_record(
 
 
 @router.get("/stats", dependencies=[Depends(get_current_active_superuser)])
-def get_admin_stats(session: SessionDep) -> Any:
+def get_admin_stats(session: SessionDep) -> AdminStatsResponse:
     """
     Get admin dashboard statistics.
     """
-    from datetime import datetime, timedelta, timezone
-
-    now = datetime.now(timezone(timedelta(hours=8)))
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # Total counts
-    total_users = session.exec(select(func.count()).select_from(User)).one()
-    total_test_records = session.exec(select(func.count()).select_from(TestRecord)).one()
-    total_analysis_reports = session.exec(
-        select(func.count()).select_from(FileAnalysisReport)
-    ).one()
-
-    # Today's new users
-    today_new_users = session.exec(
-        select(func.count()).select_from(User).where(User.created_at >= today_start)
-    ).one()
-
-    # Today's new test records
-    today_new_test_records = session.exec(
-        select(func.count())
-        .select_from(TestRecord)
-        .where(TestRecord.created_at >= today_start)
-    ).one()
-
-    return {
-        "total_users": total_users,
-        "total_test_records": total_test_records,
-        "total_analysis_reports": total_analysis_reports,
-        "today_new_users": today_new_users,
-        "today_new_test_records": today_new_test_records,
-    }
+    stats = admin_stats_service.get_stats(session=session)
+    return AdminStatsResponse(**stats)
