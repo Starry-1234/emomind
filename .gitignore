@@ -9,4 +9,7 @@ node_modules/
 frontend/.env
 backend/uploads/
 .workbuddy/
+.claude/
+.history/
+.idea/
 .playwright-mcp/
