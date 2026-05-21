@@ -14,6 +14,8 @@ class UserBase(SQLModel):
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
+    streak_days: int = Field(default=0)
+    last_active_date: datetime | None = Field(default=None)
 
 
 # Properties to receive via API on creation
@@ -64,6 +66,8 @@ class User(UserBase, table=True):
 class UserPublic(UserBase):
     id: uuid.UUID
     created_at: datetime | None = None
+    streak_days: int = 0
+    last_active_date: datetime | None = None
 
 
 class UsersPublic(SQLModel):

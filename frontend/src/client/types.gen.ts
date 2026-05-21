@@ -158,6 +158,8 @@ export type UserCreate = {
     is_active?: boolean;
     is_superuser?: boolean;
     full_name?: (string | null);
+    streak_days?: number;
+    last_active_date?: (string | null);
     password: string;
 };
 
@@ -166,6 +168,8 @@ export type UserPublic = {
     is_active?: boolean;
     is_superuser?: boolean;
     full_name?: (string | null);
+    streak_days?: number;
+    last_active_date?: (string | null);
     id: string;
     created_at?: (string | null);
 };
@@ -186,6 +190,8 @@ export type UserUpdate = {
     is_active?: boolean;
     is_superuser?: boolean;
     full_name?: (string | null);
+    streak_days?: number;
+    last_active_date?: (string | null);
     password?: (string | null);
 };
 
@@ -263,6 +269,7 @@ export type DifyGetConversationsData = {
     apiKeyName?: (string | null);
     lastId?: (string | null);
     limit?: number;
+    user?: (string | null);
 };
 
 export type DifyGetConversationsResponse = (unknown);
@@ -272,6 +279,7 @@ export type DifyGetMessagesData = {
     conversationId: string;
     firstId?: (string | null);
     limit?: number;
+    user?: (string | null);
 };
 
 export type DifyGetMessagesResponse = (unknown);
@@ -279,6 +287,7 @@ export type DifyGetMessagesResponse = (unknown);
 export type DifyDeleteConversationData = {
     apiKeyName?: (string | null);
     conversationId: string;
+    user?: (string | null);
 };
 
 export type DifyDeleteConversationResponse = (unknown);

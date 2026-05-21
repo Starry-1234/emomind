@@ -317,8 +317,9 @@ function UserHome() {
   const navigate = useNavigate()
 
   const [chatCount, setChatCount] = useState(0)
+  const [testChatCount, setTestChatCount] = useState(0)
   const [testCount, setTestCount] = useState(0)
-  const [streakDays] = useState(0)
+  const streakDays = user?.streak_days ?? 0
   const [countsLoading, setCountsLoading] = useState(true)
   const [navLoading, setNavLoading] = useState<string | null>(null)
   const quote = getQuoteOfTheDay()
@@ -340,8 +341,12 @@ function UserHome() {
   useEffect(() => {
     async function fetchCounts() {
       try {
-        const chat = await getConversationCount(userId, "ai-doctor")
+        const [chat, testChat] = await Promise.all([
+          getConversationCount(userId, "ai-doctor"),
+          getConversationCount(userId, "test"),
+        ])
         setChatCount(chat)
+        setTestChatCount(testChat)
         // 测评次数用真实的测评记录数，而不是对话次数
         setTestCount(records.length)
       } catch {
@@ -401,13 +406,25 @@ function UserHome() {
             <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
               <MessageSquare className="size-5" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-muted-foreground text-xs font-medium">
                 对话次数
               </p>
-              <p className="text-2xl font-bold">
-                {countsLoading ? "--" : chatCount}
-              </p>
+              <div className="mt-0.5 flex items-center gap-3 text-sm">
+                <span className="truncate">
+                  医生：
+                  <span className="font-bold text-foreground">
+                    {countsLoading ? "--" : chatCount}
+                  </span>
+                </span>
+                <span className="text-border">|</span>
+                <span className="truncate">
+                  测评：
+                  <span className="font-bold text-foreground">
+                    {countsLoading ? "--" : testChatCount}
+                  </span>
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -448,9 +465,9 @@ function UserHome() {
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="size-5 text-primary" />
-            <CardTitle className="text-base">心理健康指数趋势</CardTitle>
+            <CardTitle className="text-base">心理测评健康指数趋势</CardTitle>
           </div>
-          <CardDescription>近 7 天心理健康指数（归一化百分比）</CardDescription>
+          <CardDescription>近 7 天心理测评健康指数（归一化百分比）</CardDescription>
         </CardHeader>
         <CardContent>
           <MiniChart data={trendData} />

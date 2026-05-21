@@ -210,8 +210,9 @@ export class DifyService {
     /**
      * Get Conversations
      * Proxy for Dify conversations list endpoint.
-     * Requires authentication. User ID is taken from JWT token.
+     * Requires authentication. Admin can specify any user ID.
      * @param data The data for the request.
+     * @param data.user
      * @param data.lastId
      * @param data.limit
      * @param data.apiKeyName
@@ -223,6 +224,7 @@ export class DifyService {
             method: 'GET',
             url: '/api/v1/dify/conversations',
             query: {
+                user: data.user,
                 last_id: data.lastId,
                 limit: data.limit,
                 api_key_name: data.apiKeyName
@@ -236,9 +238,10 @@ export class DifyService {
     /**
      * Get Messages
      * Proxy for Dify messages list endpoint.
-     * Requires authentication. User ID is taken from JWT token.
+     * Requires authentication. Admin can specify any user ID.
      * @param data The data for the request.
      * @param data.conversationId
+     * @param data.user
      * @param data.firstId
      * @param data.limit
      * @param data.apiKeyName
@@ -251,6 +254,7 @@ export class DifyService {
             url: '/api/v1/dify/messages',
             query: {
                 conversation_id: data.conversationId,
+                user: data.user,
                 first_id: data.firstId,
                 limit: data.limit,
                 api_key_name: data.apiKeyName
@@ -264,9 +268,10 @@ export class DifyService {
     /**
      * Delete Conversation
      * Proxy for Dify conversation deletion endpoint.
-     * Requires authentication. User ID is taken from JWT token.
+     * Requires authentication. Admin can specify any user ID.
      * @param data The data for the request.
      * @param data.conversationId
+     * @param data.user
      * @param data.apiKeyName
      * @returns unknown Successful Response
      * @throws ApiError
@@ -279,6 +284,7 @@ export class DifyService {
                 conversation_id: data.conversationId
             },
             query: {
+                user: data.user,
                 api_key_name: data.apiKeyName
             },
             errors: {

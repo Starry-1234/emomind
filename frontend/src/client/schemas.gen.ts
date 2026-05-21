@@ -826,6 +826,23 @@ export const UserCreateSchema = {
             ],
             title: 'Full Name'
         },
+        streak_days: {
+            type: 'integer',
+            title: 'Streak Days',
+            default: 0
+        },
+        last_active_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Active Date'
+        },
         password: {
             type: 'string',
             maxLength: 128,
@@ -867,6 +884,23 @@ export const UserPublicSchema = {
                 }
             ],
             title: 'Full Name'
+        },
+        streak_days: {
+            type: 'integer',
+            title: 'Streak Days',
+            default: 0
+        },
+        last_active_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Active Date'
         },
         id: {
             type: 'string',
@@ -959,6 +993,23 @@ export const UserUpdateSchema = {
                 }
             ],
             title: 'Full Name'
+        },
+        streak_days: {
+            type: 'integer',
+            title: 'Streak Days',
+            default: 0
+        },
+        last_active_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Active Date'
         },
         password: {
             anyOf: [

@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from datetime import timedelta
 from typing import Annotated
 
 import jwt
@@ -11,7 +12,7 @@ from sqlmodel import Session
 from app.core import security
 from app.core.config import settings
 from app.core.db import engine
-from app.models import TokenPayload, User
+from app.models import TokenPayload, User, get_cst_now
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
@@ -25,6 +26,23 @@ def get_db() -> Generator[Session, None, None]:
 
 SessionDep = Annotated[Session, Depends(get_db)]
 TokenDep = Annotated[str, Depends(reusable_oauth2)]
+
+
+def _update_streak(user: User) -> None:
+    """更新用户连续活跃天数，基于北京时间日期。"""
+    today = get_cst_now().date()
+    last_date = user.last_active_date.date() if user.last_active_date else None
+
+    if last_date is None:
+        user.streak_days = 1
+    elif last_date == today:
+        return
+    elif last_date == today - timedelta(days=1):
+        user.streak_days += 1
+    else:
+        user.streak_days = 1
+
+    user.last_active_date = get_cst_now()
 
 
 def get_current_user(session: SessionDep, token: TokenDep) -> User:
@@ -47,6 +65,10 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
         )
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    _update_streak(user)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
     return user
 
 
