@@ -73,21 +73,53 @@ bunx playwright test
 bunx playwright test --ui  # UI mode
 ```
 
-## Env Files
+## Environment Setup
 
-Copy and fill in values:
+All configuration is managed in a single `.env` file at the project root (shared by both backend and frontend):
 
 ```bash
-cp .env.example .env        # root - backend config
-cp frontend/.env.example frontend/.env
+cp .env.example .env
 ```
 
-Key variables in `.env`:
+Key variables to configure:
 
 - `SECRET_KEY` — JWT signing key, change to a random string
-- `POSTGRES_PASSWORD` — database password
-- `FIRST_SUPERUSER_PASSWORD` — initial admin password
-- `VITE_API_URL` — frontend points to backend (http://localhost:8000 for local)
+- `POSTGRES_PASSWORD` — Database password
+- `FIRST_SUPERUSER_PASSWORD` — Initial admin password
+- `DIFY_API_URL` — Dify API endpoint (use `http://your-host-ip/v1` for Docker on Windows)
+- `DIFY_AI_DOCTOR_API_KEY` — Dify API key for AI doctor
+- `DIFY_TEST_API_KEY` — Dify API key for psychological tests
+- `VITE_API_URL` — Frontend-to-backend address (`http://localhost:8000` for local dev)
+
+### Dify Configuration
+
+This project integrates with the Dify AI platform for AI psychological doctor and testing features. Configure the following environment variables:
+
+```env
+DIFY_API_URL=http://your-host-ip/v1
+DIFY_AI_DOCTOR_API_KEY=your_ai_doctor_api_key
+DIFY_TEST_API_KEY=your_test_api_key
+```
+
+Get API keys from the Dify platform after creating your applications.
+
+### Windows Docker Notes
+
+On Windows with Docker Desktop, `host.docker.internal` may not resolve correctly. Use your host's real LAN IP:
+
+1. Run `ipconfig` to find your IPv4 address (e.g., `192.168.1.4`)
+2. Set `DIFY_API_URL` in `.env`:
+   ```env
+   DIFY_API_URL=http://192.168.1.4/v1
+   ```
+
+Ensure Dify binds to `0.0.0.0:80` (not just `127.0.0.1`) so containers can reach it.
+
+### Frontend Environment Variables
+
+The frontend reads `VITE_*` prefixed variables from the root `.env` via `envDir: "../"` in `vite.config.ts`.
+
+**No need to maintain a separate `frontend/.env` file.**
 
 ## Reset Database
 
