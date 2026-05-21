@@ -1,21 +1,45 @@
 # emomind
 
-心理测评平台，支持 AI 聊天、在线测评和心理问答。
+心理测评平台，支持 AI 聊天、在线测评、文件分析和多主题切换。
 
 ## 主要功能
 
-- 用户认证（管理员 / 普通用户）
-- AI 心理测评，Dify 平台驱动
-- 聊天式心理问答咨询
-- 在线答题，动态评分
-- AI 自动生成分析报告
-- 深色 / 浅色 / 暖色主题
+- **用户认证**
+  - JWT 登录/注册，基于角色的访问控制（管理员 / 普通用户）
+  - 密码找回与重置
+
+- **AI 心理医生**
+  - Dify AI 驱动的聊天式心理咨询
+  - 流式输出，支持暂停/继续
+  - 消息复制与重新生成，多版本切换
+  - 会话历史管理
+
+- **在线心理测评**
+  - 交互式心理量表测评
+  - 实时评分与进度追踪
+  - AI 自动生成分析报告
+  - 测评记录历史
+
+- **文件分析**
+  - 上传心理测评文件进行 AI 分析
+  - 生成可下载的分析报告
+
+- **管理后台**
+  - 用户管理
+  - 聊天历史概览
+  - 测评记录管理
+  - 系统设置
+
+- **主题**
+  - 深色 / 浅色 / 暖色主题切换
 
 ## 技术栈
 
-**后端**: FastAPI + SQLModel + PostgreSQL + JWT
+**后端**: FastAPI + SQLModel + PostgreSQL + JWT + Alembic
 
 **前端**: React 19 + TypeScript + Vite + TanStack Router + TanStack Query + Tailwind CSS + shadcn/ui
+
+**AI 集成**: Dify AI 平台（流式聊天、工作流、会话管理）
 
 **基础设施**: Docker Compose + Traefik + Mailcatcher
 
@@ -55,17 +79,37 @@ python app/initial_data.py
 
 默认管理员账号（首次登录后请修改）：
 
-- 邮箱: `admin@fastapi`
+- 邮箱: `admin@example.com`
 - 密码: `changethis`
+
+## 环境配置
+
+所有配置统一在项目根目录的 `.env` 文件中管理（前后端共用）：
+
+```bash
+cp .env.example .env
+```
+
+主要配置项：
+
+- `SECRET_KEY` — JWT 签名密钥，改成随机字符串
+- `POSTGRES_PASSWORD` — 数据库密码
+- `FIRST_SUPERUSER_PASSWORD` — 初始管理员密码
+- `DIFY_API_URL` — Dify API 地址（Windows Docker 下用宿主机局域网 IP）
+- `DIFY_AI_DOCTOR_API_KEY` — AI 心理医生 Dify API Key
+- `DIFY_TEST_API_KEY` — 心理测评 Dify API Key
+- `VITE_API_URL` — 前端连接后端的地址（本地开发用 `http://localhost:8000`）
+
+> **注意**：在 Windows + Docker Desktop 环境下，`host.docker.internal` 可能无法正常解析，请使用宿主机的真实局域网 IP（如 `192.168.1.x`）作为 `DIFY_API_URL`。
 
 ## 开发命令
 
 ```bash
-# 前端开发
-bun run dev
+# 前端开发（从 frontend/ 目录）
+cd frontend && bun install && bun run dev
 
 # 后端开发（从 backend/ 目录）
-cd backend && fastapi dev app/main.py
+cd backend && uv sync && fastapi dev app/main.py
 
 # 运行测试
 bash ./scripts/test.sh
@@ -79,21 +123,24 @@ bash ./scripts/generate-client.sh
 ```
 backend/app/
   main.py          # FastAPI 应用工厂
-  models.py        # SQLModel 模型（User, Item, TestRecord 等）
-  crud.py          # 数据库操作
+  models/          # SQLModel 模型（User, Item, TestRecord, FileAnalysisReport 等）
+  repositories/    # 仓库模式（CRUD 操作）
+  services/        # 业务逻辑层（Dify, Admin, User, Analysis）
   api/routes/      # API 端点
 
 frontend/src/
   routes/          # 按路由组织的页面组件
   components/      # UI 组件
   hooks/           # 自定义 React hooks
-  services/        # API 服务模块
+  services/        # API 服务模块（difyApi.ts, analysisApi.ts）
   client/          # 自动生成的 OpenAPI 客户端
 ```
 
-## 环境配置
+## API 概览
 
-敏感配置放在 `.env`（不提交到 Git），参考 `.env.example` 作为模板。
-
-前端环境变量: `frontend/.env`、`frontend/.env.example`
-后端环境变量: `.env`
+- `/api/v1/login` — 认证
+- `/api/v1/users` — 用户管理
+- `/api/v1/test-records` — 心理测评记录
+- `/api/v1/analysis` — 文件分析报告
+- `/api/v1/dify/*` — Dify AI 集成（聊天、会话、消息）
+- `/api/v1/utils` — 健康检查与工具接口

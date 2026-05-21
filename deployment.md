@@ -30,12 +30,11 @@ scp -r emomind-dir/* user@your-server:/root/code/emomind/
 
 **3. Configure environment**
 
-On the server, copy and edit env files:
+On the server, copy and edit the env file:
 
 ```bash
 cd /root/code/emomind
 cp .env.example .env
-cp frontend/.env.example frontend/.env
 nano .env  # fill in real passwords and keys
 ```
 
@@ -44,6 +43,10 @@ Key settings to change in `.env`:
 - `POSTGRES_PASSWORD` — strong database password
 - `FIRST_SUPERUSER_PASSWORD` — admin password
 - `DOMAIN` — your domain name
+- `DIFY_API_URL` — Dify API endpoint (use `http://host.docker.internal/v1` or the host IP)
+- `DIFY_AI_DOCTOR_API_KEY` — your Dify AI doctor API key
+- `DIFY_TEST_API_KEY` — your Dify test API key
+- `VITE_API_URL` — frontend API base URL (e.g., `https://your-domain.com` for production)
 
 **4. Start services**
 
@@ -64,7 +67,7 @@ exit
 **6. Set up admin user**
 
 Visit `https://your-domain.com` and login with:
-- Email: `admin@fastapi`
+- Email: `admin@example.com`
 - Password: `changethis`
 
 Then create your real admin account and delete the default one.
@@ -79,8 +82,7 @@ The docker-compose already has Traefik configured. No additional setup needed if
 
 ```bash
 git pull
-docker compose build
-docker compose up -d
+docker compose up -d --build
 ```
 
 ## Useful Commands

@@ -35,7 +35,6 @@ scp -r emomind目录/* user@服务器IP:/root/code/emomind/
 ```bash
 cd /root/code/emomind
 cp .env.example .env
-cp frontend/.env.example frontend/.env
 nano .env  # 填入真实的密码和密钥
 ```
 
@@ -44,6 +43,10 @@ nano .env  # 填入真实的密码和密钥
 - `POSTGRES_PASSWORD` — 数据库密码
 - `FIRST_SUPERUSER_PASSWORD` — 管理员密码
 - `DOMAIN` — 你的域名
+- `DIFY_API_URL` — Dify API 地址（Windows Docker 下用宿主机 IP）
+- `DIFY_AI_DOCTOR_API_KEY` — AI 心理医生 Dify API Key
+- `DIFY_TEST_API_KEY` — 心理测评 Dify API Key
+- `VITE_API_URL` — 前端 API 地址（生产环境用 `https://你的域名.com`）
 
 **4. 启动服务**
 
@@ -64,7 +67,7 @@ exit
 **6. 设置管理员账号**
 
 访问 `https://你的域名.com`，使用以下默认账号登录：
-- 邮箱: `admin@fastapi`
+- 邮箱: `admin@example.com`
 - 密码: `changethis`
 
 登录后创建你自己的管理员账号，然后删除默认账号。
@@ -77,8 +80,7 @@ exit
 
 ```bash
 git pull
-docker compose build
-docker compose up -d
+docker compose up -d --build
 ```
 
 ## 常用命令
