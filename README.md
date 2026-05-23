@@ -1,6 +1,12 @@
-# emomind
+# EmoMind
 
 A psychological assessment platform with AI chat integration, online testing, file analysis, and multi-theme support.
+
+## Current Status
+
+**Phase**: Design documentation complete, awaiting Phase 2 (project scaffolding).
+
+This branch (`emomind-sb`) is migrating the backend from FastAPI to Spring Boot 3.2 + Java 21. The React frontend remains unchanged.
 
 ## Features
 
@@ -28,59 +34,70 @@ A psychological assessment platform with AI chat integration, online testing, fi
   - User management
   - Chat history overview
   - Test records management
-  - System settings
+  - System statistics
 
 - **Themes**
   - Dark / light / warm theme support
 
 ## Tech Stack
 
-**Backend**: FastAPI + SQLModel + PostgreSQL + JWT + Alembic
+**Backend**: Spring Boot 3.2 + Java 21 + Maven + Spring Data JPA + Spring Security + PostgreSQL
 
 **Frontend**: React 19 + TypeScript + Vite + TanStack Router + TanStack Query + Tailwind CSS + shadcn/ui
 
 **AI Integration**: Dify AI Platform (streaming chat, workflow, conversation management)
 
-**Infra**: Docker Compose + Traefik + Mailcatcher
+**Infra**: Docker Compose + Traefik + Nginx + Mailcatcher
 
-## Quick Start
+## Documentation
 
-```bash
-# Start the full stack with hot reload
-docker compose watch
+All design documents are in the `doc/` directory:
 
-# Or start normally
-docker compose up -d
+| Document | Description |
+|----------|-------------|
+| `doc/README.md` | Documentation index and reading order |
+| `doc/requirements.md` | Functional and non-functional requirements |
+| `doc/outline-design.md` | System architecture and module design |
+| `doc/detailed-design.md` | Database, API, class, and configuration details |
+| `doc/tasks/*.md` | Per-feature task breakdown with checklists |
+
+## Planned Project Structure
+
+```
+emomind-sb/
+├── backend-sb/           # Spring Boot backend (not yet created)
+│   ├── pom.xml
+│   └── src/main/java/com/emomind/
+│       ├── controller/   # REST API controllers
+│       ├── service/      # Business logic
+│       ├── repository/   # Spring Data JPA repositories
+│       ├── entity/       # JPA entities
+│       ├── dto/          # Request/response DTOs
+│       ├── security/     # JWT and authentication
+│       ├── config/       # Configuration classes
+│       └── resources/
+│           ├── application.yml
+│           └── db/migration/   # Flyway migrations
+├── frontend/             # React SPA (shared with FastAPI version)
+├── doc/                  # Design documentation
+├── compose.yml           # Docker Compose production config
+├── compose.override.yml  # Docker Compose development config
+└── scripts/              # Build and utility scripts
 ```
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
-| API Docs | http://localhost:8000/docs |
-| Adminer (DB) | http://localhost:8080 |
-| Traefik | http://localhost:8090 |
-| Mailcatcher | http://localhost:1080 |
+## Development Environment Ports
 
-## First Login
+Ports are isolated from the FastAPI version to allow both to run simultaneously:
 
-Create a superuser in the backend container:
-
-```bash
-docker compose exec backend bash
-```
-
-Inside the container:
-
-```bash
-alembic upgrade head
-python app/initial_data.py
-```
-
-Default superuser credentials (change after first login):
-
-- Email: `admin@example.com`
-- Password: `changethis`
+| Service | Port |
+|---------|------|
+| Frontend | http://localhost:5174 |
+| Backend API | http://localhost:8080 |
+| API Docs | http://localhost:8080/docs |
+| Adminer (DB) | http://localhost:8082 |
+| Traefik Dashboard | http://localhost:8091 |
+| Mailcatcher | http://localhost:10801 |
+| PostgreSQL | localhost:5433 |
 
 ## Environment Setup
 
@@ -98,42 +115,24 @@ Key variables to configure:
 - `DIFY_API_URL` — Dify API endpoint (use `http://192.168.x.x/v1` for Docker on Windows)
 - `DIFY_AI_DOCTOR_API_KEY` — Dify API key for AI doctor
 - `DIFY_TEST_API_KEY` — Dify API key for psychological tests
-- `VITE_API_URL` — Frontend-to-backend address (`http://localhost:8000` for local dev)
+- `VITE_API_URL` — Frontend-to-backend address (`http://localhost:8080` for local dev)
 
 > **Note**: On Windows with Docker Desktop, use your host LAN IP (e.g., `192.168.1.x`) for `DIFY_API_URL` instead of `localhost` or `host.docker.internal`.
 
-## Dev Commands
+## Dev Commands (Planned)
 
 ```bash
-# Frontend (from frontend/ directory)
+# Frontend development (from frontend/ directory)
 cd frontend && bun install && bun run dev
 
-# Backend (from backend/ directory)
-cd backend && uv sync && fastapi dev app/main.py
+# Backend development (from backend-sb/ directory)
+cd backend-sb && ./mvnw spring-boot:run
 
-# Run tests
-bash ./scripts/test.sh
+# Run backend tests
+cd backend-sb && ./mvnw test
 
 # Generate API client after backend changes
 bash ./scripts/generate-client.sh
-```
-
-## Project Structure
-
-```
-backend/app/
-  main.py               # FastAPI app factory
-  models/               # SQLModel models (User, Item, TestRecord, FileAnalysisReport, etc.)
-  repositories/         # Repository pattern (CRUD operations)
-  services/             # Business logic layer (Dify, Admin, User, Analysis)
-  api/routes/           # API endpoints
-
-frontend/src/
-  routes/          # Page components by route
-  components/      # UI components
-  hooks/           # Custom React hooks
-  services/        # API service modules (difyApi.ts, analysisApi.ts)
-  client/          # Auto-generated OpenAPI client
 ```
 
 ## API Overview
@@ -143,4 +142,11 @@ frontend/src/
 - `/api/v1/test-records` — Psychological test records
 - `/api/v1/analysis` — File analysis reports
 - `/api/v1/dify/*` — Dify AI integration (chat, conversations, messages)
-- `/api/v1/utils` — Health check and utilities
+- `/api/v1/admin` — Admin statistics and management
+- `/api/v1/utils/health-check` — Health check
+
+## Relationship with FastAPI Version
+
+- `emomind/` (sibling directory) = `emo-fastapi_v3` branch, continues FastAPI development
+- `emomind-sb/` (this directory) = `emomind-sb` branch, Spring Boot re-implementation
+- Frontend code is synchronized between both branches

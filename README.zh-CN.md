@@ -1,6 +1,12 @@
-# emomind
+# EmoMind
 
 心理测评平台，支持 AI 聊天、在线测评、文件分析和多主题切换。
+
+## 当前状态
+
+**阶段**: 设计文档已完成，等待 Phase 2（项目脚手架搭建）。
+
+本分支（`emomind-sb`）正在将后端从 FastAPI 迁移至 Spring Boot 3.2 + Java 21，React 前端保持不变。
 
 ## 主要功能
 
@@ -28,59 +34,70 @@
   - 用户管理
   - 聊天历史概览
   - 测评记录管理
-  - 系统设置
+  - 系统统计数据
 
 - **主题**
   - 深色 / 浅色 / 暖色主题切换
 
 ## 技术栈
 
-**后端**: FastAPI + SQLModel + PostgreSQL + JWT + Alembic
+**后端**: Spring Boot 3.2 + Java 21 + Maven + Spring Data JPA + Spring Security + PostgreSQL
 
 **前端**: React 19 + TypeScript + Vite + TanStack Router + TanStack Query + Tailwind CSS + shadcn/ui
 
 **AI 集成**: Dify AI 平台（流式聊天、工作流、会话管理）
 
-**基础设施**: Docker Compose + Traefik + Mailcatcher
+**基础设施**: Docker Compose + Traefik + Nginx + Mailcatcher
 
-## 快速启动
+## 文档
 
-```bash
-# 启动完整栈，支持热重载
-docker compose watch
+所有设计文档位于 `doc/` 目录下：
 
-# 或者普通启动
-docker compose up -d
+| 文档 | 说明 |
+|------|------|
+| `doc/README.md` | 文档索引和阅读顺序 |
+| `doc/requirements.md` | 功能需求和非功能需求 |
+| `doc/outline-design.md` | 系统架构和模块设计 |
+| `doc/detailed-design.md` | 数据库、API、类和配置详细信息 |
+| `doc/tasks/*.md` | 各功能模块的任务分解（含复选框） |
+
+## 计划中的项目结构
+
 ```
+emomind-sb/
+├── backend-sb/           # Spring Boot 后端（尚未创建）
+│   ├── pom.xml
+│   └── src/main/java/com/emomind/
+│       ├── controller/   # REST API 控制器
+│       ├── service/      # 业务逻辑
+│       ├── repository/   # Spring Data JPA 仓库
+│       ├── entity/       # JPA 实体
+│       ├── dto/          # 请求/响应 DTO
+│       ├── security/     # JWT 和认证
+│       ├── config/       # 配置类
+│       └── resources/
+│           ├── application.yml
+│           └── db/migration/   # Flyway 迁移
+├── frontend/             # React 单页应用（与 FastAPI 版本共用）
+├── doc/                  # 设计文档
+├── compose.yml           # Docker Compose 生产配置
+├── compose.override.yml  # Docker Compose 开发配置
+└── scripts/              # 构建和工具脚本
+```
+
+## 开发环境端口
+
+端口与原 FastAPI 版本隔离，可同时运行两个版本：
 
 | 服务 | 地址 |
 |------|------|
-| 前端 | http://localhost:5173 |
-| 后端 API | http://localhost:8000 |
-| API 文档 | http://localhost:8000/docs |
-| Adminer（数据库管理）| http://localhost:8080 |
-| Traefik | http://localhost:8090 |
-| Mailcatcher | http://localhost:1080 |
-
-## 首次登录
-
-进入后端容器初始化数据库和超级用户：
-
-```bash
-docker compose exec backend bash
-```
-
-在容器内执行：
-
-```bash
-alembic upgrade head
-python app/initial_data.py
-```
-
-默认管理员账号（首次登录后请修改）：
-
-- 邮箱: `admin@example.com`
-- 密码: `changethis`
+| 前端 | http://localhost:5174 |
+| 后端 API | http://localhost:8080 |
+| API 文档 | http://localhost:8080/docs |
+| Adminer（数据库管理）| http://localhost:8082 |
+| Traefik Dashboard | http://localhost:8091 |
+| Mailcatcher | http://localhost:10801 |
+| PostgreSQL | localhost:5433 |
 
 ## 环境配置
 
@@ -98,42 +115,24 @@ cp .env.example .env
 - `DIFY_API_URL` — Dify API 地址（Windows Docker 下用宿主机局域网 IP）
 - `DIFY_AI_DOCTOR_API_KEY` — AI 心理医生 Dify API Key
 - `DIFY_TEST_API_KEY` — 心理测评 Dify API Key
-- `VITE_API_URL` — 前端连接后端的地址（本地开发用 `http://localhost:8000`）
+- `VITE_API_URL` — 前端连接后端的地址（本地开发用 `http://localhost:8080`）
 
 > **注意**：在 Windows + Docker Desktop 环境下，`host.docker.internal` 可能无法正常解析，请使用宿主机的真实局域网 IP（如 `192.168.1.x`）作为 `DIFY_API_URL`。
 
-## 开发命令
+## 开发命令（计划）
 
 ```bash
 # 前端开发（从 frontend/ 目录）
 cd frontend && bun install && bun run dev
 
-# 后端开发（从 backend/ 目录）
-cd backend && uv sync && fastapi dev app/main.py
+# 后端开发（从 backend-sb/ 目录）
+cd backend-sb && ./mvnw spring-boot:run
 
-# 运行测试
-bash ./scripts/test.sh
+# 运行后端测试
+cd backend-sb && ./mvnw test
 
 # 后端接口变更后重新生成前端客户端
 bash ./scripts/generate-client.sh
-```
-
-## 目录结构
-
-```
-backend/app/
-  main.py          # FastAPI 应用工厂
-  models/          # SQLModel 模型（User, Item, TestRecord, FileAnalysisReport 等）
-  repositories/    # 仓库模式（CRUD 操作）
-  services/        # 业务逻辑层（Dify, Admin, User, Analysis）
-  api/routes/      # API 端点
-
-frontend/src/
-  routes/          # 按路由组织的页面组件
-  components/      # UI 组件
-  hooks/           # 自定义 React hooks
-  services/        # API 服务模块（difyApi.ts, analysisApi.ts）
-  client/          # 自动生成的 OpenAPI 客户端
 ```
 
 ## API 概览
@@ -143,4 +142,11 @@ frontend/src/
 - `/api/v1/test-records` — 心理测评记录
 - `/api/v1/analysis` — 文件分析报告
 - `/api/v1/dify/*` — Dify AI 集成（聊天、会话、消息）
-- `/api/v1/utils` — 健康检查与工具接口
+- `/api/v1/admin` — 管理员统计和管理
+- `/api/v1/utils/health-check` — 健康检查
+
+## 与 FastAPI 版本的关系
+
+- `emomind/`（同级目录）= `emo-fastapi_v3` 分支，继续维护 FastAPI 版本
+- `emomind-sb/`（本目录）= `emomind-sb` 分支，Spring Boot 重新实现
+- 前端代码在两个分支间同步
