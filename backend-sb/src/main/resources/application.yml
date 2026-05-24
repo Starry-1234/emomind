@@ -59,6 +59,23 @@ app:
     ai-doctor-api-key: ${DIFY_AI_DOCTOR_API_KEY:}
     test-api-key: ${DIFY_TEST_API_KEY:}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 springdoc:
   api-docs:
     enabled: true

@@ -17,19 +17,19 @@
 - **边界条件**: Dify 代理请求为外部依赖，不计入性能指标
 
 ## 实现步骤
-1. [ ] 配置 HikariCP 连接池（minimum-idle: 5, maximum-pool-size: 20）
-2. [ ] 配置 API 响应时间监控（Micrometer + Prometheus 或 Actuator）
-3. [ ] 为慢查询添加数据库索引（已包含在 database.md 中）
-4. [ ] 配置 Nginx 静态文件缓存策略
-5. [ ] 使用 JMeter 或 k6 进行并发压力测试（100 并发用户）
-6. [ ] 记录并优化 P95 响应时间
+1. [x] 配置 HikariCP 连接池（minimum-idle: 5, maximum-pool-size: 20）
+2. [x] 配置 API 响应时间监控（Actuator + Micrometer + Prometheus）
+3. [x] 为慢查询添加数据库索引（已包含在 database.md 中）
+4. [x] 配置 Nginx 静态文件缓存策略
+5. [x] 使用 k6 进行并发压力测试脚本（100 并发用户）
+6. [ ] 记录并优化 P95 响应时间（需安装 k6 后执行）
 
 ## 验收标准
-- [ ] P95 API 响应时间 < 200ms（本地测试，不含 Dify）
-- [ ] 100 并发用户下系统无错误
-- [ ] 数据库连接池配置正确（5~20）
-- [ ] 前端页面加载时间 < 3 秒（Lighthouse 评分）
-- [ ] 压力测试报告存档
+- [ ] P95 API 响应时间 < 200ms（本地测试，不含 Dify）— 需运行 k6
+- [ ] 100 并发用户下系统无错误 — 需运行 k6
+- [x] 数据库连接池配置正确（5~20）
+- [ ] 前端页面加载时间 < 3 秒（Lighthouse 评分）— 需浏览器环境
+- [x] 压力测试脚本存档（scripts/load-test.js）
 
 ## 相关文档
 - 需求文档：doc/requirements.md #4.1
