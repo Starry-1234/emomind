@@ -54,6 +54,10 @@ app:
   first-superuser:
     email: ${FIRST_SUPERUSER:}
     password: ${FIRST_SUPERUSER_PASSWORD:}
+  dify:
+    api-url: ${DIFY_API_URL:http://localhost/v1}
+    ai-doctor-api-key: ${DIFY_AI_DOCTOR_API_KEY:}
+    test-api-key: ${DIFY_TEST_API_KEY:}
 
 springdoc:
   api-docs:

@@ -19,25 +19,25 @@
 - **边界条件**: SSE 流中断处理、API Key 切换、Dify 服务不可用
 
 ## 实现步骤
-1. [ ] 配置 WebClient（连接池、超时）
-2. [ ] 实现 DifyService（WebClient 调用）
-3. [ ] 实现 DifyController（REST API）
-4. [ ] 实现 SSE 流式代理（StreamingResponseBody）
-5. [ ] 实现文件上传代理
-6. [ ] 实现对话列表查询代理
-7. [ ] 实现消息历史查询代理
-8. [ ] 实现对话删除代理
-9. [ ] API Key 配置管理（application.yml）
-10. [ ] 单元测试
+1. [x] 配置 WebClient（连接池、超时）
+2. [x] 实现 DifyService（WebClient 调用）
+3. [x] 实现 DifyController（REST API）
+4. [x] 实现 SSE 流式代理（StreamingResponseBody）
+5. [x] 实现文件上传代理
+6. [x] 实现对话列表查询代理
+7. [x] 实现消息历史查询代理
+8. [x] 实现对话删除代理
+9. [x] API Key 配置管理（application.yml）
+10. [x] 单元测试
 
 ## 验收标准
-- [ ] SSE 流式聊天正常响应
-- [ ] 文件上传代理正常
-- [ ] 对话列表查询正常
-- [ ] 消息历史查询正常
-- [ ] 对话删除正常
-- [ ] API Key 不暴露给前端
-- [ ] Dify 服务不可用时返回友好错误
+- [x] SSE 流式聊天正常响应
+- [x] 文件上传代理正常
+- [x] 对话列表查询正常
+- [x] 消息历史查询正常
+- [x] 对话删除正常
+- [x] API Key 不暴露给前端
+- [x] Dify 服务不可用时返回友好错误
 
 ## 相关文档
 - 需求文档：doc/requirements.md #3.5
