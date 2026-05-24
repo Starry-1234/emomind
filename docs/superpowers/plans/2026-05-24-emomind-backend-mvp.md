@@ -6,7 +6,7 @@
 
 **Architecture:** 经典分层架构（Controller → Service → Repository → Entity），Spring Security JWT 认证，PostgreSQL + Flyway 数据管理，严格 TDD 开发。
 
-**Tech Stack:** Java 21, Spring Boot 3.2, Maven, Spring Data JPA, Spring Security, JWT (jjwt), Flyway, PostgreSQL, MapStruct, Lombok
+**Tech Stack:** Java 17, Spring Boot 3.2, Maven, Spring Data JPA, Spring Security, JWT (jjwt), Flyway, PostgreSQL, MapStruct, Lombok
 
 ---
 

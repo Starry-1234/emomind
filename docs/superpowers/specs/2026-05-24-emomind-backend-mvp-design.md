@@ -2,7 +2,7 @@
 
 ## 1. 项目背景
 
-EmoMind 心理测评平台后端从 FastAPI 迁移到 Spring Boot 3.2 + Java 21。本文档定义 MVP 核心链路的实施级设计，基于项目 `doc/` 目录下的现有设计文档。
+EmoMind 心理测评平台后端从 FastAPI 迁移到 Spring Boot 3.2 + Java 17。本文档定义 MVP 核心链路的实施级设计，基于项目 `doc/` 目录下的现有设计文档。
 
 ## 2. 范围
 

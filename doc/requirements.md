@@ -50,7 +50,7 @@ EmoMind 系统包含以下组成部分：
 ### 2.3 运行环境
 
 **服务端：**
-- Java 21 (LTS)
+- Java 17 (LTS)
 - Spring Boot 3.2
 - PostgreSQL 17
 - Docker & Docker Compose

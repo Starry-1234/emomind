@@ -6,7 +6,7 @@
 
 **阶段**: 设计文档已完成，等待 Phase 2（项目脚手架搭建）。
 
-本分支（`emomind-sb`）正在将后端从 FastAPI 迁移至 Spring Boot 3.2 + Java 21，React 前端保持不变。
+本分支（`emomind-sb`）正在将后端从 FastAPI 迁移至 Spring Boot 3.2 + Java 17，React 前端保持不变。
 
 ## 主要功能
 
@@ -41,7 +41,7 @@
 
 ## 技术栈
 
-**后端**: Spring Boot 3.2 + Java 21 + Maven + Spring Data JPA + Spring Security + PostgreSQL
+**后端**: Spring Boot 3.2 + Java 17 + Maven + Spring Data JPA + Spring Security + PostgreSQL
 
 **前端**: React 19 + TypeScript + Vite + TanStack Router + TanStack Query + Tailwind CSS + shadcn/ui
 

@@ -6,7 +6,7 @@ A psychological assessment platform with AI chat integration, online testing, fi
 
 **Phase**: Design documentation complete, awaiting Phase 2 (project scaffolding).
 
-This branch (`emomind-sb`) is migrating the backend from FastAPI to Spring Boot 3.2 + Java 21. The React frontend remains unchanged.
+This branch (`emomind-sb`) is migrating the backend from FastAPI to Spring Boot 3.2 + Java 17. The React frontend remains unchanged.
 
 ## Features
 
@@ -41,7 +41,7 @@ This branch (`emomind-sb`) is migrating the backend from FastAPI to Spring Boot 
 
 ## Tech Stack
 
-**Backend**: Spring Boot 3.2 + Java 21 + Maven + Spring Data JPA + Spring Security + PostgreSQL
+**Backend**: Spring Boot 3.2 + Java 17 + Maven + Spring Data JPA + Spring Security + PostgreSQL
 
 **Frontend**: React 19 + TypeScript + Vite + TanStack Router + TanStack Query + Tailwind CSS + shadcn/ui
 

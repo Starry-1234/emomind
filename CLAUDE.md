@@ -2,13 +2,13 @@
 
 ## 项目定位
 
-EmoMind 是一个心理测评平台，当前分支 `emomind-sb` 正在将后端从 FastAPI 迁移到 Spring Boot 3.2 + Java 21，前端保持 React 19 不变。
+EmoMind 是一个心理测评平台，当前分支 `emomind-sb` 正在将后端从 FastAPI 迁移到 Spring Boot 3.2 + Java 17，前端保持 React 19 不变。
 
 **当前阶段**: Phase 1 文档编写已完成，等待进入 Phase 2 项目脚手架搭建。
 
 ## 技术栈
 
-- **后端**: Spring Boot 3.2 + Java 21 + Maven + Spring Data JPA + Spring Security + PostgreSQL
+- **后端**: Spring Boot 3.2 + Java 17 + Maven + Spring Data JPA + Spring Security + PostgreSQL
 - **前端**: React 19 + TypeScript + Vite + TanStack Router/Query + Tailwind CSS + shadcn/ui
 - **基础设施**: Docker Compose + Traefik + Nginx + PostgreSQL 17
 
