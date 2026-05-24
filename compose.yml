@@ -108,6 +108,9 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - DIFY_API_URL=${DIFY_API_URL}
+      - DIFY_AI_DOCTOR_API_KEY=${DIFY_AI_DOCTOR_API_KEY}
+      - DIFY_TEST_API_KEY=${DIFY_TEST_API_KEY}
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/utils/health-check/"]

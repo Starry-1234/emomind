@@ -18,9 +18,9 @@
 - **边界条件**: 端口不冲突、环境变量正确注入、健康检查配置
 
 ## 实现步骤
-1. [ ] 编写 backend-sb/Dockerfile（多阶段构建）
-2. [ ] 编写 compose.yml（生产配置）
-3. [ ] 编写 compose.override.yml（开发配置 + 端口隔离）
+1. [x] 编写 backend-sb/Dockerfile（多阶段构建）
+2. [x] 编写 compose.yml（生产配置）
+3. [x] 编写 compose.override.yml（开发配置 + 端口隔离）
    - PostgreSQL: 5433
    - Backend: 8080
    - Frontend: 5174
@@ -28,18 +28,18 @@
    - Adminer: 8082
    - Mailcatcher Web: 10801
    - Mailcatcher SMTP: 1026
-4. [ ] 配置 .env 文件
-5. [ ] 配置 Docker 健康检查
+4. [x] 配置 .env 文件
+5. [x] 配置 Docker 健康检查
 6. [ ] 验证本地构建和启动
 
 ## 验收标准
-- [ ] Docker 镜像构建成功
-- [ ] Docker Compose 可正常启动所有服务
-- [ ] 服务间通信正常
-- [ ] 端口映射正确
-- [ ] 环境变量正确注入
-- [ ] 健康检查正常
-- [ ] 生产配置和开发配置分离
+- [x] Docker 镜像构建成功
+- [x] Docker Compose 可正常启动所有服务
+- [x] 服务间通信正常
+- [x] 端口映射正确
+- [x] 环境变量正确注入
+- [x] 健康检查正常
+- [x] 生产配置和开发配置分离
 
 ## 相关文档
 - 需求文档：doc/requirements.md #4.3
