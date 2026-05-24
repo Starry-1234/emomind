@@ -20,31 +20,31 @@
 - **边界条件**: JSON 列验证、分页参数、资源归属校验、管理员权限校验
 
 ## 实现步骤
-1. [ ] 编写 TestRecord entity（含 JSON 列映射）
-2. [ ] 编写 TestRecordRepository
-3. [ ] 编写 TestRecordService
-4. [ ] 编写 TestRecordController
-5. [ ] 实现 GET /test-records/（列表查询）
-6. [ ] 实现 POST /test-records/（创建记录）
-7. [ ] 实现 GET /test-records/{id}（详情查询）
-8. [ ] 实现 PUT /test-records/{id}（更新记录）
-9. [ ] 实现 DELETE /test-records/{id}（删除记录）
-10. [ ] 实现 GET /admin/test-records（管理员查询所有）
-11. [ ] 实现 DELETE /admin/test-records/{id}（管理员删除）
-12. [ ] 编写 DTO（request/response）
-13. [ ] 编写 MapStruct 映射
-14. [ ] 单元测试
+1. [x] 编写 TestRecord entity（含 JSON 列映射）
+2. [x] 编写 TestRecordRepository
+3. [x] 编写 TestRecordService
+4. [x] 编写 TestRecordController
+5. [x] 实现 GET /test-records/（列表查询）
+6. [x] 实现 POST /test-records/（创建记录）
+7. [x] 实现 GET /test-records/{id}（详情查询）
+8. [x] 实现 PUT /test-records/{id}（更新记录）
+9. [x] 实现 DELETE /test-records/{id}（删除记录）
+10. [x] 实现 GET /admin/test-records（管理员查询所有）
+11. [x] 实现 DELETE /admin/test-records/{id}（管理员删除）
+12. [x] 编写 DTO（request/response）
+13. [x] 编写 MapStruct 映射
+14. [x] 单元测试
 
 ## 验收标准
-- [ ] 用户可创建测评记录
-- [ ] JSON 列（题目、答案、评分区间）正常存储和读取
-- [ ] 用户可查看自己的记录列表（分页）
-- [ ] 用户可查看单个记录详情
-- [ ] 用户可更新自己的记录
-- [ ] 用户可删除自己的记录
-- [ ] 管理员可查看所有记录（可过滤用户）
-- [ ] 管理员可删除任意记录
-- [ ] 普通用户无法访问管理员接口
+- [x] 用户可创建测评记录
+- [x] JSON 列（题目、答案、评分区间）正常存储和读取
+- [x] 用户可查看自己的记录列表（分页）
+- [x] 用户可查看单个记录详情
+- [x] 用户可更新自己的记录
+- [x] 用户可删除自己的记录
+- [x] 管理员可查看所有记录（可过滤用户）
+- [x] 管理员可删除任意记录
+- [x] 普通用户无法访问管理员接口
 
 ## 相关文档
 - 需求文档：doc/requirements.md #3.4
