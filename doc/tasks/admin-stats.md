@@ -16,17 +16,17 @@
 - **边界条件**: 权限校验（仅超级用户）、今日日期计算（Asia/Shanghai 时区）
 
 ## 实现步骤
-1. [ ] 编写 AdminStatsService（统计查询）
-2. [ ] 编写 AdminController（REST API）
-3. [ ] 实现 GET /admin/stats（统计数据）
-4. [ ] 配置管理员权限（@PreAuthorize）
-5. [ ] 单元测试
+1. [x] 编写 AdminStatsService（统计查询）
+2. [x] 编写 AdminController（REST API）
+3. [x] 实现 GET /admin/stats（统计数据）
+4. [x] 配置管理员权限（@PreAuthorize）
+5. [x] 单元测试
 
 ## 验收标准
-- [ ] 统计数据准确（用户总数、测评总数、报告总数）
-- [ ] 今日新增数据准确
-- [ ] 仅超级用户可访问
-- [ ] 普通用户访问返回 403
+- [x] 统计数据准确（用户总数、测评总数、报告总数）
+- [x] 今日新增数据准确
+- [x] 仅超级用户可访问
+- [x] 普通用户访问返回 403
 
 ## 相关文档
 - 需求文档：doc/requirements.md #3.6
