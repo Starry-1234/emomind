@@ -17,23 +17,23 @@
 - **边界条件**: 确保删除的代码确实未被引用
 
 ## 实现步骤
-1. [ ] 分析并删除未使用的组件
-   - [ ] components/Sidebar/AdminSidebar.tsx
-   - [ ] components/ui/button-group.tsx
-   - [ ] components/ui/pagination.tsx
-2. [ ] 分析并删除未使用的 hooks
-   - [ ] hooks/useCopyToClipboard.ts
+1. [x] 分析并删除未使用的组件
+   - [x] components/Sidebar/AdminSidebar.tsx
+   - [x] components/ui/button-group.tsx
+   - [x] components/ui/pagination.tsx
+2. [x] 分析并删除未使用的 hooks
+   - [x] hooks/useCopyToClipboard.ts
 3. [ ] 更新前端自动生成客户端
    - [ ] 重新生成 sdk.gen.ts（不包含 Item/Private/Utils）
-4. [ ] 验证前端构建正常
+4. [x] 验证前端构建正常
 5. [ ] 验证前端功能正常
 
 ## 验收标准
-- [ ] 未使用的组件已删除
-- [ ] 未使用的 hooks 已删除
-- [ ] 前端构建无错误
-- [ ] 前端功能测试通过
-- [ ] 自动生成的客户端不包含废弃 API
+- [x] 未使用的组件已删除
+- [x] 未使用的 hooks 已删除
+- [x] 前端构建无错误
+- [ ] 前端功能测试通过（需浏览器验证）
+- [ ] 自动生成的客户端不包含废弃 API（需 openapi-ts 工具）
 
 ## 相关文档
 - 需求文档：doc/requirements.md #3（功能需求通用）、#4.4（可维护性需求 MAINT-002）
