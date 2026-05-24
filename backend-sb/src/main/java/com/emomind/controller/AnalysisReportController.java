@@ -6,6 +6,8 @@ import com.emomind.dto.response.MessageResponse;
 import com.emomind.dto.response.PageResponse;
 import com.emomind.security.UserDetailsImpl;
 import com.emomind.service.AnalysisReportService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -18,11 +20,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/analysis/reports")
 @RequiredArgsConstructor
+@Tag(name = "Analysis Reports", description = "文件分析报告管理")
 public class AnalysisReportController {
 
     private final AnalysisReportService analysisReportService;
 
     @GetMapping("/")
+    @Operation(summary = "获取当前用户的分析报告列表")
     public ResponseEntity<PageResponse<AnalysisReportResponse>> getReports(
             @AuthenticationPrincipal UserDetailsImpl user,
             Pageable pageable) {
@@ -30,6 +34,7 @@ public class AnalysisReportController {
     }
 
     @PostMapping("/")
+    @Operation(summary = "创建新的分析报告")
     public ResponseEntity<AnalysisReportResponse> createReport(
             @AuthenticationPrincipal UserDetailsImpl user,
             @Valid @RequestBody AnalysisReportCreateRequest request) {
@@ -37,6 +42,7 @@ public class AnalysisReportController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "获取指定分析报告的详情")
     public ResponseEntity<AnalysisReportResponse> getReport(
             @AuthenticationPrincipal UserDetailsImpl user,
             @PathVariable UUID id) {
@@ -44,6 +50,7 @@ public class AnalysisReportController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "删除指定的分析报告")
     public ResponseEntity<MessageResponse> deleteReport(
             @AuthenticationPrincipal UserDetailsImpl user,
             @PathVariable UUID id) {
