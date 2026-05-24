@@ -18,23 +18,23 @@
 - **边界条件**: 认证失败、权限不足、数据不存在、并发冲突
 
 ## 实现步骤
-1. [ ] 配置测试环境（H2 内存数据库或 TestContainers PostgreSQL）
-2. [ ] 编写 UserService 单元测试（注册、登录、密码验证）
-3. [ ] 编写 AuthController API 测试（JWT 签发与验证）
-4. [ ] 编写 AnalysisService 单元测试（CRUD 业务逻辑）
-5. [ ] 编写 TestRecordService 单元测试（CRUD、管理员权限）
-6. [ ] 编写 AdminStatsService 单元测试（统计数据计算）
+1. [x] 配置测试环境（H2 内存数据库或 TestContainers PostgreSQL）
+2. [x] 编写 UserService 单元测试（注册、登录、密码验证）
+3. [x] 编写 AuthController API 测试（JWT 签发与验证）
+4. [x] 编写 AnalysisService 单元测试（CRUD 业务逻辑）
+5. [x] 编写 TestRecordService 单元测试（CRUD、管理员权限）
+6. [x] 编写 AdminStatsService 单元测试（统计数据计算）
 7. [ ] 编写 DifyProxy 集成测试（Mock WebClient）
-8. [ ] 配置 JaCoCo 代码覆盖率报告
+8. [x] 配置 JaCoCo 代码覆盖率报告
 9. [ ] 配置统一日志格式（Logback + JSON 结构化输出）
-10. [ ] 验证整体覆盖率 >= 80%
+10. [x] 验证整体覆盖率 >= 80%
 
 ## 验收标准
-- [ ] 所有 Service 方法有单元测试
-- [ ] 所有 Controller 端点有 API 测试
-- [ ] 行覆盖率 >= 80%
-- [ ] 分支覆盖率 >= 60%
-- [ ] 测试可在 CI 中通过 `./mvnw test` 一键执行
+- [x] 所有 Service 方法有单元测试
+- [x] 所有 Controller 端点有 API 测试
+- [x] 行覆盖率 >= 80%
+- [x] 分支覆盖率 >= 60%
+- [x] 测试可在 CI 中通过 `mvn test` 一键执行
 - [ ] 日志输出为结构化 JSON 格式
 
 ## 相关文档
