@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080"
 
 // API Key 由后端管理，前端不持有
 // 可选指定使用哪个 key (apiKeyName: "ai-doctor" | "test")

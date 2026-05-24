@@ -362,6 +362,7 @@ function TestRecordsAdmin() {
               <div className="flex flex-col gap-0.5">
                 {filteredUsers.map((user: UserPublic) => (
                   <button
+                    type="button"
                     key={user.id}
                     onClick={() => {
                       setSelectedUserId(user.id)
@@ -427,62 +428,60 @@ function TestRecordsAdmin() {
                 {records.map((record) => (
                   <div
                     key={record.id}
-                    role="button"
-                    tabIndex={0}
-                    className={`group relative rounded-md border p-3 transition-colors cursor-pointer ${
+                    className={`group relative rounded-md border transition-colors ${
                       selectedRecord?.id === record.id
                         ? "bg-primary/5 border-primary/30"
                         : "hover:bg-muted/50"
                     }`}
-                    onClick={() => setSelectedRecord(record)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ")
-                        setSelectedRecord(record)
-                    }}
                   >
-                    <div className="flex items-start justify-between gap-1.5 pr-5">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium truncate">
-                            {record.test_name}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={`text-xs ${getScoreColor(record.total_score, record.scoring_ranges)}`}
-                          >
-                            {getScoreLabel(
-                              record.total_score,
-                              record.scoring_ranges,
-                            )}
-                          </Badge>
+                    <button
+                      type="button"
+                      aria-label={`查看测评记录: ${record.test_name}`}
+                      className="w-full rounded-md p-3 text-left cursor-pointer"
+                      onClick={() => setSelectedRecord(record)}
+                    >
+                      <div className="flex items-start justify-between gap-1.5 pr-5">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium truncate">
+                              {record.test_name}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${getScoreColor(record.total_score, record.scoring_ranges)}`}
+                            >
+                              {getScoreLabel(
+                                record.total_score,
+                                record.scoring_ranges,
+                              )}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="size-3" />
+                              {formatDate(record.created_at)}
+                            </span>
+                            {record.total_score !== null &&
+                              record.total_score !== undefined && (
+                                <span className="font-medium text-foreground">
+                                  {record.total_score}/{record.total_max ?? 100}
+                                </span>
+                              )}
+                          </div>
+                          {record.result_description && (
+                            <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
+                              {record.result_description
+                                .replace(/[#*`]/g, "")
+                                .slice(0, 80)}
+                            </p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="size-3" />
-                            {formatDate(record.created_at)}
-                          </span>
-                          {record.total_score !== null &&
-                            record.total_score !== undefined && (
-                              <span className="font-medium text-foreground">
-                                {record.total_score}/{record.total_max ?? 100}
-                              </span>
-                            )}
-                        </div>
-                        {record.result_description && (
-                          <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
-                            {record.result_description
-                              .replace(/[#*`]/g, "")
-                              .slice(0, 80)}
-                          </p>
-                        )}
                       </div>
-                    </div>
+                    </button>
                     {/* 删除按钮 */}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setDeleteRecordId(record.id)
-                      }}
+                      type="button"
+                      onClick={() => setDeleteRecordId(record.id)}
                       className="absolute right-2 top-2 size-6 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
                     >
                       <X className="size-3.5" />

@@ -1,11 +1,5 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { Brain, MessageSquare, Plus, Stethoscope, X } from "lucide-react"
-
-import {
-  type ConversationModuleType,
-  type TypedConversation,
-  useConversation,
-} from "@/components/contexts/ConversationContext"
 import { Badge } from "@/components/ui/badge"
 import {
   SidebarGroup,
@@ -18,6 +12,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import {
+  type ConversationModuleType,
+  type TypedConversation,
+  useConversation,
+} from "@/contexts/ConversationContext"
 import useAuth from "@/hooks/useAuth"
 
 // ── 模块路由配置：根据 moduleType 解析对应的 chat 路由和 modulePath ──────────

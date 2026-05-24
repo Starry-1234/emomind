@@ -14,11 +14,11 @@ import {
 import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import { AnalysisService } from "@/client"
-import { useConversation } from "@/components/contexts/ConversationContext"
-import { MessageActions } from "@/components/MessageActions"
-import { StreamingMessage } from "@/components/StreamingMessage"
+import { MessageActions } from "@/components/chat/MessageActions"
+import { StreamingMessage } from "@/components/chat/StreamingMessage"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { useConversation } from "@/contexts/ConversationContext"
 import useAuth from "@/hooks/useAuth"
 import { useChat } from "@/hooks/useChat"
 import { useCurrentTheme } from "@/hooks/useCurrentTheme"
@@ -490,7 +490,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
       {/* 心理状况分析 - 文件上传模态框 */}
       {showAnalysisUpload && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
+          <button
+            type="button"
+            aria-label="关闭对话框"
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => {
               analysisAbortControllerRef.current?.abort()

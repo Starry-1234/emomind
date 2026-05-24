@@ -956,6 +956,28 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MessageResponse> deleteUser(@PathVariable UUID id) { }
 }
+
+@RestController
+@RequestMapping("/api/v1/admin")
+@RequiredArgsConstructor
+public class AdminController {
+    private final AdminStatsService adminStatsService;
+    private final TestRecordService testRecordService;
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AdminStatsResponse> getStats() { }
+
+    @GetMapping("/test-records")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PageResponse<TestRecordResponse>> getAllTestRecords(
+            @RequestParam(required = false) UUID userId,
+            Pageable pageable) { }
+
+    @DeleteMapping("/test-records/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<MessageResponse> deleteTestRecord(@PathVariable UUID id) { }
+}
 ```
 
 ### 4.6 Security 类设计
@@ -1219,7 +1241,7 @@ spring:
     name: emomind
 
   datasource:
-    url: jdbc:postgresql://${POSTGRES_SERVER:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:emomind}
+    url: jdbc:postgresql://${POSTGRES_SERVER:localhost}:${POSTGRES_PORT:5433}/${POSTGRES_DB:emomind}
     username: ${POSTGRES_USER:postgres}
     password: ${POSTGRES_PASSWORD:}
     driver-class-name: org.postgresql.Driver
@@ -1262,9 +1284,9 @@ app:
     secret: ${SECRET_KEY:}
     expiration: 691200000  # 8 days in milliseconds
   frontend:
-    host: ${FRONTEND_HOST:http://localhost:5173}
+    host: ${FRONTEND_HOST:http://localhost:5174}
   cors:
-    origins: ${BACKEND_CORS_ORIGINS:http://localhost:5173}
+    origins: ${BACKEND_CORS_ORIGINS:http://localhost:5174}
   dify:
     api-url: ${DIFY_API_URL:http://localhost/v1}
     ai-doctor-api-key: ${DIFY_AI_DOCTOR_API_KEY:}
@@ -1279,9 +1301,9 @@ app:
 
 springdoc:
   api-docs:
-    path: /docs
+    enabled: true
   swagger-ui:
-    path: /docs/swagger-ui.html
+    enabled: true
 ```
 
 ### 7.2 环境配置
@@ -1321,12 +1343,12 @@ logging:
 |---------|---------------------|--------|------|
 | SECRET_KEY | app.jwt.secret | - | 是 |
 | POSTGRES_SERVER | spring.datasource.url | localhost | 否 |
-| POSTGRES_PORT | spring.datasource.url | 5432 | 否 |
+| POSTGRES_PORT | spring.datasource.url | 5433 | 否 |
 | POSTGRES_DB | spring.datasource.url | emomind | 否 |
 | POSTGRES_USER | spring.datasource.username | postgres | 否 |
 | POSTGRES_PASSWORD | spring.datasource.password | - | 是 |
-| FRONTEND_HOST | app.frontend.host | http://localhost:5173 | 否 |
-| BACKEND_CORS_ORIGINS | app.cors.origins | http://localhost:5173 | 否 |
+| FRONTEND_HOST | app.frontend.host | http://localhost:5174 | 否 |
+| BACKEND_CORS_ORIGINS | app.cors.origins | http://localhost:5174 | 否 |
 | SMTP_HOST | spring.mail.host | - | 否 |
 | SMTP_PORT | spring.mail.port | 587 | 否 |
 | SMTP_USER | spring.mail.username | - | 否 |

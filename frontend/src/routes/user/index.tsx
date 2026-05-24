@@ -152,7 +152,10 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
       viewBox={`0 0 ${chartW} ${chartH}`}
       className="w-full"
       style={{ maxHeight: 200 }}
+      role="img"
+      aria-label="心理健康评分趋势图"
     >
+      <title>心理健康评分趋势图</title>
       {/* 健康区间背景色（60-80 分） */}
       <rect
         x={padX}
@@ -467,7 +470,9 @@ function UserHome() {
             <TrendingUp className="size-5 text-primary" />
             <CardTitle className="text-base">心理测评健康指数趋势</CardTitle>
           </div>
-          <CardDescription>近 7 天心理测评健康指数（归一化百分比）</CardDescription>
+          <CardDescription>
+            近 7 天心理测评健康指数（归一化百分比）
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <MiniChart data={trendData} />

@@ -173,6 +173,7 @@ function ChatHistory() {
               <div className="flex flex-col gap-0.5">
                 {filteredUsers.map((user: UserPublic) => (
                   <button
+                    type="button"
                     key={user.id}
                     onClick={() => handleSelectUser(user.id)}
                     className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors cursor-pointer ${
@@ -246,16 +247,20 @@ function ChatHistory() {
                     {conversations.map((conv: DifyConversation) => (
                       <div
                         key={conv.id}
-                        className={`group relative rounded-md px-2.5 py-2.5 cursor-pointer ${
+                        className={`group relative rounded-md transition-colors ${
                           selectedConvId === conv.id
                             ? "bg-primary/10 text-primary"
                             : "hover:bg-muted"
                         }`}
-                        onClick={() => setSelectedConvId(conv.id)}
                       >
-                        <div className="flex items-start justify-between gap-1">
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-xs font-medium">
+                        <button
+                          type="button"
+                          className="w-full px-2.5 py-2.5 text-left cursor-pointer"
+                          aria-label={`选择会话: ${conv.name || "未命名会话"}`}
+                          onClick={() => setSelectedConvId(conv.id)}
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate text-xs font-medium pr-6">
                               {conv.name || "未命名会话"}
                             </div>
                             <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -263,16 +268,14 @@ function ChatHistory() {
                               {formatTime(conv.updated_at || conv.created_at)}
                             </div>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setDeleteConvId(conv.id)
-                            }}
-                            className="opacity-0 group-hover:opacity-100 shrink-0 size-6 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
-                          >
-                            <X className="size-3.5" />
-                          </button>
-                        </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConvId(conv.id)}
+                          className="opacity-0 group-hover:opacity-100 absolute right-1.5 top-1.5 size-6 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                        >
+                          <X className="size-3.5" />
+                        </button>
                       </div>
                     ))}
                   </div>

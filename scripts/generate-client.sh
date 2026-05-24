@@ -3,9 +3,10 @@
 set -e
 set -x
 
-cd backend
-uv run python -c "import app.main; import json; print(json.dumps(app.main.app.openapi()))" > ../openapi.json
+# Fetch OpenAPI schema from Spring Boot backend
+curl -s http://localhost:8080/v3/api-docs > frontend/openapi.json
+
+cd frontend
+bun run generate-client
 cd ..
-mv openapi.json frontend/
-bun run --filter frontend generate-client
 bun run lint

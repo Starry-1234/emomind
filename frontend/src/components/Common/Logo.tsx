@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
 
-import { useTheme } from "@/components/theme-provider"
+import { useTheme } from "@/components/Common/theme-provider"
 import { cn } from "@/lib/utils"
 
 interface LogoProps {

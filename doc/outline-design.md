@@ -209,8 +209,10 @@ frontend/
 │   │   ├── ui/          # 基础 UI 组件（shadcn/ui）
 │   │   ├── Admin/       # 管理员页面组件
 │   │   ├── Common/      # 通用组件
-│   │   └── UserSettings/# 用户设置组件
-│   ├── contexts/        # React Context
+│   │   ├── Sidebar/     # 侧边栏组件
+│   │   ├── UserSettings/# 用户设置组件
+│   │   └── chat/        # AI 聊天组件
+│   ├── contexts/        # React Context（状态管理）
 │   ├── hooks/           # 自定义 Hooks
 │   ├── routes/          # 页面路由组件
 │   ├── services/        # 手动封装的 API 服务
@@ -388,7 +390,7 @@ Internet
 内部网络:
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │  Spring Boot │────▶│  PostgreSQL │     │   Nginx     │
-│   (8080)     │     │   (5432)    │     │   (80)      │
+│   (8080)     │     │   (5433)    │     │   (80)      │
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
 

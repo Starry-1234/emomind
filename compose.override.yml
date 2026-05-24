@@ -11,7 +11,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8081:80"
-      - "8090:8080"
+      - "8091:8080"
     # Duplicate the command from compose.yml to add --api.insecure=true
     command:
       # Enable Docker in Traefik, so that it reads labels from Docker services
@@ -48,39 +48,30 @@ services:
   db:
     restart: "no"
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
   adminer:
     restart: "no"
     ports:
-      - "8080:8080"
+      - "8082:8080"
 
   backend:
     restart: "no"
     ports:
-      - "8000:8000"
+      - "8080:8080"
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend-sb/Dockerfile
+    # For Spring Boot dev mode with hot reload, use:
+    # command: ./mvnw spring-boot:run -Dspring-boot.run.jvmArguments="-Dspring.devtools.restart.enabled=true"
     # command: sleep infinity  # Infinite loop to keep container alive doing nothing
-    command:
-      - fastapi
-      - run
-      - --reload
-      - "app/main.py"
     develop:
       watch:
-        - path: ./backend
+        - path: ./backend-sb/src
           action: sync
-          target: /app/backend
-          ignore:
-            - ./backend/.venv
-            - .venv
-        - path: ./backend/pyproject.toml
+          target: /app/src
+        - path: ./backend-sb/pom.xml
           action: rebuild
-    # TODO: remove once coverage is done locally
-    volumes:
-      - ./backend/htmlcov:/app/backend/htmlcov
     env_file:
       - .env
     # environment:
@@ -92,13 +83,13 @@ services:
   mailcatcher:
     image: schickling/mailcatcher
     ports:
-      - "10800:1080"
-      - "1025:1025"
+      - "10801:1080"
+      - "1026:1025"
 
   frontend:
     restart: "no"
     ports:
-      - "5173:80"
+      - "5174:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -106,7 +97,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        - VITE_API_URL=http://localhost:8000
+        - VITE_API_URL=http://localhost:8080
         - NODE_ENV=development
     volumes:
       - ./frontend/nginx-dev.conf:/etc/nginx/conf.d/default.conf
@@ -117,7 +108,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile.playwright
       args:
-        - VITE_API_URL=http://backend:8000
+        - VITE_API_URL=http://backend:8080
         - NODE_ENV=production
     ipc: host
     depends_on:
@@ -126,7 +117,7 @@ services:
     env_file:
       - .env
     environment:
-      - VITE_API_URL=http://backend:8000
+      - VITE_API_URL=http://backend:8080
       - MAILCATCHER_HOST=http://mailcatcher:1080
       # For the reports when run locally
       - PLAYWRIGHT_HTML_HOST=0.0.0.0

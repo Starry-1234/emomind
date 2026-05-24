@@ -30,7 +30,8 @@ doc/
 1. **requirements.md** — 了解项目功能需求和非功能需求
 2. **outline-design.md** — 了解系统整体架构和技术选型
 3. **detailed-design.md** — 了解数据库设计、API 设计、类设计等详细内容
-4. **tasks/*.md** — 了解各功能模块的具体任务分解
+4. **tasks/README.md** — 了解开发执行顺序和模块依赖关系（必读）
+5. **tasks/*.md** — 了解各功能模块的具体任务分解
 
 ## 文档维护
 

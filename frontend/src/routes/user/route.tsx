@@ -1,13 +1,13 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { ApiError, type UserPublic, UsersService } from "@/client"
 import { Footer } from "@/components/Common/Footer"
-import { ConversationProvider } from "@/components/contexts/ConversationContext"
 import UserSidebar from "@/components/Sidebar/UserSidebar"
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { ConversationProvider } from "@/contexts/ConversationContext"
 import { isLoggedIn } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/user")({

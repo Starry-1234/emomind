@@ -180,7 +180,7 @@ function AdminHome() {
           </Link>
 
           <a
-            href="http://localhost:8000/docs"
+            href="http://localhost:8080/swagger-ui.html"
             target="_blank"
             rel="noopener noreferrer"
           >

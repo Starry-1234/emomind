@@ -1,6 +1,6 @@
 import { Circle, Heart, Monitor, Moon, Sparkles, Sun } from "lucide-react"
 
-import { type Theme, useTheme } from "@/components/theme-provider"
+import { type Theme, useTheme } from "@/components/Common/theme-provider"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,

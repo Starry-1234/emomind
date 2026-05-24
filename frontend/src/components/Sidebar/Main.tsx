@@ -1,10 +1,5 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import type { LucideIcon } from "lucide-react"
-
-import {
-  type ConversationModuleType,
-  useConversation,
-} from "@/components/contexts/ConversationContext"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -13,6 +8,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import {
+  type ConversationModuleType,
+  useConversation,
+} from "@/contexts/ConversationContext"
 
 export type Item = {
   icon: LucideIcon

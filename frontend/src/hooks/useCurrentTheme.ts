@@ -1,4 +1,4 @@
-import { useTheme } from "@/components/theme-provider"
+import { useTheme } from "@/components/Common/theme-provider"
 
 /**
  * 自定义Hook用于检测当前主题状态
