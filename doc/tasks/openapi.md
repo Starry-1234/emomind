@@ -7,7 +7,7 @@
 
 ## 需求要点
 - 生成 OpenAPI 3.0 格式的 API 文档
-- 文档路径与 FastAPI 版本一致（/docs, /docs/swagger-ui.html）
+- 文档路径使用 Spring Boot 默认路径（/v3/api-docs, /swagger-ui.html）
 - 所有响应格式、字段名、类型与前端期望完全一致
 - 支持前端自动生成 TypeScript 客户端
 
@@ -27,8 +27,8 @@
 8. [ ] 修复不兼容的字段或格式
 
 ## 验收标准
-- [ ] OpenAPI 文档可在 /docs 访问
-- [ ] Swagger UI 可在 /docs/swagger-ui.html 访问
+- [ ] OpenAPI 文档可在 /v3/api-docs 访问
+- [ ] Swagger UI 可在 /swagger-ui.html 访问
 - [ ] 所有端点正确生成
 - [ ] 字段名与前端期望完全一致
 - [ ] 前端代码生成成功且无编译错误

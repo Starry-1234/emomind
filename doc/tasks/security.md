@@ -18,25 +18,25 @@
 - **边界条件**: Token 过期、签名验证失败、权限不足、参数验证失败
 
 ## 实现步骤
-1. [ ] 配置 SecurityConfig（过滤器链、CORS、CSRF）
-2. [ ] 实现 JwtTokenProvider（签发/验证/解析）
-3. [ ] 实现 JwtAuthenticationFilter（从请求头提取 Token）
-4. [ ] 实现 StreakUpdateFilter（更新连续活跃天数）
-5. [ ] 实现 UserDetailsImpl 和 UserDetailsServiceImpl
-6. [ ] 配置角色注解（@PreAuthorize）
-7. [ ] 实现 GlobalExceptionHandler（统一异常处理）
-8. [ ] 配置 422 验证错误格式（兼容前端）
-9. [ ] 单元测试（TokenProvider, Filter）
+1. [x] 配置 SecurityConfig（过滤器链、CORS、CSRF）
+2. [x] 实现 JwtTokenProvider（签发/验证/解析）
+3. [x] 实现 JwtAuthenticationFilter（从请求头提取 Token）
+4. [x] 实现 StreakUpdateFilter（更新连续活跃天数）
+5. [x] 实现 UserDetailsImpl 和 UserDetailsServiceImpl
+6. [x] 配置角色注解（@PreAuthorize）
+7. [x] 实现 GlobalExceptionHandler（统一异常处理）
+8. [x] 配置 422 验证错误格式（兼容前端）
+9. [x] 单元测试（TokenProvider, Filter）
 
 ## 验收标准
-- [ ] JWT 签发和验证正常工作
-- [ ] Token 过期返回 401
-- [ ] 无效 Token 返回 401
-- [ ] 密码哈希强度符合要求
-- [ ] 普通用户无法访问管理员接口（返回 403）
-- [ ] CORS 配置正确（仅允许配置的来源）
-- [ ] 参数验证错误返回 422（格式兼容）
-- [ ] 全局异常捕获所有未处理异常
+- [x] JWT 签发和验证正常工作
+- [x] Token 过期返回 401
+- [x] 无效 Token 返回 401
+- [x] 密码哈希强度符合要求
+- [x] 普通用户无法访问管理员接口（返回 403）
+- [x] CORS 配置正确（仅允许配置的来源）
+- [x] 参数验证错误返回 422（格式兼容）
+- [x] 全局异常捕获所有未处理异常
 
 ## 相关文档
 - 需求文档：doc/requirements.md #4.2

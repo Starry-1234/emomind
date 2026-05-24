@@ -12,17 +12,17 @@
 - 更新前端自动生成客户端（去掉 Item/Private/Utils 相关代码）
 
 ## 设计要点
-- **关键文件**: AdminSidebar.tsx, useCopyToClipboard.ts, button-group.tsx, pagination.tsx
+- **关键文件**: AdminSidebar.tsx (components/Sidebar/), useCopyToClipboard.ts (hooks/), button-group.tsx (components/ui/), pagination.tsx (components/ui/)
 - **数据流**: 代码清理 → 构建验证
 - **边界条件**: 确保删除的代码确实未被引用
 
 ## 实现步骤
 1. [ ] 分析并删除未使用的组件
-   - [ ] AdminSidebar.tsx
-   - [ ] button-group.tsx
-   - [ ] pagination.tsx
+   - [ ] components/Sidebar/AdminSidebar.tsx
+   - [ ] components/ui/button-group.tsx
+   - [ ] components/ui/pagination.tsx
 2. [ ] 分析并删除未使用的 hooks
-   - [ ] useCopyToClipboard.ts
+   - [ ] hooks/useCopyToClipboard.ts
 3. [ ] 更新前端自动生成客户端
    - [ ] 重新生成 sdk.gen.ts（不包含 Item/Private/Utils）
 4. [ ] 验证前端构建正常
@@ -36,5 +36,5 @@
 - [ ] 自动生成的客户端不包含废弃 API
 
 ## 相关文档
-- 需求文档：doc/requirements.md #3
+- 需求文档：doc/requirements.md #3（功能需求通用）、#4.4（可维护性需求 MAINT-002）
 - 详细设计：doc/detailed-design.md #8

@@ -17,21 +17,21 @@
 - **边界条件**: UUID 主键、JSONB 列映射、级联删除、索引设计
 
 ## 实现步骤
-1. [ ] 编写 User entity（JPA 注解映射）
-2. [ ] 编写 FileAnalysisReport entity（JPA 注解映射）
-3. [ ] 编写 TestRecord entity（含 JSON 列映射）
-4. [ ] 编写 Flyway V1 迁移脚本（创建表 + 索引）
-5. [ ] 编写 Flyway V2 迁移脚本（标记版本）
-6. [ ] 配置 application.yml 中 Flyway 和 JPA
-7. [ ] 验证数据库连接和自动迁移
+1. [x] 编写 User entity（JPA 注解映射）
+2. [x] 编写 FileAnalysisReport entity（JPA 注解映射）
+3. [x] 编写 TestRecord entity（含 JSON 列映射）
+4. [x] 编写 Flyway V1 迁移脚本（创建表 + 索引）
+5. [x] 编写 Flyway V2 迁移脚本（标记版本）
+6. [x] 配置 application.yml 中 Flyway 和 JPA
+7. [x] 验证数据库连接和自动迁移
 
 ## 验收标准
-- [ ] 所有表结构正确创建
-- [ ] JPA 实体与数据库表映射一致
-- [ ] 外键和级联删除配置正确
-- [ ] 索引创建成功
-- [ ] Flyway 迁移可重复执行
-- [ ] JSON 列可正常读写
+- [x] 所有表结构正确创建
+- [x] JPA 实体与数据库表映射一致
+- [x] 外键和级联删除配置正确
+- [x] 索引创建成功
+- [x] Flyway 迁移可重复执行
+- [x] JSON 列可正常读写
 
 ## 相关文档
 - 需求文档：doc/requirements.md #5.1, #5.2

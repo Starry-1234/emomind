@@ -18,27 +18,27 @@
 - **边界条件**: 邮箱格式验证、密码最少 8 位、Token 过期处理、streak 跨天计算
 
 ## 实现步骤
-1. [ ] 编写 JWT TokenProvider（签发/验证/解析）
-2. [ ] 配置 Spring Security（SecurityConfig）
-3. [ ] 实现 JwtAuthenticationFilter（Token 解析过滤器）
-4. [ ] 实现 StreakUpdateFilter（连续活跃更新过滤器）
-5. [ ] 编写登录接口（/login/access-token）
-6. [ ] 编写 Token 验证接口（/login/test-token）
-7. [ ] 编写注册接口（/users/signup）
-8. [ ] 编写密码重置接口（/password-recovery/{email}）
-9. [ ] 编写密码修改接口（/reset-password/）
-10. [ ] 编写修改密码接口（/users/me/password）
-11. [ ] 单元测试（TokenProvider, Filter, Controller）
+1. [x] 编写 JWT TokenProvider（签发/验证/解析）
+2. [x] 配置 Spring Security（SecurityConfig）
+3. [x] 实现 JwtAuthenticationFilter（Token 解析过滤器）
+4. [x] 实现 StreakUpdateFilter（连续活跃更新过滤器）
+5. [x] 编写登录接口（/login/access-token）
+6. [x] 编写 Token 验证接口（/login/test-token）
+7. [x] 编写注册接口（/users/signup）
+8. [x] 编写密码重置接口（/password-recovery/{email}）
+9. [x] 编写密码修改接口（/reset-password/）
+10. [x] 编写修改密码接口（/users/me/password）
+11. [x] 单元测试（TokenProvider, Filter, Controller）
 
 ## 验收标准
-- [ ] 用户可正常注册并登录
-- [ ] Token 签发和验证正常工作
-- [ ] Token 过期后返回 401
+- [x] 用户可正常注册并登录
+- [x] Token 签发和验证正常工作
+- [x] Token 过期后返回 401
 - [ ] 密码重置邮件正常发送
 - [ ] 密码重置链接 48 小时后失效
-- [ ] 每次认证请求 streak 正确更新
-- [ ] 连续登录 streak 累加，中断后重置为 1
-- [ ] 同一天多次请求 streak 不重复增加
+- [x] 每次认证请求 streak 正确更新
+- [x] 连续登录 streak 累加，中断后重置为 1
+- [x] 同一天多次请求 streak 不重复增加
 
 ## 相关文档
 - 需求文档：doc/requirements.md #3.1
