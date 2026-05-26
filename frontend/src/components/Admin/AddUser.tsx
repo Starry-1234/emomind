@@ -84,7 +84,9 @@ const AddUser = () => {
   })
 
   const onSubmit = (data: FormData) => {
-    mutation.mutate(data)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { confirm_password, ...userData } = data
+    mutation.mutate(userData)
   }
 
   return (

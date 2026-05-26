@@ -27,7 +27,7 @@ public class TestRecordController {
 
     private final TestRecordService testRecordService;
 
-    @GetMapping("/test-records/")
+    @GetMapping({"/test-records", "/test-records/"})
     @Operation(summary = "获取当前用户的测评记录列表")
     public ResponseEntity<PageResponse<TestRecordResponse>> getRecords(
             @AuthenticationPrincipal UserDetailsImpl user,
@@ -35,7 +35,7 @@ public class TestRecordController {
         return ResponseEntity.ok(testRecordService.getRecords(user.getId(), pageable));
     }
 
-    @PostMapping("/test-records/")
+    @PostMapping({"/test-records", "/test-records/"})
     @Operation(summary = "创建新的测评记录")
     public ResponseEntity<TestRecordResponse> createRecord(
             @AuthenticationPrincipal UserDetailsImpl user,

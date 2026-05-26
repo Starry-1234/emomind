@@ -1,28 +1,15 @@
 # syntax=docker/dockerfile:1
 
-# Build stage
-FROM maven:3.9-eclipse-temurin-17-alpine AS builder
-
-WORKDIR /build
-
-# Copy pom.xml first for dependency caching
-COPY backend-sb/pom.xml .
-RUN mvn dependency:go-offline -B
-
-# Copy source and build
-COPY backend-sb/src ./src
-RUN mvn clean package -DskipTests -B
-
-# Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+# Build stage - copy pre-built JAR from host
+FROM eclipse-temurin:17-jre-alpine AS builder
 
 WORKDIR /app
 
 # Install curl for healthcheck
 RUN apk add --no-cache curl
 
-# Copy built JAR from builder stage
-COPY --from=builder /build/target/*.jar app.jar
+# Copy pre-built JAR
+COPY backend-sb/target/emomind-backend-1.0.0-SNAPSHOT.jar app.jar
 
 # Run as non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

@@ -50,16 +50,16 @@ class UserControllerTest {
         User user = new User();
         user.setEmail("user@example.com");
         user.setHashedPassword(passwordEncoder.encode("password123"));
-        user.setIsActive(true);
-        user.setIsSuperuser(false);
+        user.setActive(true);
+        user.setSuperuser(false);
         user = userRepository.save(user);
         userToken = tokenProvider.generateToken(user.getId().toString());
 
         User admin = new User();
         admin.setEmail("admin@example.com");
         admin.setHashedPassword(passwordEncoder.encode("password123"));
-        admin.setIsActive(true);
-        admin.setIsSuperuser(true);
+        admin.setActive(true);
+        admin.setSuperuser(true);
         admin = userRepository.save(admin);
         adminToken = tokenProvider.generateToken(admin.getId().toString());
     }

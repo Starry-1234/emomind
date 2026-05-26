@@ -97,7 +97,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        - VITE_API_URL=http://localhost:8080
+        - VITE_API_URL=http://localhost:5174
         - NODE_ENV=development
     volumes:
       - ./frontend/nginx-dev.conf:/etc/nginx/conf.d/default.conf

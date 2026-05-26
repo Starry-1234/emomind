@@ -48,6 +48,9 @@ public class UserService {
     }
 
     public TokenResponse login(String email, String password) {
+        if (!userRepository.existsByEmail(email)) {
+            throw new UnauthorizedException("User not found");
+        }
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password));
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -63,8 +66,8 @@ public class UserService {
                 .email(request.getEmail())
                 .hashedPassword(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
-                .isActive(true)
-                .isSuperuser(false)
+                .active(true)
+                .superuser(false)
                 .streakDays(0)
                 .build();
         User saved = userRepository.save(user);
@@ -111,8 +114,8 @@ public class UserService {
                 .email(request.getEmail())
                 .hashedPassword(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .isSuperuser(request.getIsSuperuser() != null ? request.getIsSuperuser() : false)
+                .active(request.getActive() != null ? request.getActive() : true)
+                .superuser(request.getSuperuser() != null ? request.getSuperuser() : false)
                 .streakDays(0)
                 .build();
         return userMapper.toResponse(userRepository.save(user));
@@ -130,11 +133,11 @@ public class UserService {
         if (request.getFullName() != null) {
             user.setFullName(request.getFullName());
         }
-        if (request.getIsActive() != null) {
-            user.setIsActive(request.getIsActive());
+        if (request.getActive() != null) {
+            user.setActive(request.getActive());
         }
-        if (request.getIsSuperuser() != null) {
-            user.setIsSuperuser(request.getIsSuperuser());
+        if (request.getSuperuser() != null) {
+            user.setSuperuser(request.getSuperuser());
         }
         if (request.getPassword() != null) {
             user.setHashedPassword(passwordEncoder.encode(request.getPassword()));

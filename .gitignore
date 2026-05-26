@@ -7,7 +7,6 @@ node_modules/
 /playwright/.cache/
 .env
 frontend/.env
-backend/uploads/
 .workbuddy/
 .claude/
 .history/

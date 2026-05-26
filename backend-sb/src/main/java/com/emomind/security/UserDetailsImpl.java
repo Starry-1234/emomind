@@ -18,7 +18,7 @@ public class UserDetailsImpl implements UserDetails {
 
     private UUID id;
     private String email;
-    private Boolean isSuperuser;
+    private Boolean superuser;
 
     @JsonIgnore
     private String password;
@@ -26,11 +26,11 @@ public class UserDetailsImpl implements UserDetails {
     private Collection<? extends GrantedAuthority> authorities;
 
     public static UserDetailsImpl build(User user) {
-        String role = Boolean.TRUE.equals(user.getIsSuperuser()) ? "ADMIN" : "USER";
+        String role = Boolean.TRUE.equals(user.getSuperuser()) ? "ADMIN" : "USER";
         return new UserDetailsImpl(
                 user.getId(),
                 user.getEmail(),
-                user.getIsSuperuser(),
+                user.getSuperuser(),
                 user.getHashedPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
         );

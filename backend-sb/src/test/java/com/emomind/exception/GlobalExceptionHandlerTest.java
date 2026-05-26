@@ -23,7 +23,7 @@ class GlobalExceptionHandlerTest {
     void shouldHandleServiceException() {
         var response = handler.handleServiceException(new ServiceException("bad request"));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody().getMessage()).isEqualTo("bad request");
+        assertThat(response.getBody().get("detail")).isEqualTo("bad request");
     }
 
     @Test
@@ -42,14 +42,14 @@ class GlobalExceptionHandlerTest {
     void shouldHandleAccessDenied() {
         var response = handler.handleAccessDenied(new AccessDeniedException("denied"));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(response.getBody().getMessage()).isEqualTo("Not enough permissions");
+        assertThat(response.getBody().get("detail")).isEqualTo("Not enough permissions");
     }
 
     @Test
     void shouldHandleAuthenticationException() {
         var response = handler.handleAuthenticationException(new BadCredentialsException("bad creds"));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody().getMessage()).isEqualTo("Incorrect email or password");
+        assertThat(response.getBody().get("detail")).isEqualTo("Incorrect email or password");
     }
 
     @Test
@@ -67,6 +67,6 @@ class GlobalExceptionHandlerTest {
     void shouldHandleGenericException() {
         var response = handler.handleException(new RuntimeException("boom"));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody().getMessage()).isEqualTo("Internal server error");
+        assertThat(response.getBody().get("detail")).isEqualTo("Internal server error");
     }
 }

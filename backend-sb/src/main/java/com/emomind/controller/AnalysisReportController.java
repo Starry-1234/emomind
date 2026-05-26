@@ -25,7 +25,7 @@ public class AnalysisReportController {
 
     private final AnalysisReportService analysisReportService;
 
-    @GetMapping("/")
+    @GetMapping({"/", ""})
     @Operation(summary = "获取当前用户的分析报告列表")
     public ResponseEntity<PageResponse<AnalysisReportResponse>> getReports(
             @AuthenticationPrincipal UserDetailsImpl user,
@@ -33,7 +33,7 @@ public class AnalysisReportController {
         return ResponseEntity.ok(analysisReportService.getReports(user.getId(), pageable));
     }
 
-    @PostMapping("/")
+    @PostMapping({"/", ""})
     @Operation(summary = "创建新的分析报告")
     public ResponseEntity<AnalysisReportResponse> createReport(
             @AuthenticationPrincipal UserDetailsImpl user,

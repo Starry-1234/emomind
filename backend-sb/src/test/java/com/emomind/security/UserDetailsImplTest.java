@@ -16,7 +16,7 @@ class UserDetailsImplTest {
                 .id(id)
                 .email("admin@test.com")
                 .hashedPassword("pass")
-                .isSuperuser(true)
+                .superuser(true)
                 .build();
 
         UserDetailsImpl details = UserDetailsImpl.build(user);
@@ -25,7 +25,7 @@ class UserDetailsImplTest {
         assertThat(details.getEmail()).isEqualTo("admin@test.com");
         assertThat(details.getUsername()).isEqualTo("admin@test.com");
         assertThat(details.getPassword()).isEqualTo("pass");
-        assertThat(details.getIsSuperuser()).isTrue();
+        assertThat(details.getSuperuser()).isTrue();
         assertThat(details.getAuthorities())
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
@@ -37,12 +37,12 @@ class UserDetailsImplTest {
                 .id(id)
                 .email("user@test.com")
                 .hashedPassword("pass")
-                .isSuperuser(false)
+                .superuser(false)
                 .build();
 
         UserDetailsImpl details = UserDetailsImpl.build(user);
 
-        assertThat(details.getIsSuperuser()).isFalse();
+        assertThat(details.getSuperuser()).isFalse();
         assertThat(details.getAuthorities())
                 .anyMatch(a -> a.getAuthority().equals("ROLE_USER"));
     }
@@ -53,7 +53,7 @@ class UserDetailsImplTest {
                 .id(UUID.randomUUID())
                 .email("user@test.com")
                 .hashedPassword("pass")
-                .isSuperuser(null)
+                .superuser(null)
                 .build();
 
         UserDetailsImpl details = UserDetailsImpl.build(user);

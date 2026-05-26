@@ -57,8 +57,8 @@ class AnalysisReportControllerTest {
         User user = new User();
         user.setEmail("user@example.com");
         user.setHashedPassword(passwordEncoder.encode("password123"));
-        user.setIsActive(true);
-        user.setIsSuperuser(false);
+        user.setActive(true);
+        user.setSuperuser(false);
         user = userRepository.save(user);
         userId = user.getId();
         userToken = tokenProvider.generateToken(user.getId().toString());
@@ -77,8 +77,8 @@ class AnalysisReportControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fileName").value("report.pdf"))
-                .andExpect(jsonPath("$.analysisResult").value("This is a positive analysis result."))
+                .andExpect(jsonPath("$.file_name").value("report.pdf"))
+                .andExpect(jsonPath("$.analysis_result").value("This is a positive analysis result."))
                 .andReturn();
 
         String responseBody = createResult.getResponse().getContentAsString();
@@ -87,7 +87,7 @@ class AnalysisReportControllerTest {
         mockMvc.perform(get("/api/v1/analysis/reports/" + reportId)
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fileName").value("report.pdf"))
+                .andExpect(jsonPath("$.file_name").value("report.pdf"))
                 .andExpect(jsonPath("$.owner.email").value("user@example.com"));
     }
 
@@ -122,8 +122,8 @@ class AnalysisReportControllerTest {
         User other = new User();
         other.setEmail("other@example.com");
         other.setHashedPassword(passwordEncoder.encode("password123"));
-        other.setIsActive(true);
-        other.setIsSuperuser(false);
+        other.setActive(true);
+        other.setSuperuser(false);
         other = userRepository.save(other);
         FileAnalysisReport report = createTestReport(other.getId(), "other.pdf");
 

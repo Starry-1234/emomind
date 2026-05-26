@@ -1,6 +1,5 @@
 package com.emomind.exception;
 
-import com.emomind.dto.response.MessageResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,30 +21,32 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ServiceException.class)
-    public ResponseEntity<MessageResponse> handleServiceException(ServiceException e) {
-        return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
-    }
-
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<MessageResponse> handleNotFound(ResourceNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+    public ResponseEntity<Map<String, String>> handleServiceException(ServiceException e) {
+        return ResponseEntity.badRequest().body(Map.of("detail", e.getMessage()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<MessageResponse> handleUnauthorized(UnauthorizedException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(e.getMessage()));
+    public ResponseEntity<Map<String, String>> handleUnauthorized(UnauthorizedException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("detail", e.getMessage()));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNotFound(ResourceNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("detail", e.getMessage()));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<MessageResponse> handleAccessDenied(AccessDeniedException e) {
+    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new MessageResponse("Not enough permissions"));
+                .body(Map.of("detail", "Not enough permissions"));
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<MessageResponse> handleAuthenticationException(AuthenticationException e) {
+    public ResponseEntity<Map<String, String>> handleAuthenticationException(AuthenticationException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new MessageResponse("Incorrect email or password"));
+                .body(Map.of("detail", "Incorrect email or password"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -58,10 +59,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<MessageResponse> handleException(Exception e) {
+    public ResponseEntity<Map<String, String>> handleException(Exception e) {
         log.error("Unhandled exception", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new MessageResponse("Internal server error"));
+                .body(Map.of("detail", "Internal server error"));
     }
 
     private Map<String, Object> mapFieldError(FieldError error) {

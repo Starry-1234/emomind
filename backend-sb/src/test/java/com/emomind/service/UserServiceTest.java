@@ -64,6 +64,7 @@ class UserServiceTest {
         UserDetailsImpl userDetails = new UserDetailsImpl(userId, email, false, "encoded", null);
         Authentication auth = mock(Authentication.class);
 
+        when(userRepository.existsByEmail(email)).thenReturn(true);
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(auth);
         when(auth.getPrincipal()).thenReturn(userDetails);
         when(tokenProvider.generateToken(userId.toString())).thenReturn("jwt-token");
@@ -194,8 +195,8 @@ class UserServiceTest {
         request.setEmail("admin@example.com");
         request.setPassword("password123");
         request.setFullName("Admin");
-        request.setIsActive(false);
-        request.setIsSuperuser(true);
+        request.setActive(false);
+        request.setSuperuser(true);
 
         when(userRepository.existsByEmail("admin@example.com")).thenReturn(false);
         when(passwordEncoder.encode("password123")).thenReturn("encoded");
@@ -243,12 +244,12 @@ class UserServiceTest {
     @Test
     void shouldUpdateUserWithAllFields() {
         UUID userId = UUID.randomUUID();
-        User user = User.builder().id(userId).email("old@example.com").fullName("Old").isActive(true).isSuperuser(false).build();
+        User user = User.builder().id(userId).email("old@example.com").fullName("Old").active(true).superuser(false).build();
         UserUpdateRequest request = new UserUpdateRequest();
         request.setEmail("new@example.com");
         request.setFullName("New");
-        request.setIsActive(false);
-        request.setIsSuperuser(true);
+        request.setActive(false);
+        request.setSuperuser(true);
         request.setPassword("newpass");
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -260,8 +261,8 @@ class UserServiceTest {
         userService.updateUser(userId, request);
 
         assertThat(user.getFullName()).isEqualTo("New");
-        assertThat(user.getIsActive()).isFalse();
-        assertThat(user.getIsSuperuser()).isTrue();
+        assertThat(user.getActive()).isFalse();
+        assertThat(user.getSuperuser()).isTrue();
     }
 
     @Test

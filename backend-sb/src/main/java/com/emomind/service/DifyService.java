@@ -5,11 +5,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Slf4j
@@ -22,6 +26,7 @@ public class DifyService {
 
     public Flux<String> sendChatMessage(String apiKeyName, Map<String, Object> requestBody) {
         String apiKey = difyProperties.resolveApiKey(apiKeyName);
+        log.info("Sending chat message to Dify with key: {}", apiKeyName);
         return difyWebClient.post()
                 .uri("/chat-messages")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
@@ -32,9 +37,17 @@ public class DifyService {
                 .map(buffer -> {
                     byte[] bytes = new byte[buffer.readableByteCount()];
                     buffer.read(bytes);
-                    return new String(bytes);
+                    String chunk = new String(bytes, StandardCharsets.UTF_8);
+                    log.debug("Dify chunk received: {}", chunk);
+                    return chunk;
                 })
-                .doOnError(e -> log.error("Dify chat error: {}", e.getMessage()));
+                .doOnError(e -> {
+                    if (e instanceof WebClientResponseException wcre) {
+                        log.error("Dify API error: {} - {}", wcre.getStatusCode(), wcre.getResponseBodyAsString());
+                    } else {
+                        log.error("Dify chat error: {} - {}", e.getClass().getSimpleName(), e.getMessage());
+                    }
+                });
     }
 
     public Map<String, Object> uploadFile(String apiKeyName, Map<String, Object> requestBody) {
@@ -76,13 +89,29 @@ public class DifyService {
                 .block();
     }
 
-    public void deleteConversation(String conversationId, String apiKeyName) {
+    public void deleteConversation(String conversationId, String user, String apiKeyName) {
         String apiKey = difyProperties.resolveApiKey(apiKeyName);
-        difyWebClient.delete()
-                .uri("/conversations/" + conversationId)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                .retrieve()
-                .toBodilessEntity()
-                .block();
+        // Dify DELETE /conversations/{id} 要求 user 字段在 JSON request body 里，而非 query param
+        Map<String, Object> body = Map.of("user", user);
+        try {
+            difyWebClient.method(HttpMethod.DELETE)
+                    .uri("/conversations/" + conversationId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(body)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+            log.info("Conversation {} deleted successfully", conversationId);
+        } catch (Exception e) {
+            log.error("Failed to delete conversation {} from Dify: {} - {}", conversationId, e.getClass().getSimpleName(), e.getMessage());
+            // 抛出异常，让 Controller 层返回错误响应给前端
+            if (e instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
+                org.springframework.web.reactive.function.client.WebClientResponseException wcre =
+                        (org.springframework.web.reactive.function.client.WebClientResponseException) e;
+                throw new RuntimeException("Dify API 删除会话失败: " + wcre.getResponseBodyAsString(), wcre);
+            }
+            throw new RuntimeException("删除会话失败: " + e.getMessage(), e);
+        }
     }
 }

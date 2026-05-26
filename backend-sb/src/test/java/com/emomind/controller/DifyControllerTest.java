@@ -50,8 +50,8 @@ class DifyControllerTest {
         var user = new com.emomind.entity.User();
         user.setEmail("user@example.com");
         user.setHashedPassword(passwordEncoder.encode("password123"));
-        user.setIsActive(true);
-        user.setIsSuperuser(false);
+        user.setActive(true);
+        user.setSuperuser(false);
         user = userRepository.save(user);
         userToken = tokenProvider.generateToken(user.getId().toString());
     }

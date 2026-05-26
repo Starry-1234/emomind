@@ -42,7 +42,7 @@ export type OpenAPIConfig = {
 
 export const OpenAPI: OpenAPIConfig = {
 	BASE: '',
-	CREDENTIALS: 'include',
+	CREDENTIALS: 'same-origin',
 	ENCODE_PATH: undefined,
 	HEADERS: undefined,
 	PASSWORD: undefined,

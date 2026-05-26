@@ -62,8 +62,8 @@ class TestRecordControllerTest {
         User user = new User();
         user.setEmail("user@example.com");
         user.setHashedPassword(passwordEncoder.encode("password123"));
-        user.setIsActive(true);
-        user.setIsSuperuser(false);
+        user.setActive(true);
+        user.setSuperuser(false);
         user = userRepository.save(user);
         userId = user.getId();
         userToken = tokenProvider.generateToken(user.getId().toString());
@@ -71,8 +71,8 @@ class TestRecordControllerTest {
         User admin = new User();
         admin.setEmail("admin@example.com");
         admin.setHashedPassword(passwordEncoder.encode("password123"));
-        admin.setIsActive(true);
-        admin.setIsSuperuser(true);
+        admin.setActive(true);
+        admin.setSuperuser(true);
         admin = userRepository.save(admin);
         adminId = admin.getId();
         adminToken = tokenProvider.generateToken(admin.getId().toString());
@@ -93,8 +93,8 @@ class TestRecordControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.testName").value("SAS Test"))
-                .andExpect(jsonPath("$.totalScore").value(45))
+                .andExpect(jsonPath("$.test_name").value("SAS Test"))
+                .andExpect(jsonPath("$.total_score").value(45))
                 .andReturn();
 
         String responseBody = createResult.getResponse().getContentAsString();
@@ -103,7 +103,7 @@ class TestRecordControllerTest {
         mockMvc.perform(get("/api/v1/test-records/" + recordId)
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.testName").value("SAS Test"))
+                .andExpect(jsonPath("$.test_name").value("SAS Test"))
                 .andExpect(jsonPath("$.owner.email").value("user@example.com"));
     }
 
@@ -133,8 +133,8 @@ class TestRecordControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.testName").value("Updated Name"))
-                .andExpect(jsonPath("$.totalScore").value(60));
+                .andExpect(jsonPath("$.test_name").value("Updated Name"))
+                .andExpect(jsonPath("$.total_score").value(60));
     }
 
     @Test
@@ -155,8 +155,8 @@ class TestRecordControllerTest {
         User other = new User();
         other.setEmail("other@example.com");
         other.setHashedPassword(passwordEncoder.encode("password123"));
-        other.setIsActive(true);
-        other.setIsSuperuser(false);
+        other.setActive(true);
+        other.setSuperuser(false);
         other = userRepository.save(other);
         TestRecord record = createTestRecord(other.getId(), "Other's Record");
 

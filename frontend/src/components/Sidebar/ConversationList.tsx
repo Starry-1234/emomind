@@ -1,5 +1,6 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import { Brain, MessageSquare, Plus, Stethoscope, X } from "lucide-react"
+import { Brain, Loader2, MessageSquare, Plus, Stethoscope, X } from "lucide-react"
+import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import {
   SidebarGroup,
@@ -45,6 +46,8 @@ export function ConversationList() {
   const navigate = useNavigate()
   const router = useRouterState()
   const currentPath = router.location.pathname
+  // 正在删除中的会话 ID
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // 从当前 URL 中提取 sessionId（如果处于动态路由中）
   const sessionMatch = currentPath.match(
@@ -94,6 +97,7 @@ export function ConversationList() {
     e: React.MouseEvent,
   ) => {
     e.stopPropagation()
+    if (deletingId) return // 防止重复点击
 
     // 先判断是否需要导航（在 deleteConversationById 可能失败的情况下也要导航）
     const isTest = currentPath.startsWith("/user/test")
@@ -106,7 +110,14 @@ export function ConversationList() {
       navigate({ to: targetPath, replace: true })
     }
 
-    await deleteConversationById(convId)
+    setDeletingId(convId)
+    try {
+      await deleteConversationById(convId)
+    } catch (err) {
+      alert(`删除失败: ${err instanceof Error ? err.message : "未知错误"}`)
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   // 渲染单条会话
@@ -130,8 +141,15 @@ export function ConversationList() {
           {conv.moduleType === "ai-doctor" ? "医生" : "测评"}
         </Badge>
       </SidebarMenuButton>
-      <SidebarMenuAction onClick={(e) => handleDeleteConversation(conv.id, e)}>
-        <X />
+      <SidebarMenuAction
+        onClick={(e) => handleDeleteConversation(conv.id, e)}
+        disabled={deletingId === conv.id}
+      >
+        {deletingId === conv.id ? (
+          <Loader2 className="animate-spin" />
+        ) : (
+          <X />
+        )}
       </SidebarMenuAction>
     </SidebarMenuItem>
   )

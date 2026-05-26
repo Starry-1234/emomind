@@ -59,16 +59,16 @@ class AdminControllerTest {
         User user = new User();
         user.setEmail("user@example.com");
         user.setHashedPassword(passwordEncoder.encode("password123"));
-        user.setIsActive(true);
-        user.setIsSuperuser(false);
+        user.setActive(true);
+        user.setSuperuser(false);
         user = userRepository.save(user);
         userToken = tokenProvider.generateToken(user.getId().toString());
 
         User admin = new User();
         admin.setEmail("admin@example.com");
         admin.setHashedPassword(passwordEncoder.encode("password123"));
-        admin.setIsActive(true);
-        admin.setIsSuperuser(true);
+        admin.setActive(true);
+        admin.setSuperuser(true);
         admin = userRepository.save(admin);
         adminToken = tokenProvider.generateToken(admin.getId().toString());
     }
@@ -79,8 +79,8 @@ class AdminControllerTest {
         User testUser = userRepository.save(User.builder()
                 .email("test@example.com")
                 .hashedPassword(passwordEncoder.encode("password123"))
-                .isActive(true)
-                .isSuperuser(false)
+                .active(true)
+                .superuser(false)
                 .build());
 
         testRecordRepository.save(TestRecord.builder()
@@ -100,12 +100,12 @@ class AdminControllerTest {
         mockMvc.perform(get("/api/v1/admin/stats")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalUsers").value(3))
-                .andExpect(jsonPath("$.totalTestRecords").value(1))
-                .andExpect(jsonPath("$.totalAnalysisReports").value(1))
-                .andExpect(jsonPath("$.todayNewUsers").value(3))
-                .andExpect(jsonPath("$.todayNewTestRecords").value(1))
-                .andExpect(jsonPath("$.todayNewAnalysisReports").value(1));
+                .andExpect(jsonPath("$.total_users").value(3))
+                .andExpect(jsonPath("$.total_test_records").value(1))
+                .andExpect(jsonPath("$.total_analysis_reports").value(1))
+                .andExpect(jsonPath("$.today_new_users").value(3))
+                .andExpect(jsonPath("$.today_new_test_records").value(1))
+                .andExpect(jsonPath("$.today_new_analysis_reports").value(1));
     }
 
     @Test

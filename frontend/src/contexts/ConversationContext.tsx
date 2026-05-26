@@ -234,8 +234,9 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
             sessionStorage.removeItem("dify_active_conv_id")
           }
         }
-      } catch {
-        // silent
+      } catch (err) {
+        console.error("删除会话失败:", err)
+        throw err
       }
     },
     [userId, testConversations, testActiveId, aiDoctorActiveId],

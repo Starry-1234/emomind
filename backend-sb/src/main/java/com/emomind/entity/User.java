@@ -2,7 +2,6 @@ package com.emomind.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -26,11 +25,11 @@ public class User {
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default
-    private Boolean isActive = true;
+    private Boolean active = true;
 
     @Column(name = "is_superuser", nullable = false)
     @Builder.Default
-    private Boolean isSuperuser = false;
+    private Boolean superuser = false;
 
     @Column(name = "full_name", length = 255)
     private String fullName;

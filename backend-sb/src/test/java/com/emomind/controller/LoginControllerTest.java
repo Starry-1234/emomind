@@ -53,7 +53,7 @@ class LoginControllerTest {
                         .param("username", "test@test.com")
                         .param("password", "password"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("token"));
+                .andExpect(jsonPath("$.access_token").value("token"));
     }
 
     @Test

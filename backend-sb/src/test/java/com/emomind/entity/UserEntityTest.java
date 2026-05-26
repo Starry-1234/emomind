@@ -17,8 +17,8 @@ class UserEntityTest {
 
         assertThat(user.getEmail()).isEqualTo("test@example.com");
         assertThat(user.getHashedPassword()).isEqualTo("hashed123");
-        assertThat(user.getIsActive()).isTrue();
-        assertThat(user.getIsSuperuser()).isFalse();
+        assertThat(user.getActive()).isTrue();
+        assertThat(user.getSuperuser()).isFalse();
         assertThat(user.getStreakDays()).isZero();
         assertThat(user.getCreatedAt()).isNull();
     }

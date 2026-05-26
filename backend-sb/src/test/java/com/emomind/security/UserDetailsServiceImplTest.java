@@ -27,7 +27,7 @@ class UserDetailsServiceImplTest {
     @Test
     void shouldLoadUserByUuid() {
         UUID id = UUID.randomUUID();
-        User user = User.builder().id(id).email("test@test.com").hashedPassword("pass").isSuperuser(false).build();
+        User user = User.builder().id(id).email("test@test.com").hashedPassword("pass").superuser(false).build();
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
 
         var result = userDetailsService.loadUserByUsername(id.toString());
@@ -37,7 +37,7 @@ class UserDetailsServiceImplTest {
 
     @Test
     void shouldLoadUserByEmail() {
-        User user = User.builder().id(UUID.randomUUID()).email("test@test.com").hashedPassword("pass").isSuperuser(false).build();
+        User user = User.builder().id(UUID.randomUUID()).email("test@test.com").hashedPassword("pass").superuser(false).build();
         when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(user));
 
         var result = userDetailsService.loadUserByUsername("test@test.com");

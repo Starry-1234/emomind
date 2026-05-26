@@ -71,8 +71,8 @@ class SecurityIntegrationTest {
                 .email("auth@test.com")
                 .hashedPassword(passwordEncoder.encode("password123"))
                 .fullName("Auth User")
-                .isActive(true)
-                .isSuperuser(false)
+                .active(true)
+                .superuser(false)
                 .streakDays(0)
                 .build();
         user = userRepository.save(user);
@@ -90,8 +90,8 @@ class SecurityIntegrationTest {
                 .email("user@test.com")
                 .hashedPassword(passwordEncoder.encode("password123"))
                 .fullName("Regular User")
-                .isActive(true)
-                .isSuperuser(false)
+                .active(true)
+                .superuser(false)
                 .streakDays(0)
                 .build();
         user = userRepository.save(user);
@@ -109,8 +109,8 @@ class SecurityIntegrationTest {
                 .email("admin@test.com")
                 .hashedPassword(passwordEncoder.encode("password123"))
                 .fullName("Admin User")
-                .isActive(true)
-                .isSuperuser(true)
+                .active(true)
+                .superuser(true)
                 .streakDays(0)
                 .build();
         admin = userRepository.save(admin);
