@@ -26,7 +26,7 @@
 6. [x] 编写 AdminStatsService 单元测试（统计数据计算）
 7. [ ] 编写 DifyProxy 集成测试（Mock WebClient）
 8. [x] 配置 JaCoCo 代码覆盖率报告
-9. [ ] 配置统一日志格式（Logback + JSON 结构化输出）
+9. [x] 配置统一日志格式（Logback + JSON 结构化输出）
 10. [x] 验证整体覆盖率 >= 80%
 
 ## 验收标准
@@ -35,7 +35,7 @@
 - [x] 行覆盖率 >= 80%
 - [x] 分支覆盖率 >= 60%
 - [x] 测试可在 CI 中通过 `mvn test` 一键执行
-- [ ] 日志输出为结构化 JSON 格式
+- [x] 日志输出为结构化 JSON 格式
 
 ## 相关文档
 - 需求文档：doc/requirements.md #4.4（MAINT-001、MAINT-004）
