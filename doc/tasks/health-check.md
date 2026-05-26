@@ -19,13 +19,13 @@
 1. [x] 编写 UtilsController
 2. [x] 实现 GET /utils/health-check/
 3. [x] 配置 Spring Security（允许匿名访问）
-4. [ ] 配置 Docker healthcheck
+4. [x] 配置 Docker healthcheck
 5. [x] 单元测试
 
 ## 验收标准
 - [x] 健康检查端点返回 200 + { "status": "ok" }
 - [x] 无需认证即可访问
-- [ ] Docker 健康检查正常
+- [x] Docker 健康检查正常
 
 ## 相关文档
 - 需求文档：doc/requirements.md #3.7
