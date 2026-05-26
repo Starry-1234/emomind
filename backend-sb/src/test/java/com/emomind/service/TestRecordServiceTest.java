@@ -111,7 +111,7 @@ class TestRecordServiceTest {
 
         assertThatThrownBy(() -> testRecordService.getRecord(recordId, otherId))
                 .isInstanceOf(UnauthorizedException.class)
-                .hasMessage("Not enough permissions");
+                .hasMessage("权限不足");
     }
 
     @Test

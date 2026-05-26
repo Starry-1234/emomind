@@ -34,7 +34,7 @@ public class AnalysisReportService {
 
     public AnalysisReportResponse createReport(UUID ownerId, AnalysisReportCreateRequest request) {
         User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new UnauthorizedException("Could not validate credentials"));
+                .orElseThrow(() -> new UnauthorizedException("凭证验证失败"));
 
         FileAnalysisReport report = FileAnalysisReport.builder()
                 .fileName(request.getFileName())
@@ -53,7 +53,7 @@ public class AnalysisReportService {
         FileAnalysisReport report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Analysis report not found"));
         if (!report.getOwner().getId().equals(ownerId)) {
-            throw new UnauthorizedException("Not enough permissions");
+            throw new UnauthorizedException("权限不足");
         }
         return analysisReportMapper.toResponse(report);
     }
@@ -62,7 +62,7 @@ public class AnalysisReportService {
         FileAnalysisReport report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Analysis report not found"));
         if (!report.getOwner().getId().equals(ownerId)) {
-            throw new UnauthorizedException("Not enough permissions");
+            throw new UnauthorizedException("权限不足");
         }
         reportRepository.delete(report);
     }

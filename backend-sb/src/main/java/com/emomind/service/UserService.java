@@ -49,7 +49,7 @@ public class UserService {
 
     public TokenResponse login(String email, String password) {
         if (!userRepository.existsByEmail(email)) {
-            throw new UnauthorizedException("User not found");
+            throw new UnauthorizedException("用户不存在");
         }
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password));
@@ -60,7 +60,7 @@ public class UserService {
 
     public UserResponse register(UserRegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ServiceException("Email already registered");
+            throw new ServiceException("邮箱已被注册");
         }
         User user = User.builder()
                 .email(request.getEmail())
@@ -77,16 +77,16 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UnauthorizedException("Could not validate credentials"));
+                .orElseThrow(() -> new UnauthorizedException("凭证验证失败"));
         return userMapper.toResponse(user);
     }
 
     public UserResponse updateCurrentUser(UUID userId, UserUpdateMeRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UnauthorizedException("Could not validate credentials"));
+                .orElseThrow(() -> new UnauthorizedException("凭证验证失败"));
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new ServiceException("Email already registered");
+                throw new ServiceException("邮箱已被注册");
             }
             user.setEmail(request.getEmail());
         }
@@ -108,7 +108,7 @@ public class UserService {
 
     public UserResponse createUser(UserCreateRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ServiceException("Email already registered");
+            throw new ServiceException("邮箱已被注册");
         }
         User user = User.builder()
                 .email(request.getEmail())
@@ -126,7 +126,7 @@ public class UserService {
                 .orElseThrow(() -> new ServiceException("User not found"));
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new ServiceException("Email already registered");
+                throw new ServiceException("邮箱已被注册");
             }
             user.setEmail(request.getEmail());
         }
@@ -151,9 +151,9 @@ public class UserService {
 
     public void updatePassword(UUID userId, UpdatePasswordRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UnauthorizedException("Could not validate credentials"));
+                .orElseThrow(() -> new UnauthorizedException("凭证验证失败"));
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getHashedPassword())) {
-            throw new UnauthorizedException("Incorrect password");
+            throw new UnauthorizedException("密码错误");
         }
         user.setHashedPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);

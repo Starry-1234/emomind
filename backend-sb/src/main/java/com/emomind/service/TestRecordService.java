@@ -35,7 +35,7 @@ public class TestRecordService {
 
     public TestRecordResponse createRecord(UUID ownerId, TestRecordCreateRequest request) {
         User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new UnauthorizedException("Could not validate credentials"));
+                .orElseThrow(() -> new UnauthorizedException("凭证验证失败"));
 
         TestRecord record = TestRecord.builder()
                 .testName(request.getTestName())
@@ -58,7 +58,7 @@ public class TestRecordService {
         TestRecord record = testRecordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("Test record not found"));
         if (!record.getOwner().getId().equals(ownerId)) {
-            throw new UnauthorizedException("Not enough permissions");
+            throw new UnauthorizedException("权限不足");
         }
         return testRecordMapper.toResponse(record);
     }
@@ -67,7 +67,7 @@ public class TestRecordService {
         TestRecord record = testRecordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("Test record not found"));
         if (!record.getOwner().getId().equals(ownerId)) {
-            throw new UnauthorizedException("Not enough permissions");
+            throw new UnauthorizedException("权限不足");
         }
 
         if (request.getTestName() != null) {
@@ -105,7 +105,7 @@ public class TestRecordService {
         TestRecord record = testRecordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("Test record not found"));
         if (!record.getOwner().getId().equals(ownerId)) {
-            throw new UnauthorizedException("Not enough permissions");
+            throw new UnauthorizedException("权限不足");
         }
         testRecordRepository.delete(record);
     }

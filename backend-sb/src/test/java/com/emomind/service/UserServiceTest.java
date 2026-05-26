@@ -102,7 +102,7 @@ class UserServiceTest {
 
         assertThatThrownBy(() -> userService.register(request))
                 .isInstanceOf(ServiceException.class)
-                .hasMessage("Email already registered");
+                .hasMessage("邮箱已被注册");
     }
 
     @Test
@@ -158,7 +158,7 @@ class UserServiceTest {
 
         assertThatThrownBy(() -> userService.updatePassword(userId, request))
                 .isInstanceOf(UnauthorizedException.class)
-                .hasMessage("Incorrect password");
+                .hasMessage("密码错误");
     }
 
     @Test

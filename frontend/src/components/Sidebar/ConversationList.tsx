@@ -1,3 +1,14 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { Brain, Loader2, MessageSquare, Plus, Stethoscope, X } from "lucide-react"
 import { useState } from "react"
@@ -141,16 +152,39 @@ export function ConversationList() {
           {conv.moduleType === "ai-doctor" ? "医生" : "测评"}
         </Badge>
       </SidebarMenuButton>
-      <SidebarMenuAction
-        onClick={(e) => handleDeleteConversation(conv.id, e)}
-        disabled={deletingId === conv.id}
-      >
-        {deletingId === conv.id ? (
-          <Loader2 className="animate-spin" />
-        ) : (
-          <X />
-        )}
-      </SidebarMenuAction>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <SidebarMenuAction
+            onClick={(e) => e.stopPropagation()}
+            disabled={deletingId === conv.id}
+          >
+            {deletingId === conv.id ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <X />
+            )}
+          </SidebarMenuAction>
+        </AlertDialogTrigger>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除会话「{conv.name || "新对话"}」吗？此操作不可撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation()
+                handleDeleteConversation(conv.id, e)
+              }}
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarMenuItem>
   )
 
