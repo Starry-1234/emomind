@@ -7,8 +7,8 @@ import {
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import type { Body_login_login_access_token as AccessToken } from "@/client"
-import { ApiError, type UserPublic, UsersService } from "@/client"
+import type { LoginRequest } from "@/client"
+import { ApiError, type UserResponse, UsersService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
   Form,
@@ -29,7 +29,7 @@ const formSchema = z.object({
     .string()
     .min(1, { message: "密码不能为空" })
     .min(8, { message: "密码至少8个字符" }),
-}) satisfies z.ZodType<AccessToken>
+}) satisfies z.ZodType<LoginRequest>
 
 type FormData = z.infer<typeof formSchema>
 
@@ -37,9 +37,9 @@ export const Route = createFileRoute("/login")({
   component: Login,
   beforeLoad: async () => {
     if (isLoggedIn()) {
-      let user: UserPublic | undefined
+      let user: UserResponse | undefined
       try {
-        user = await UsersService.readUserMe()
+        user = await UsersService.getCurrentUser()
       } catch (error) {
         // 仅当认证失败时才清除 token
         if (

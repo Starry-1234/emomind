@@ -25,7 +25,7 @@ const DeleteConfirmation = () => {
   const { logout } = useAuth()
 
   const mutation = useMutation({
-    mutationFn: () => UsersService.deleteUserMe(),
+    mutationFn: () => UsersService.deleteCurrentUser(),
     onSuccess: () => {
       showSuccessToast("您的账户已成功删除")
       logout()

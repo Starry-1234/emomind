@@ -337,7 +337,7 @@ function UserHome() {
   // 获取最近测评记录
   const { data: testRecordsData } = useQuery({
     queryKey: ["test-records-home"],
-    queryFn: () => TestRecordsService.readTestRecords({ skip: 0, limit: 100 }),
+    queryFn: () => TestRecordsService.getRecords1({ pageable: { page: 0, size: 100 } }),
   })
   const records = testRecordsData?.data ?? []
 

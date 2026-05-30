@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
-import { type UserPublic, UsersService } from "@/client"
+import { type UserResponse, UsersService } from "@/client"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,13 +69,13 @@ function ChatHistory() {
   // 1) 用户列表
   const { data: usersRes, isLoading: usersLoading } = useQuery({
     queryKey: ["admin-users"],
-    queryFn: () => UsersService.readUsers({ skip: 0, limit: 100 }),
+    queryFn: () => UsersService.getAllUsers({ pageable: { page: 0, size: 100 } }),
   })
 
   const allUsers = (usersRes?.data || []).filter(
-    (u: UserPublic) => !u.is_superuser,
+    (u: UserResponse) => !u.is_superuser,
   )
-  const filteredUsers = allUsers.filter((u: UserPublic) => {
+  const filteredUsers = allUsers.filter((u: UserResponse) => {
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -85,8 +85,8 @@ function ChatHistory() {
   })
 
   const selectedUser = allUsers.find(
-    (u: UserPublic) => u.id === selectedUserId,
-  ) as UserPublic | undefined
+    (u: UserResponse) => u.id === selectedUserId,
+  ) as UserResponse | undefined
 
   // 2) 会话列表
   const { data: convsRes, isLoading: convsLoading } = useQuery({
@@ -184,11 +184,11 @@ function ChatHistory() {
               </div>
             ) : (
               <div className="flex flex-col gap-0.5">
-                {filteredUsers.map((user: UserPublic) => (
+                {filteredUsers.map((user: UserResponse) => (
                   <button
                     type="button"
                     key={user.id}
-                    onClick={() => handleSelectUser(user.id)}
+                    onClick={() => handleSelectUser(user.id!)}
                     className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors cursor-pointer ${
                       selectedUserId === user.id
                         ? "bg-primary/10 text-primary"

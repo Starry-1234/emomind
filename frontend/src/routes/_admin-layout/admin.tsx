@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ClipboardCheck, FileText, MessageSquare, Users } from "lucide-react"
 import { AdminService } from "@/client"
+import type { AdminStatsResponse } from "@/client"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
 
@@ -16,16 +17,8 @@ export const Route = createFileRoute("/_admin-layout/admin")({
   }),
 })
 
-interface AdminStats {
-  total_users: number
-  total_test_records: number
-  total_analysis_reports: number
-  today_new_users: number
-  today_new_test_records: number
-}
-
-async function fetchAdminStats(): Promise<AdminStats> {
-  return AdminService.getAdminStats() as Promise<AdminStats>
+async function fetchAdminStats(): Promise<AdminStatsResponse> {
+  return AdminService.getStats()
 }
 
 function StatCard({

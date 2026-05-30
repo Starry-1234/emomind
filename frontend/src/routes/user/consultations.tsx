@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Calendar, FileText, Loader2, MoreVertical } from "lucide-react"
 import { useState } from "react"
 import ReactMarkdown from "react-markdown"
-import { AnalysisService } from "@/client"
+import { AnalysisReportsService } from "@/client"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,9 +48,8 @@ function Consultations() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["analysis-reports", page],
     queryFn: async () => {
-      const response = await AnalysisService.readAnalysisReports({
-        skip: page * limit,
-        limit: limit,
+      const response = await AnalysisReportsService.getReports1({
+        pageable: { page, size: limit },
       })
       return response
     },
@@ -58,7 +57,7 @@ function Consultations() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
-      AnalysisService.deleteAnalysisReport({ reportId: id }),
+      AnalysisReportsService.deleteReport({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["analysis-reports"] })
       setDeleteReportId(null)
@@ -234,12 +233,12 @@ function Consultations() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => handleViewDetail(report.id)}
+                                onClick={() => handleViewDetail(report.id!)}
                               >
                                 查看详情
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => setDeleteReportId(report.id)}
+                                onClick={() => setDeleteReportId(report.id || null)}
                                 className="text-destructive"
                               >
                                 删除

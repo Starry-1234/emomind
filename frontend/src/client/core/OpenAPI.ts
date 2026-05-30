@@ -41,14 +41,14 @@ export type OpenAPIConfig = {
 };
 
 export const OpenAPI: OpenAPIConfig = {
-	BASE: '',
-	CREDENTIALS: 'same-origin',
+	BASE: 'http://localhost:8080',
+	CREDENTIALS: 'include',
 	ENCODE_PATH: undefined,
 	HEADERS: undefined,
 	PASSWORD: undefined,
 	TOKEN: undefined,
 	USERNAME: undefined,
-	VERSION: '0.1.0',
+	VERSION: '0',
 	WITH_CREDENTIALS: false,
 	interceptors: {
 		request: new Interceptors(),

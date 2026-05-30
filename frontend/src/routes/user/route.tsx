@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
-import { ApiError, type UserPublic, UsersService } from "@/client"
+import { ApiError, type UserResponse, UsersService } from "@/client"
 import { Footer } from "@/components/Common/Footer"
 import UserSidebar from "@/components/Sidebar/UserSidebar"
 import {
@@ -18,9 +18,9 @@ export const Route = createFileRoute("/user")({
         to: "/login",
       })
     }
-    let user: UserPublic | undefined
+    let user: UserResponse | undefined
     try {
-      user = await UsersService.readUserMe()
+      user = await UsersService.getCurrentUser()
     } catch (error) {
       if (
         error instanceof ApiError &&

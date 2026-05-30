@@ -57,16 +57,15 @@ function TestRecords() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["test-records", page],
     queryFn: async () => {
-      const response = await TestRecordsService.readTestRecords({
-        skip: page * limit,
-        limit: limit,
+      const response = await TestRecordsService.getRecords1({
+        pageable: { page, size: limit },
       })
       return response
     },
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => TestRecordsService.deleteTestRecord({ id }),
+    mutationFn: (id: string) => TestRecordsService.deleteRecord({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["test-records"] })
       setDeleteRecordId(null)
@@ -294,12 +293,12 @@ function TestRecords() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => handleViewDetail(record.id)}
+                                onClick={() => handleViewDetail(record.id!)}
                               >
                                 查看详情
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => setDeleteRecordId(record.id)}
+                                onClick={() => setDeleteRecordId(record.id || null)}
                                 className="text-destructive"
                               >
                                 删除
@@ -417,7 +416,7 @@ function TestRecords() {
                     {qaExpanded && (
                       <div className="px-4 pb-4 space-y-3">
                         {(
-                          selectedRecordData.questions as {
+                          (selectedRecordData.questions as unknown) as {
                             id: string
                             text: string
                             options: string[]
@@ -425,7 +424,7 @@ function TestRecords() {
                           }[]
                         ).map((q, qIdx) => {
                           const userAnswer = (
-                            selectedRecordData.answers as {
+                            (selectedRecordData.answers as unknown) as {
                               question_id: string
                               answer?: number
                               score?: number

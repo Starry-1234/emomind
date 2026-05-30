@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
-import { AnalysisService } from "@/client"
+import { AnalysisReportsService } from "@/client"
 import { MessageActions } from "@/components/chat/MessageActions"
 import { StreamingMessage } from "@/components/chat/StreamingMessage"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -807,9 +807,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           file_size: analysisFile.size,
                           analysis_result: actualAnalysisResult,
                           conversation_id:
-                            conversationId || activeConvId || null,
+                            conversationId || activeConvId || undefined,
                         }
-                        AnalysisService.createAnalysisReport({
+                        AnalysisReportsService.createReport1({
                           requestBody: reportData,
                         })
                           .then((result) => {

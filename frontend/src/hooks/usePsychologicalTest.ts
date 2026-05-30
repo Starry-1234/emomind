@@ -1056,16 +1056,22 @@ export function usePsychologicalTest(
                 )?.content || null
             }
 
-            TestRecordsService.createTestRecord({
+            TestRecordsService.createRecord1({
               requestBody: {
                 test_name: testName,
-                user_topic: userTopic,
+                user_topic: userTopic || undefined,
                 total_score: capturedTotalScore,
-                total_max: capturedTest?.scoring?.total_max || null,
+                total_max: capturedTest?.scoring?.total_max || undefined,
                 result_description: accumulated,
-                questions: questions,
-                answers: answers,
-                scoring_ranges: capturedTest?.scoring?.ranges || [],
+                questions: questions as unknown as Array<{
+                  [key: string]: { [key: string]: unknown }
+                }>,
+                answers: answers as unknown as Array<{
+                  [key: string]: { [key: string]: unknown }
+                }>,
+                scoring_ranges: (capturedTest?.scoring?.ranges || []) as unknown as Array<{
+                  [key: string]: { [key: string]: unknown }
+                }>,
                 conversation_id: sessionIdRef.current || undefined,
               },
             })
