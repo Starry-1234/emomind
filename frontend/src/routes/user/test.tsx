@@ -176,6 +176,18 @@ export function PsychologicalTestInner({
     handleSessionCreated,
   )
 
+  // 用户发送消息后自动滚动到底部，AI 回复时不滚动
+  const prevMessagesLength = useRef(0)
+  useEffect(() => {
+    if (messages.length > prevMessagesLength.current) {
+      const added = messages.slice(prevMessagesLength.current)
+      if (added.some((m) => m.role === "user")) {
+        messagesEndRef.current?.scrollIntoView({ block: "end" })
+      }
+    }
+    prevMessagesLength.current = messages.length
+  }, [messages])
+
   // ── 基础路由安全网：确保没有 stale 消息残留 ──────────────────────────────
   useEffect(() => {
     if (!propSessionId && messages.length > 0) {
@@ -198,7 +210,7 @@ export function PsychologicalTestInner({
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border bg-card">
       {/* 顶栏 */}
-      <div className="flex items-center gap-3 border-b px-5 py-3">
+      <div className="shrink-0 flex items-center gap-3 border-b px-5 py-3">
         <div
           className={`flex size-8 items-center justify-center rounded-full ${
             isWarmTheme ? "warm-gradient-bg warm-shadow" : "bg-violet-100"
@@ -218,10 +230,8 @@ export function PsychologicalTestInner({
         </div>
       </div>
 
-      {/* 主内容区 */}
-      <div className="relative flex-1 overflow-hidden">
-        {/* 聊天消息区域 */}
-        <div className="h-full overflow-y-auto px-4 py-4">
+      {/* 聊天消息区域 */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
           {messages.length === 0 && !activeTest ? (
             /* 欢迎界面 */
             <div className="flex h-full flex-col items-center justify-center gap-8 px-6">
@@ -585,11 +595,10 @@ export function PsychologicalTestInner({
             </div>
           </div>
         )}
-      </div>
 
       {/* 输入区域（答题时隐藏） */}
       {!activeTest && (
-        <div className="border-t p-4">
+        <div className="shrink-0 border-t p-4">
           <div className="mx-auto max-w-2xl">
             <div className="flex items-end gap-2 rounded-xl border bg-background px-3 py-2 focus-within:ring-1 focus-within:ring-violet-300 focus-within:border-violet-300 transition-all">
               <textarea

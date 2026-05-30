@@ -8,6 +8,7 @@ import com.emomind.entity.User;
 import com.emomind.exception.ServiceException;
 import com.emomind.exception.UnauthorizedException;
 import com.emomind.mapper.UserMapper;
+import com.emomind.repository.PasswordResetTokenRepository;
 import com.emomind.repository.UserRepository;
 import com.emomind.security.JwtTokenProvider;
 import com.emomind.security.UserDetailsImpl;
@@ -40,6 +41,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private PasswordResetTokenRepository tokenRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;

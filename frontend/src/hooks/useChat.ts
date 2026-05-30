@@ -457,11 +457,6 @@ export function useChat(
     }
   }, [sessionId, loadMessages, userId, isStreaming])
 
-  // 自动滚动到底部
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [])
-
   // 辅助函数：同时更新 ref、注册表和缓存
   const updateMessagesAndCache = (
     updatedMessages: ChatMessage[],

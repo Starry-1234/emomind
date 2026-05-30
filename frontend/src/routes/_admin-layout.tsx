@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_admin-layout")({
 export default function AdminLayout() {
   return (
     <ConversationProvider>
-      <SidebarProvider>
+      <SidebarProvider className="h-full flex">
         <AppSidebar />
         <SidebarInset className="flex flex-col">
           <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4">

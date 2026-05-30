@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -74,17 +75,19 @@ class LoginControllerTest {
 
     @Test
     void shouldRecoverPassword() throws Exception {
+        doNothing().when(userService).initiatePasswordReset("test@test.com");
         mockMvc.perform(post("/api/v1/password-recovery/test@test.com"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Password recovery email sent"));
+                .andExpect(jsonPath("$.message").value("密码重置邮件已发送"));
     }
 
     @Test
     void shouldResetPassword() throws Exception {
+        doNothing().when(userService).resetPassword(anyString(), anyString());
         mockMvc.perform(post("/api/v1/reset-password/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"token\":\"abc\",\"newPassword\":\"password123\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Password updated successfully"));
+                .andExpect(jsonPath("$.message").value("密码已更新"));
     }
 }

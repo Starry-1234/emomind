@@ -24,7 +24,7 @@
 4. [x] 编写 AnalysisService 单元测试（CRUD 业务逻辑）
 5. [x] 编写 TestRecordService 单元测试（CRUD、管理员权限）
 6. [x] 编写 AdminStatsService 单元测试（统计数据计算）
-7. [ ] 编写 DifyProxy 集成测试（Mock WebClient）
+7. [x] 编写 DifyProxy 集成测试（Mock WebClient）— 项目中无 DifyProxy 类，使用 DifyControllerTest 覆盖
 8. [x] 配置 JaCoCo 代码覆盖率报告
 9. [x] 配置统一日志格式（Logback + JSON 结构化输出）
 10. [x] 验证整体覆盖率 >= 80%

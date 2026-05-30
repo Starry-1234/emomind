@@ -41,7 +41,7 @@ export const Route = createFileRoute("/user")({
 export default function UserLayout() {
   return (
     <ConversationProvider>
-      <SidebarProvider>
+      <SidebarProvider className="h-full flex">
         <UserSidebar />
         <SidebarInset className="flex flex-col">
           <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4">

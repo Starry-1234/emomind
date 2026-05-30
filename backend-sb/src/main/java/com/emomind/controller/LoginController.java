@@ -38,14 +38,14 @@ public class LoginController {
     @PostMapping("/password-recovery/{email}")
     @Operation(summary = "发送密码找回邮件")
     public ResponseEntity<MessageResponse> recoverPassword(@PathVariable String email) {
-        // TODO: Implement email sending in next iteration
-        return ResponseEntity.ok(new MessageResponse("Password recovery email sent"));
+        userService.initiatePasswordReset(email);
+        return ResponseEntity.ok(new MessageResponse("密码重置邮件已发送"));
     }
 
     @PostMapping("/reset-password/")
     @Operation(summary = "使用令牌重置密码")
     public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
-        // TODO: Implement password reset in next iteration
-        return ResponseEntity.ok(new MessageResponse("Password updated successfully"));
+        userService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(new MessageResponse("密码已更新"));
     }
 }

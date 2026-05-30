@@ -481,11 +481,6 @@ export function usePsychologicalTest(
     }
   }, [sessionId, loadMessages, userId, isStreaming])
 
-  // 自动滚动
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [])
-
   // ── 解析 TEST_JSON ──────────────────────────────────────────────────────────
   const tryParseTestJson = (
     content: string | undefined | null,
