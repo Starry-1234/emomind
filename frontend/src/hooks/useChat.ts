@@ -218,38 +218,61 @@ export function useChat(
         if (loadingConvIdRef.current !== convId) return
         // API 成功后才清旧缓存并写入新数据
         clearChatCache(userId, convId)
-        const chatMsgs: ChatMessage[] = []
+        const rawMsgs: ChatMessage[] = []
         const sorted = [...result.data].sort(
           (a, b) => a.created_at - b.created_at,
         )
-        // 保留现有 assistant 消息的前端元数据（versions / currentVersion 等），避免 API 刷新后丢失
-        const existingAssistants = messagesRef.current.filter(
-          (m) => m.role === "assistant",
-        )
-        let assistantIdx = 0
         for (const msg of sorted) {
           if (msg.query) {
-            chatMsgs.push({
+            rawMsgs.push({
               role: "user",
               content: msg.query,
               files: msg.message_files,
             })
           }
           if (msg.answer) {
-            const existing = existingAssistants[assistantIdx]
-            chatMsgs.push({
+            rawMsgs.push({
               role: "assistant",
               content: msg.answer,
               files: msg.message_files,
-              ...(existing
-                ? {
-                    versions: existing.versions,
-                    currentVersion: existing.currentVersion,
-                    isPaused: existing.isPaused,
-                    userQuery: existing.userQuery,
-                  }
-                : {}),
             })
+          }
+        }
+        // Dify 把重新生成存为独立消息，前端视图为 versions，需要合并连续 assistant
+        const chatMsgs: ChatMessage[] = []
+        for (let i = 0; i < rawMsgs.length; i++) {
+          if (rawMsgs[i].role === "assistant") {
+            const versions: string[] = []
+            let j = i
+            while (j < rawMsgs.length && rawMsgs[j].role === "assistant") {
+              versions.push(rawMsgs[j].content)
+              j++
+            }
+            chatMsgs.push({
+              ...rawMsgs[j - 1],
+              versions,
+              currentVersion: versions.length - 1,
+            })
+            i = j - 1
+          } else {
+            chatMsgs.push(rawMsgs[i])
+          }
+        }
+        // 保留现有 assistant 消息的前端元数据（isPaused / userQuery 等）
+        const existingAssistants = messagesRef.current.filter(
+          (m) => m.role === "assistant",
+        )
+        let assistantIdx = 0
+        for (let i = 0; i < chatMsgs.length; i++) {
+          if (chatMsgs[i].role === "assistant") {
+            const existing = existingAssistants[assistantIdx]
+            if (existing) {
+              chatMsgs[i] = {
+                ...chatMsgs[i],
+                isPaused: existing.isPaused,
+                userQuery: existing.userQuery,
+              }
+            }
             assistantIdx++
           }
         }
