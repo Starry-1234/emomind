@@ -218,44 +218,62 @@ export function useChat(
         if (loadingConvIdRef.current !== convId) return
         // API 成功后才清旧缓存并写入新数据
         clearChatCache(userId, convId)
-        const rawMsgs: ChatMessage[] = []
+        const chatMsgs: ChatMessage[] = []
         const sorted = [...result.data].sort(
           (a, b) => a.created_at - b.created_at,
         )
         for (const msg of sorted) {
           if (msg.query) {
-            rawMsgs.push({
+            // 检查是否重复 query（regenerate/continue）
+            const lastUser =
+              chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1] : null
+            if (lastUser?.role === "user" && lastUser.content === msg.query) {
+              if (msg.answer) {
+                let lastAssistantIdx = -1
+                for (let k = chatMsgs.length - 1; k >= 0; k--) {
+                  if (chatMsgs[k].role === "assistant") {
+                    lastAssistantIdx = k
+                    break
+                  }
+                }
+                if (lastAssistantIdx !== -1) {
+                  const lastAssistant = chatMsgs[lastAssistantIdx]
+                  const existingVersions = lastAssistant.versions || [
+                    lastAssistant.content,
+                  ]
+                  chatMsgs[lastAssistantIdx] = {
+                    ...lastAssistant,
+                    versions: [...existingVersions, msg.answer],
+                    currentVersion: existingVersions.length,
+                    content: msg.answer,
+                    files: msg.message_files,
+                  }
+                }
+              }
+              continue
+            }
+
+            chatMsgs.push({
               role: "user",
               content: msg.query,
               files: msg.message_files,
             })
           }
+
           if (msg.answer) {
-            rawMsgs.push({
-              role: "assistant",
-              content: msg.answer,
-              files: msg.message_files,
-            })
-          }
-        }
-        // Dify 把重新生成存为独立消息，前端视图为 versions，需要合并连续 assistant
-        const chatMsgs: ChatMessage[] = []
-        for (let i = 0; i < rawMsgs.length; i++) {
-          if (rawMsgs[i].role === "assistant") {
-            const versions: string[] = []
-            let j = i
-            while (j < rawMsgs.length && rawMsgs[j].role === "assistant") {
-              versions.push(rawMsgs[j].content)
-              j++
+            const lastUser =
+              chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1] : null
+            const isNewPair =
+              lastUser?.role === "user" && lastUser.content === msg.query
+            const isOrphanAnswer = !msg.query
+
+            if (isNewPair || isOrphanAnswer) {
+              chatMsgs.push({
+                role: "assistant",
+                content: msg.answer,
+                files: msg.message_files,
+              })
             }
-            chatMsgs.push({
-              ...rawMsgs[j - 1],
-              versions,
-              currentVersion: versions.length - 1,
-            })
-            i = j - 1
-          } else {
-            chatMsgs.push(rawMsgs[i])
           }
         }
         // 保留现有 assistant 消息的前端元数据（isPaused / userQuery 等）
