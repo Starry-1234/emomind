@@ -226,8 +226,14 @@ export function useChat(
         for (const msg of sorted) {
           if (msg.query) {
             // 检查是否重复 query（regenerate/continue）
-            const lastUser =
-              chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1] : null
+            let lastUserIdx = -1
+            for (let k = chatMsgs.length - 1; k >= 0; k--) {
+              if (chatMsgs[k].role === "user") {
+                lastUserIdx = k
+                break
+              }
+            }
+            const lastUser = lastUserIdx >= 0 ? chatMsgs[lastUserIdx] : null
             const isDuplicateQuery =
               lastUser?.role === "user" &&
               lastUser.content.trim() === (msg.query || "").trim()
@@ -242,7 +248,7 @@ export function useChat(
             if (isDuplicateQuery) {
               if (msg.answer) {
                 let lastAssistantIdx = -1
-                for (let k = chatMsgs.length - 1; k >= 0; k--) {
+                for (let k = chatMsgs.length - 1; k > lastUserIdx; k--) {
                   if (chatMsgs[k].role === "assistant") {
                     lastAssistantIdx = k
                     break
@@ -277,8 +283,14 @@ export function useChat(
           }
 
           if (msg.answer) {
-            const lastUser =
-              chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1] : null
+            let lastUserIdx = -1
+            for (let k = chatMsgs.length - 1; k >= 0; k--) {
+              if (chatMsgs[k].role === "user") {
+                lastUserIdx = k
+                break
+              }
+            }
+            const lastUser = lastUserIdx >= 0 ? chatMsgs[lastUserIdx] : null
             const isNewPair =
               lastUser?.role === "user" &&
               lastUser.content.trim() === (msg.query || "").trim()

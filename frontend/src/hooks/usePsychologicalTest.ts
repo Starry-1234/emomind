@@ -259,8 +259,14 @@ export function usePsychologicalTest(
             if (msg.query.startsWith("RESULT_JSON::")) continue
 
             // 检查是否重复 query（regenerate/continue）
-            const lastUser =
-              chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1] : null
+            let lastUserIdx = -1
+            for (let k = chatMsgs.length - 1; k >= 0; k--) {
+              if (chatMsgs[k].role === "user") {
+                lastUserIdx = k
+                break
+              }
+            }
+            const lastUser = lastUserIdx >= 0 ? chatMsgs[lastUserIdx] : null
             const isDuplicateQuery =
               lastUser?.role === "user" &&
               lastUser.content.trim() === (msg.query || "").trim()
@@ -285,7 +291,7 @@ export function usePsychologicalTest(
 
                 if (content) {
                   let lastAssistantIdx = -1
-                  for (let k = chatMsgs.length - 1; k >= 0; k--) {
+                  for (let k = chatMsgs.length - 1; k > lastUserIdx; k--) {
                     if (chatMsgs[k].role === "assistant") {
                       lastAssistantIdx = k
                       break
@@ -326,8 +332,14 @@ export function usePsychologicalTest(
             }
 
             if (content) {
-              const lastUser =
-                chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1] : null
+              let lastUserIdx = -1
+              for (let k = chatMsgs.length - 1; k >= 0; k--) {
+                if (chatMsgs[k].role === "user") {
+                  lastUserIdx = k
+                  break
+                }
+              }
+              const lastUser = lastUserIdx >= 0 ? chatMsgs[lastUserIdx] : null
               const isNewPair =
                 lastUser?.role === "user" &&
                 lastUser.content.trim() === (msg.query || "").trim()
