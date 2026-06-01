@@ -1,0 +1,867 @@
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  icon_type: emoji
+  mode: advanced-chat
+  name: 智能心理测评_v0.1
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/minimax:0.0.15@04198f577cae6ba0b4624d2715edc9c93fd775a47ee16bcbc2825230eed8c56a
+    version: null
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/tongyi:0.1.45@7f2b2d5b163de4c1ad8fad80e624c08d47ed7942a6a534e88e5786e65073f3ca
+    version: null
+kind: app
+version: 0.6.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      - document
+      allowed_file_upload_methods:
+      - remote_url
+      - local_file
+      enabled: true
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 20
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: '你好呀！👋✨
+
+      很高兴见到你！我是小心，你的心理测试小助手～
+
+      这里是一个温暖的角落，可以帮助你更好地了解自己的内心世界。
+
+      您可以选择：
+
+      🌟 聊聊心事 — 如果你最近有什么烦心事或者想倾诉的，我可以陪你说说话
+
+      📋 做个心理小测试 — 想探索一下自己的某个心理维度吗？比如情绪、压力、睡眠、人际关系等
+
+      🎯 了解测试怎么做 — 如果你想知道如何使用测试功能，我可以一步步告诉你哦～'
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: true
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1776743084298-source-1776744558722-target
+      selected: false
+      source: '1776743084298'
+      sourceHandle: source
+      target: '1776744558722'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1776743566754-source-1776744692649-target
+      selected: false
+      source: '1776743566754'
+      sourceHandle: source
+      target: '1776744692649'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: knowledge-retrieval
+      id: 1776743569458-source-1776744810150-target
+      selected: false
+      source: '1776743569458'
+      sourceHandle: source
+      target: '1776744810150'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: 1776744810150-source-1776744848593-target
+      selected: false
+      source: '1776744810150'
+      sourceHandle: source
+      target: '1776744848593'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1776746000001-source-1776746000002-target
+      selected: false
+      source: '1776746000001'
+      sourceHandle: source
+      target: '1776746000002'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1776744848593-source-1776745152806-target
+      selected: false
+      source: '1776744848593'
+      sourceHandle: source
+      target: '1776745152806'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: question-classifier
+      id: 1776738478539-source-1777022968676-target
+      selected: false
+      source: '1776738478539'
+      sourceHandle: source
+      target: '1777022968676'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+      id: 1777022968676-1777023880497-1776743084298-target
+      source: '1777022968676'
+      sourceHandle: '1777023880497'
+      target: '1776743084298'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+      id: 1777022968676-1-1776746000001-target
+      source: '1777022968676'
+      sourceHandle: '1'
+      target: '1776746000001'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+      id: 1777022968676-1777023252530-1776743566754-target
+      source: '1777022968676'
+      sourceHandle: '1777023252530'
+      target: '1776743566754'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+      id: 1777022968676-2-1776743569458-target
+      source: '1777022968676'
+      sourceHandle: '2'
+      target: '1776743569458'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 用户输入
+        type: start
+        variables: []
+      height: 73
+      id: '1776738478539'
+      position:
+        x: 0
+        y: 244
+      positionAbsolute:
+        x: 0
+        y: 244
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - sys
+          - query
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}
+
+
+            {{#sys.files#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 50
+        model:
+          completion_params:
+            temperature: 0.11
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: af87161e-ee2b-4251-a95a-a9f10414144f
+          role: system
+          text: '你是一个心理测评分析师。
+
+
+            用户会发送以 RESULT_JSON:: 开头的答案数据{{#sys.query#}}，格式如下：
+
+            RESULT_JSON::{"test_id":"xxx","title":"测试名称","answers":[{"id":"Q001","answer":2,"score":3},...]}
+
+            '
+        - id: ad7e877d-37f1-4c7b-9c92-e91799d5cf77
+          role: user
+          text: '你的任务：
+
+            1. 根据答案中的 test_id 和 title，从当前会话历史中找到对应的测试题（以 TEST_JSON:: 开头的那条消息）
+
+            2. 如果找到多个测试题，优先匹配 test_id 完全一致的那一套；如果 test_id 找不到，再用 title 匹配
+
+            3. 提取该测试题的完整信息：题目文本、每题分值、评分标准（ranges）
+
+            4. 根据用户提交的 answers 计算总分（将每题的 score 相加）
+
+            5. 对照评分标准 ranges，判断用户所处区间，生成分析报告
+
+
+            分析报告结构：
+
+            - 测试名称：xxx
+
+            - 总分：xx 分（满分 xx 分）
+
+            - 结果评定：xxx（如"轻度抑郁"）
+
+            - 结果解读：根据所处区间的 description 进行展开说明
+
+            - 建议：针对性的心理调适建议'
+        selected: true
+        structured_output_enabled: false
+        title: 情感测试题分析
+        type: llm
+        variables:
+        - label: upload_file
+          max_length: 48
+          required: false
+          type: file
+          variable: upload_file
+        vision:
+          enabled: false
+      height: 88
+      id: '1776743084298'
+      position:
+        x: 686.828621263965
+        y: 564
+      positionAbsolute:
+        x: 686.828621263965
+        y: 564
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}
+
+
+            {{#sys.files#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 51
+        model:
+          completion_params:
+            temperature: 0.01
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: dca5e1ca-dec4-434c-8c05-54129bd0acbd
+          role: system
+          text: 你是情感标签生成器，专门生成所有情感标签并按一定格式输出。
+        - id: 78a3b9c6-7ce8-431b-8e48-3d09f99ec3d1
+          role: user
+          text: "```xml\n<instruction>\n你需要完成以下任务：\n1. 从提供的34个情感标签列表中随机选择10个不同的标签。列表如下：mood,\
+            \ interest, sleep, anxiety, cognitive, stress, irritability, social, motivation,\
+            \ energy, physical, coping, behavior, relationships, help_seeking, selfesteem,\
+            \ mood_swings, withdrawal, future, somatic, suicidal, avoidance, panic,\
+            \ rumination, family, adaptation, substance, alexithymia, support, sensitivity,\
+            \ work, existential, trauma, impulsivity, reactivity, communication, selfimage,\
+            \ dissociation, resilience。\n2. 确保选择的10个标签是随机且不重复的。\n3. 将选出的10个情感标签翻译成对应的中文。以下是每个标签的标准中文翻译对照表，请严格使用：\n\
+            \   - mood: 情绪\n   - interest: 兴趣\n   - sleep: 睡眠\n   - anxiety: 焦虑\n\
+            \   - cognitive: 认知\n   - stress: 压力\n   - irritability: 易怒\n   - social:\
+            \ 社交\n   - motivation: 动力\n   - energy: 精力\n   - physical: 躯体\n   - coping:\
+            \ 应对\n   - behavior: 行为\n   - relationships: 人际关系\n   - help_seeking:\
+            \ 求助\n   - selfesteem: 自尊\n   - mood_swings: 情绪波动\n   - withdrawal: 退缩\n\
+            \   - future: 未来\n   - somatic: 躯体化\n   - suicidal: 自杀意念\n   - avoidance:\
+            \ 回避\n   - panic: 恐慌\n   - rumination: 反刍思维\n   - family: 家庭\n   - adaptation:\
+            \ 适应\n   - substance: 物质使用\n   - alexithymia: 述情障碍\n   - support: 支持\n\
+            \   - sensitivity: 敏感性\n   - work: 工作\n   - existential: 存在感\n   - trauma:\
+            \ 创伤\n   - impulsivity: 冲动性\n   - reactivity: 反应性\n   - communication:\
+            \ 沟通\n   - selfimage: 自我形象\n   - dissociation: 解离\n   - resilience: 心理韧性\n\
+            4. 将翻译后的10个中文标签，用顿号（、）连接成一个字符串。\n5. 生成最终输出。输出格式可以用一下作为参考：“好的，以下是我为你推荐的10个情感标签，你可以选择其中任意数量的标签然后我将为你生成相关测试题：“"
+        selected: false
+        title: 情感标签生成器
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 88
+      id: '1776743566754'
+      position:
+        x: 686.828621263965
+        y: 214.45441116563407
+      positionAbsolute:
+        x: 686.828621263965
+        y: 214.45441116563407
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - sys
+          - query
+        desc: ''
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: 813b7d9e-68e5-4e86-9e91-edc9db8dca8a
+          role: system
+          text: 你是一个心理健康评估的分类器。根据用户输入的内容，判断用户最可能属于以下哪个心理维度，输出对应的英文维度标签
+        - id: 7651e4b5-298f-49d7-9b90-ee72c5951625
+          role: user
+          text: '。
+
+            维度列表：
+
+            - mood：情绪（低落、烦躁、悲伤、情绪波动）
+
+            - interest：兴趣（丧失兴趣、乏味、无感、冷漠）
+
+            - sleep：睡眠（失眠、噩梦、嗜睡、作息紊乱）
+
+            - anxiety：焦虑（紧张、担忧、恐慌、心跳加速、回避）
+
+            - cognitive：认知（注意力、记忆力、思维迟缓）
+
+            - stress：压力（负担重、喘不过气、超负荷）
+
+            - irritability：易怒（暴躁、不耐烦、容易发火）
+
+            - social：社交（回避社交、孤独、不合群）
+
+            - motivation：动力（拖延、懒散、提不起劲）
+
+            - energy：精力（疲劳、虚弱、没精神）
+
+            - physical：躯体化（头痛、胃痛、胸闷、无明显器质性病变）
+
+            - coping：应对方式（逃避、自责、消极应对）
+
+            - behavior：行为异常（强迫行为、冲动、自伤）
+
+            - relationships：人际关系（冲突、疏离、依赖）
+
+            - help_seeking：求助意愿（想求助、不知道找谁、犹豫）
+
+            - selfesteem：自尊（自我否定、觉得自己没用、不自信）
+
+            - mood_swings：情绪波动（忽高忽低、大起大落）
+
+            - withdrawal：退缩（封闭自己、不愿出门、回避接触）
+
+            - future：未来感（无望、迷茫、看不到出路）
+
+            - somatic：躯体症状（心悸、手抖、出汗、头晕）
+
+            - suicidal：自杀意念（不想活、死了算了、自伤念头）
+
+            - avoidance：回避行为（逃避现实、不敢面对、躲避）
+
+            - panic：恐慌（突然恐惧、窒息感、濒死感）
+
+            - rumination：反刍思维（反复想、停不下来、钻牛角尖）
+
+            - family：家庭关系（家庭冲突、不被理解、原生家庭）
+
+            - adaptation：适应困难（新环境、变化、适应不良）
+
+            - substance：物质使用（酒精、药物依赖、成瘾）
+
+            - alexithymia：述情障碍（说不清感受、情感麻木）
+
+            - support：社会支持（无人倾诉、缺乏支持、孤立）
+
+            - sensitivity：敏感（过度敏感、容易受伤、玻璃心）
+
+            - work：工作压力（加班、职场、绩效焦虑）
+
+            - existential：存在感（无意义、空虚、活着为什么）
+
+            - trauma：创伤（闪回、噩梦、创伤后反应）
+
+            - impulsivity：冲动（控制不住、爆发、事后后悔）
+
+            - reactivity：反应过度（小事大反应、过激、情绪失控）
+
+            - communication：沟通困难（表达不清、不被理解、沟通障碍）
+
+
+            规则：
+
+            1. 只输出一个英文维度标签，不要输出任何其他内容
+
+            2. 如果用户描述涉及多个维度，选择用户表达最强烈、最核心的那个
+
+            3. 如果无法判断，默认输出 "mood"
+
+            4. 不要解释、不要加标点、不要换行
+
+
+            示例：
+
+            用户输入："我最近总是睡不着，翻来覆去的"
+
+            输出：sleep
+
+
+            用户输入："我什么都不想做，觉得什么都没意思"
+
+            输出：interest
+
+
+            用户输入："我经常心跳加速，感觉要出事了一样"
+
+            输出：anxiety'
+        selected: false
+        title: 提取情感标签
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 88
+      id: '1776743569458'
+      position:
+        x: 686.828621263965
+        y: 372.4225892448671
+      positionAbsolute:
+        x: 686.828621263965
+        y: 372.4225892448671
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#1776743084298.text#}}'
+        desc: ''
+        selected: false
+        title: 测试题分析输出
+        type: answer
+        variables: []
+      height: 103
+      id: '1776744558722'
+      position:
+        x: 1071.6896183904564
+        y: 564
+      positionAbsolute:
+        x: 1071.6896183904564
+        y: 564
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#1776743566754.text#}}'
+        desc: ''
+        selected: false
+        title: 情感标签输出
+        type: answer
+        variables: []
+      height: 103
+      id: '1776744692649'
+      position:
+        x: 1071.6896183904564
+        y: 214.45441116563407
+      positionAbsolute:
+        x: 1071.6896183904564
+        y: 214.45441116563407
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        dataset_ids:
+        - M226cJwOGexSGukeJ1E6k+yhS40HYF2jCbMl8IUucXaD6+4SZqwyqPltUEjeHgeP
+        - N4rLv9C/TqrDLwlNli1/+cj1JL7AhtzpFLVC3iinHmEXOBzPRSzuKeXWIG/aUjT8
+        desc: ''
+        multiple_retrieval_config:
+          reranking_enable: false
+          reranking_mode: reranking_model
+          reranking_model:
+            model: qwen3-rerank
+            provider: langgenius/tongyi/tongyi
+          score_threshold: null
+          top_k: 4
+          weights:
+            keyword_setting:
+              keyword_weight: 0
+            vector_setting:
+              embedding_model_name: embo-01
+              embedding_provider_name: langgenius/minimax/minimax
+              vector_weight: 1
+            weight_type: customized
+        query_attachment_selector: []
+        query_variable_selector:
+        - '1776738478539'
+        - sys.query
+        retrieval_mode: multiple
+        selected: false
+        title: 知识检索
+        type: knowledge-retrieval
+      height: 90
+      id: '1776744810150'
+      position:
+        x: 1071.6896183904564
+        y: 372.4225892448671
+      positionAbsolute:
+        x: 1071.6896183904564
+        y: 372.4225892448671
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1776744810150'
+          - result
+        desc: ''
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: efc9913d-02df-4d0c-ad09-195a2e89b208
+          role: system
+          text: 你的任务是将知识库检索到的题目数据，转换为标准 JSON 格式，供前端页面直接渲染使用。
+        - id: 2b9a5551-995e-4adb-aaf2-a660019f37b1
+          role: user
+          text: "你的任务是将知识库检索到的题目数据{{#context#}}，转换为标准 JSON 格式，供前端页面直接渲染使用。\n\n## 输入说明\n\
+            \n输入数据来自知识库检索结果，格式为多行 JSON，每行一条题目记录：\n- `id`：题目唯一标识符（如 \"anxiety_003\"\
+            ）\n- `text`：题目文本\n- `dimension`：英文维度标签（如 \"anxiety\"）\n- `dimension_cn`：中文维度名（如\
+            \ \"焦虑\"）\n- `keywords`：关键词列表（逗号分隔）\n\n## 处理步骤\n\n### 第 1 步：提取并归类\n- 从输入数据中提取所有题目\n\
+            - 按 `dimension` 字段分组\n- 如果只有一个维度，生成单维度量表\n- 如果有多个维度，生成综合量表（title 用\"心理健康综合自评量表\"\
+            ，dimension 用 \"composite\"）\n\n### 第 2 步：优化题目文本\n- 保持原意不变\n- 使语句更自然流畅、口语化\n\
+            - 确保每题都是清晰的自我陈述句，适合 5 级频率评分\n- 删除重复或过于相似的题目（相似度 > 80% 只保留一题）\n\n### 第\
+            \ 3 步：确定题型和选项\n所有题目统一使用 `likert` 类型，选项和分值固定为：\n- 选项：`[\"从不\", \"偶尔\",\
+            \ \"有时\", \"经常\", \"总是\"]`\n- 分值：`[1, 2, 3, 4, 5]`\n\n### 第 4 步：生成评分标准\n\
+            - `total_max` = 题目数量 × 5（每题最高 5 分）\n- 分为 3 个区间，每个区间给出中文名称和针对该维度的具体描述：\n\
+            \n| 区间 | 范围 | label | 描述风格 |\n|------|------|-------|---------|\n| 低分\
+            \ | 0 ~ total_max×33% | 正常范围 | 肯定当前状态良好，鼓励继续保持 |\n| 中分 | total_max×33%+1\
+            \ ~ total_max×66% | 需要关注 | 指出存在一定困扰，建议自我调节 |\n| 高分 | total_max×66%+1 ~\
+            \ total_max | 建议寻求帮助 | 强调问题较严重，建议寻求专业帮助 |\n\n- 如果是综合量表，描述需涵盖涉及的主要维度\n\
+            - label 和 description 必须使用中文\n\n### 第 5 步：组装 JSON\n- `test_id`：格式为 `{dimension}_{题目数量}q`（如\
+            \ `anxiety_7q`、`composite_21q`），不用时间戳\n- `title`：单维度用 `{dimension_cn}自评量表`（如\"\
+            焦虑自评量表\"），多维度用\"心理健康综合自评量表\"\n- `dimension`：单维度用英文标签，多维度用 \"composite\"\
+            \n- `description`：一句话说明测评目的和覆盖范围\n\n## 输出格式要求\n\n1. 必须输出合法的 JSON 字符串\n\
+            2. 不得包含 Markdown 语法、XML 标签、代码块符号（如 ```）\n3. 不得有任何 JSON 之外的前缀文字或后缀说明\n\
+            4. 字段名全部使用英文，内容使用中文\n5. 输出必须以 TEST_JSON:: 开头，紧跟 JSON 字符串，中间不加任何空格或换行\n\
+            \n## JSON 结构\n\n{\n  \"test_id\": \"anxiety_7q\",\n  \"title\": \"焦虑自评量表\"\
+            ,\n  \"dimension\": \"anxiety\",\n  \"description\": \"本量表用于评估您近期的焦虑状态，请根据实际感受如实作答。\"\
+            ,\n  \"total_questions\": 7,\n  \"questions\": [\n    {\n      \"id\"\
+            : \"anxiety_001\",\n      \"text\": \"你是否经常感到心跳加速或呼吸急促？\",\n      \"type\"\
+            : \"likert\",\n      \"options\": [\"从不\", \"偶尔\", \"有时\", \"经常\", \"\
+            总是\"],\n      \"scores\": [1, 2, 3, 4, 5]\n    }\n  ],\n  \"scoring\"\
+            : {\n    \"total_max\": 35,\n    \"ranges\": [\n      {\"min\": 0, \"\
+            max\": 11, \"label\": \"正常范围\", \"description\": \"您目前的焦虑水平在正常范围内，继续保持良好的生活习惯和积极心态。\"\
+            },\n      {\"min\": 12, \"max\": 23, \"label\": \"需要关注\", \"description\"\
+            : \"您存在一定程度的焦虑情绪，建议通过放松训练、规律运动等方式缓解，并持续关注自身状态。\"},\n      {\"min\": 24,\
+            \ \"max\": 35, \"label\": \"建议寻求帮助\", \"description\": \"您的焦虑水平较高，可能已影响日常生活，建议尽早与专业心理咨询师沟通。\"\
+            }\n    ]\n  }\n}\n\n## 多维度综合量表示例\n\n当知识库返回多个维度的题目时：\n\n{\n  \"test_id\"\
+            : \"composite_21q\",\n  \"title\": \"心理健康综合自评量表\",\n  \"dimension\": \"\
+            composite\",\n  \"description\": \"本量表综合评估您在焦虑、睡眠、认知等多个维度的心理状态，请根据近两周的实际感受如实作答。\"\
+            ,\n  \"total_questions\": 21,\n  \"questions\": [\n    {\"id\": \"anxiety_001\"\
+            , \"text\": \"...\", \"type\": \"likert\", \"options\": [\"从不\",\"偶尔\"\
+            ,\"有时\",\"经常\",\"总是\"], \"scores\": [1,2,3,4,5]},\n    {\"id\": \"sleep_001\"\
+            , \"text\": \"...\", \"type\": \"likert\", \"options\": [\"从不\",\"偶尔\"\
+            ,\"有时\",\"经常\",\"总是\"], \"scores\": [1,2,3,4,5]},\n    {\"id\": \"cognitive_001\"\
+            , \"text\": \"...\", \"type\": \"likert\", \"options\": [\"从不\",\"偶尔\"\
+            ,\"有时\",\"经常\",\"总是\"], \"scores\": [1,2,3,4,5]}\n  ],\n  \"scoring\"\
+            : {\n    \"total_max\": 105,\n    \"ranges\": [\n      {\"min\": 0, \"\
+            max\": 34, \"label\": \"正常范围\", \"description\": \"您目前的心理状态总体良好，各维度表现均在正常范围内，请继续保持健康的生活方式。\"\
+            },\n      {\"min\": 35, \"max\": 69, \"label\": \"需要关注\", \"description\"\
+            : \"您在某些维度上存在一定困扰，建议关注自身情绪变化，适当调整生活节奏，必要时寻求身边人的支持。\"},\n      {\"min\"\
+            : 70, \"max\": 105, \"label\": \"建议寻求帮助\", \"description\": \"您的多项心理指标偏高，日常功能可能已受到影响，强烈建议尽快联系专业心理咨询师或心理医生进行评估。\"\
+            }\n    ]\n  }\n}"
+        selected: false
+        title: 测试题生成
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 88
+      id: '1776744848593'
+      position:
+        x: 1418.5880180620554
+        y: 372.4225892448671
+      positionAbsolute:
+        x: 1418.5880180620554
+        y: 372.4225892448671
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#1776744848593.text#}}'
+        desc: ''
+        selected: false
+        title: 测试题输出
+        type: answer
+        variables: []
+      height: 103
+      id: '1776745152806'
+      position:
+        x: 1774.0586171589525
+        y: 372.4225892448671
+      positionAbsolute:
+        x: 1774.0586171589525
+        y: 372.4225892448671
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        memory:
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 50
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: guide-chat-system-prompt
+          role: system
+          text: '你是一个温暖、友好的心理测试引导助手。你的名字叫「小心」。
+
+
+            你的主要职责是：
+
+            1. 友好地与用户交流，让用户感到舒适和被理解
+
+            2. 介绍心理测试的使用流程，帮助用户顺利开始测试
+
+            3. 引导用户进入正确的功能分支
+
+            4. 支持简单的日常交流
+
+
+            当用户问到如何使用时，请介绍以下流程：
+
+            「您好！这里是心理测试助手，使用流程很简单：
+
+            第一步：输入"智能问答"，系统会为您随机推荐10个情感维度标签供您选择；
+
+            第二步：从标签中挑选您感兴趣的方向（如"焦虑"、"压力"、"睡眠"等），输入该标签名；
+
+            第三步：系统会为您生成对应的心理测试题，您可以在线作答；
+
+            第四步：将答完的测试题保存并上传，系统会为您生成分析报告。」
+
+
+            保持语气温暖、耐心、专业，避免冷漠机械的回复，让整个交流过程自然流畅。l'
+        - id: guide-chat-user-prompt
+          role: user
+          text: '{{#sys.query#}}'
+        selected: false
+        title: 引导性对话助手
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 88
+      id: '1776746000001'
+      position:
+        x: 686.828621263965
+        y: 36.695199014797026
+      positionAbsolute:
+        x: 686.828621263965
+        y: 36.695199014797026
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#1776746000001.text#}}'
+        desc: ''
+        selected: false
+        title: 引导回复
+        type: answer
+        variables: []
+      height: 103
+      id: '1776746000002'
+      position:
+        x: 1071.6896183904564
+        y: 36.695199014797026
+      positionAbsolute:
+        x: 1071.6896183904564
+        y: 36.695199014797026
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        classes:
+        - id: '1'
+          name: 当用户输入不符合分类2,3,4时，就走这一条，即：其他
+        - id: '1777023252530'
+          name: 包含“智能问答”字样或有想答题、测试的意图
+        - id: '2'
+          name: "{{#sys.query#}}用户单独输入如下意向的情感标签或用户输入含如下情感标签有答题意向的话：{   - mood: 情绪\
+            \   \n- interest: 兴趣   \n- sleep: 睡眠   \n- anxiety: 焦虑   \n- cognitive:\
+            \ 认知   \n- stress: 压力   \n- irritability: 易怒   \n- social: 社交   \n- motivation:\
+            \ 动力   \n- energy: 精力   \n- physical: 躯体   \n- coping: 应对   \n- behavior:\
+            \ 行为   \n- relationships: 人际关系   \n- help_seeking: 求助   \n- selfesteem:\
+            \ 自尊   \n- mood_swings: 情绪波动   \n- withdrawal: 退缩   \n- future: 未来   \n\
+            - somatic: 躯体化   \n- suicidal: 自杀意念   \n- avoidance: 回避   \n- panic: 恐慌\
+            \   \n- rumination: 反刍思维   \n- family: 家庭   \n- adaptation: 适应   \n- substance:\
+            \ 物质使用   \n- alexithymia: 述情障碍   \n- support: 支持   \n- sensitivity: 敏感性\
+            \   \n- work: 工作   \n- existential: 存在感   \n- trauma: 创伤   \n- impulsivity:\
+            \ 冲动性   \n- reactivity: 反应性   \n- communication: 沟通   \n- selfimage: 自我形象\
+            \   \n- dissociation: 解离   \n- resilience: 心理韧性}"
+        - id: '1777023880497'
+          name: '输入信息以 RESULT_JSON:: 开头的答案数据，格式如下：
+
+            RESULT_JSON::{"test_id":"xxx","title":"测试名称","answers":[{"id":"Q001","answer":2,"score":3},...]}'
+        instructions: ''
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        query_variable_selector:
+        - '1776738478539'
+        - sys.query
+        selected: false
+        title: 意图分析
+        type: question-classifier
+        vision:
+          enabled: false
+      height: 249
+      id: '1777022968676'
+      position:
+        x: 339.5508001642005
+        y: 154.77540008210025
+      positionAbsolute:
+        x: 339.5508001642005
+        y: 154.77540008210025
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: -27.992033487209483
+      y: 351.32768441474695
+      zoom: 0.8165932280275265
+  rag_pipeline_variables: []
