@@ -253,6 +253,11 @@ export function usePsychologicalTest(
         const sorted = [...result.data].sort(
           (a, b) => a.created_at - b.created_at,
         )
+        // 保留现有 assistant 消息的前端元数据（versions / currentVersion 等），避免 API 刷新后丢失
+        const existingAssistants = messagesRef.current.filter(
+          (m) => m.role === "assistant",
+        )
+        let assistantIdx = 0
         for (const msg of sorted) {
           if (msg.query && typeof msg.query === "string") {
             if (!msg.query.startsWith("RESULT_JSON::")) {
@@ -261,13 +266,28 @@ export function usePsychologicalTest(
           }
           if (msg.answer && typeof msg.answer === "string") {
             const testJsonIdx = msg.answer.indexOf("TEST_JSON::")
+            let content: string | null = null
             if (testJsonIdx !== -1) {
               const prefixText = msg.answer.slice(0, testJsonIdx).trim()
-              if (prefixText) {
-                chatMsgs.push({ role: "assistant", content: prefixText })
-              }
+              if (prefixText) content = prefixText
             } else if (!msg.answer.startsWith("RESULT_JSON::")) {
-              chatMsgs.push({ role: "assistant", content: msg.answer })
+              content = msg.answer
+            }
+            if (content) {
+              const existing = existingAssistants[assistantIdx]
+              chatMsgs.push({
+                role: "assistant",
+                content,
+                ...(existing
+                  ? {
+                      versions: existing.versions,
+                      currentVersion: existing.currentVersion,
+                      isPaused: existing.isPaused,
+                      userQuery: existing.userQuery,
+                    }
+                  : {}),
+              })
+              assistantIdx++
             }
           }
         }

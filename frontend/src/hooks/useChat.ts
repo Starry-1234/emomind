@@ -222,6 +222,11 @@ export function useChat(
         const sorted = [...result.data].sort(
           (a, b) => a.created_at - b.created_at,
         )
+        // 保留现有 assistant 消息的前端元数据（versions / currentVersion 等），避免 API 刷新后丢失
+        const existingAssistants = messagesRef.current.filter(
+          (m) => m.role === "assistant",
+        )
+        let assistantIdx = 0
         for (const msg of sorted) {
           if (msg.query) {
             chatMsgs.push({
@@ -231,11 +236,21 @@ export function useChat(
             })
           }
           if (msg.answer) {
+            const existing = existingAssistants[assistantIdx]
             chatMsgs.push({
               role: "assistant",
               content: msg.answer,
               files: msg.message_files,
+              ...(existing
+                ? {
+                    versions: existing.versions,
+                    currentVersion: existing.currentVersion,
+                    isPaused: existing.isPaused,
+                    userQuery: existing.userQuery,
+                  }
+                : {}),
             })
+            assistantIdx++
           }
         }
         setMessages(chatMsgs)
