@@ -253,6 +253,7 @@ export function usePsychologicalTest(
         const sorted = [...result.data].sort(
           (a, b) => a.created_at - b.created_at,
         )
+        console.log("[loadMessages] sorted API msgs:", sorted)
         for (const msg of sorted) {
           if (msg.query && typeof msg.query === "string") {
             if (msg.query.startsWith("RESULT_JSON::")) continue
@@ -260,7 +261,18 @@ export function usePsychologicalTest(
             // 检查是否重复 query（regenerate/continue）
             const lastUser =
               chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1] : null
-            if (lastUser?.role === "user" && lastUser.content === msg.query) {
+            const isDuplicateQuery =
+              lastUser?.role === "user" &&
+              lastUser.content.trim() === (msg.query || "").trim()
+            console.log(
+              "[loadMessages] checking query:",
+              JSON.stringify(msg.query),
+              "lastUser:",
+              JSON.stringify(lastUser?.content),
+              "isDuplicate:",
+              isDuplicateQuery,
+            )
+            if (isDuplicateQuery) {
               if (msg.answer && typeof msg.answer === "string") {
                 const testJsonIdx = msg.answer.indexOf("TEST_JSON::")
                 let content: string | null = null
@@ -290,6 +302,10 @@ export function usePsychologicalTest(
                       currentVersion: existingVersions.length,
                       content,
                     }
+                    console.log(
+                      "[loadMessages] merged regenerate answer into versions:",
+                      chatMsgs[lastAssistantIdx].versions,
+                    )
                   }
                 }
               }
@@ -313,7 +329,8 @@ export function usePsychologicalTest(
               const lastUser =
                 chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1] : null
               const isNewPair =
-                lastUser?.role === "user" && lastUser.content === msg.query
+                lastUser?.role === "user" &&
+                lastUser.content.trim() === (msg.query || "").trim()
               const isOrphanAnswer = !msg.query
 
               if (isNewPair || isOrphanAnswer) {
@@ -322,6 +339,7 @@ export function usePsychologicalTest(
             }
           }
         }
+        console.log("[loadMessages] rebuilt chatMsgs:", chatMsgs)
         // 保留现有 assistant 消息的前端元数据（isPaused / userQuery 等）
         const existingAssistants = messagesRef.current.filter(
           (m) => m.role === "assistant",

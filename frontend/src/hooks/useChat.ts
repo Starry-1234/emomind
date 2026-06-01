@@ -222,12 +222,24 @@ export function useChat(
         const sorted = [...result.data].sort(
           (a, b) => a.created_at - b.created_at,
         )
+        console.log("[loadMessages] sorted API msgs:", sorted)
         for (const msg of sorted) {
           if (msg.query) {
             // 检查是否重复 query（regenerate/continue）
             const lastUser =
               chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1] : null
-            if (lastUser?.role === "user" && lastUser.content === msg.query) {
+            const isDuplicateQuery =
+              lastUser?.role === "user" &&
+              lastUser.content.trim() === (msg.query || "").trim()
+            console.log(
+              "[loadMessages] checking query:",
+              JSON.stringify(msg.query),
+              "lastUser:",
+              JSON.stringify(lastUser?.content),
+              "isDuplicate:",
+              isDuplicateQuery,
+            )
+            if (isDuplicateQuery) {
               if (msg.answer) {
                 let lastAssistantIdx = -1
                 for (let k = chatMsgs.length - 1; k >= 0; k--) {
@@ -248,6 +260,10 @@ export function useChat(
                     content: msg.answer,
                     files: msg.message_files,
                   }
+                  console.log(
+                    "[loadMessages] merged regenerate answer into versions:",
+                    chatMsgs[lastAssistantIdx].versions,
+                  )
                 }
               }
               continue
@@ -264,7 +280,8 @@ export function useChat(
             const lastUser =
               chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1] : null
             const isNewPair =
-              lastUser?.role === "user" && lastUser.content === msg.query
+              lastUser?.role === "user" &&
+              lastUser.content.trim() === (msg.query || "").trim()
             const isOrphanAnswer = !msg.query
 
             if (isNewPair || isOrphanAnswer) {
@@ -276,6 +293,7 @@ export function useChat(
             }
           }
         }
+        console.log("[loadMessages] rebuilt chatMsgs:", chatMsgs)
         // 保留现有 assistant 消息的前端元数据（isPaused / userQuery 等）
         const existingAssistants = messagesRef.current.filter(
           (m) => m.role === "assistant",
