@@ -2,12 +2,6 @@
 
 A psychological assessment platform with AI chat integration, online testing, file analysis, and multi-theme support.
 
-## Current Status
-
-**Phase**: Design documentation complete, awaiting Phase 2 (project scaffolding).
-
-This branch (`emomind-sb`) is migrating the backend from FastAPI to Spring Boot 3.2 + Java 17. The React frontend remains unchanged.
-
 ## Features
 
 - **User Authentication**
@@ -61,11 +55,11 @@ All design documents are in the `doc/` directory:
 | `doc/detailed-design.md` | Database, API, class, and configuration details |
 | `doc/tasks/*.md` | Per-feature task breakdown with checklists |
 
-## Planned Project Structure
+## Project Structure
 
 ```
 emomind-sb/
-├── backend-sb/           # Spring Boot backend (not yet created)
+├── backend-sb/           # Spring Boot backend
 │   ├── pom.xml
 │   └── src/main/java/com/emomind/
 │       ├── controller/   # REST API controllers
@@ -73,27 +67,35 @@ emomind-sb/
 │       ├── repository/   # Spring Data JPA repositories
 │       ├── entity/       # JPA entities
 │       ├── dto/          # Request/response DTOs
+│       ├── mapper/       # Entity-DTO mappers
+│       ├── exception/    # Custom exceptions
 │       ├── security/     # JWT and authentication
 │       ├── config/       # Configuration classes
 │       └── resources/
 │           ├── application.yml
 │           └── db/migration/   # Flyway migrations
-├── frontend/             # React SPA (shared with FastAPI version)
+├── frontend/             # React SPA
+│   ├── src/
+│   │   ├── routes/       # TanStack Router pages
+│   │   ├── components/   # Shared UI components
+│   │   ├── hooks/        # React hooks (chat, auth, etc.)
+│   │   ├── services/     # API clients
+│   │   └── client/       # Auto-generated OpenAPI client
+│   └── dist/             # Production build output
 ├── doc/                  # Design documentation
 ├── compose.yml           # Docker Compose production config
 ├── compose.override.yml  # Docker Compose development config
-└── scripts/              # Build and utility scripts
+├── scripts/              # Build and utility scripts
+└── .env.example          # Environment variable template
 ```
 
 ## Development Environment Ports
-
-Ports are isolated from the FastAPI version to allow both to run simultaneously:
 
 | Service | Port |
 |---------|------|
 | Frontend | http://localhost:5174 |
 | Backend API | http://localhost:8080 |
-| API Docs | http://localhost:8080/docs |
+| API Docs (Swagger UI) | http://localhost:8080/swagger-ui.html |
 | Adminer (DB) | http://localhost:8082 |
 | Traefik Dashboard | http://localhost:8091 |
 | Mailcatcher | http://localhost:10801 |
@@ -119,7 +121,7 @@ Key variables to configure:
 
 > **Note**: On Windows with Docker Desktop, use your host LAN IP (e.g., `192.168.1.x`) for `DIFY_API_URL` instead of `localhost` or `host.docker.internal`.
 
-## Dev Commands (Planned)
+## Dev Commands
 
 ```bash
 # Frontend development (from frontend/ directory)
@@ -144,9 +146,3 @@ bash ./scripts/generate-client.sh
 - `/api/v1/dify/*` — Dify AI integration (chat, conversations, messages)
 - `/api/v1/admin` — Admin statistics and management
 - `/api/v1/utils/health-check` — Health check
-
-## Relationship with FastAPI Version
-
-- `emomind/` (sibling directory) = `emo-fastapi_v3` branch, continues FastAPI development
-- `emomind-sb/` (this directory) = `emomind-sb` branch, Spring Boot re-implementation
-- Frontend code is synchronized between both branches

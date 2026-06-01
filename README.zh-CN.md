@@ -2,12 +2,6 @@
 
 心理测评平台，支持 AI 聊天、在线测评、文件分析和多主题切换。
 
-## 当前状态
-
-**阶段**: 设计文档已完成，等待 Phase 2（项目脚手架搭建）。
-
-本分支（`emomind-sb`）正在将后端从 FastAPI 迁移至 Spring Boot 3.2 + Java 17，React 前端保持不变。
-
 ## 主要功能
 
 - **用户认证**
@@ -61,11 +55,11 @@
 | `doc/detailed-design.md` | 数据库、API、类和配置详细信息 |
 | `doc/tasks/*.md` | 各功能模块的任务分解（含复选框） |
 
-## 计划中的项目结构
+## 项目结构
 
 ```
 emomind-sb/
-├── backend-sb/           # Spring Boot 后端（尚未创建）
+├── backend-sb/           # Spring Boot 后端
 │   ├── pom.xml
 │   └── src/main/java/com/emomind/
 │       ├── controller/   # REST API 控制器
@@ -73,27 +67,35 @@ emomind-sb/
 │       ├── repository/   # Spring Data JPA 仓库
 │       ├── entity/       # JPA 实体
 │       ├── dto/          # 请求/响应 DTO
+│       ├── mapper/       # 实体-DTO 映射器
+│       ├── exception/    # 自定义异常
 │       ├── security/     # JWT 和认证
 │       ├── config/       # 配置类
 │       └── resources/
 │           ├── application.yml
 │           └── db/migration/   # Flyway 迁移
-├── frontend/             # React 单页应用（与 FastAPI 版本共用）
+├── frontend/             # React 单页应用
+│   ├── src/
+│   │   ├── routes/       # TanStack Router 页面
+│   │   ├── components/   # 共享 UI 组件
+│   │   ├── hooks/        # React hooks（聊天、认证等）
+│   │   ├── services/     # API 客户端
+│   │   └── client/       # 自动生成的 OpenAPI 客户端
+│   └── dist/             # 生产构建输出
 ├── doc/                  # 设计文档
 ├── compose.yml           # Docker Compose 生产配置
 ├── compose.override.yml  # Docker Compose 开发配置
-└── scripts/              # 构建和工具脚本
+├── scripts/              # 构建和工具脚本
+└── .env.example          # 环境变量模板
 ```
 
 ## 开发环境端口
-
-端口与原 FastAPI 版本隔离，可同时运行两个版本：
 
 | 服务 | 地址 |
 |------|------|
 | 前端 | http://localhost:5174 |
 | 后端 API | http://localhost:8080 |
-| API 文档 | http://localhost:8080/docs |
+| API 文档（Swagger UI）| http://localhost:8080/swagger-ui.html |
 | Adminer（数据库管理）| http://localhost:8082 |
 | Traefik Dashboard | http://localhost:8091 |
 | Mailcatcher | http://localhost:10801 |
@@ -119,7 +121,7 @@ cp .env.example .env
 
 > **注意**：在 Windows + Docker Desktop 环境下，`host.docker.internal` 可能无法正常解析，请使用宿主机的真实局域网 IP（如 `192.168.1.x`）作为 `DIFY_API_URL`。
 
-## 开发命令（计划）
+## 开发命令
 
 ```bash
 # 前端开发（从 frontend/ 目录）
@@ -144,9 +146,3 @@ bash ./scripts/generate-client.sh
 - `/api/v1/dify/*` — Dify AI 集成（聊天、会话、消息）
 - `/api/v1/admin` — 管理员统计和管理
 - `/api/v1/utils/health-check` — 健康检查
-
-## 与 FastAPI 版本的关系
-
-- `emomind/`（同级目录）= `emo-fastapi_v3` 分支，继续维护 FastAPI 版本
-- `emomind-sb/`（本目录）= `emomind-sb` 分支，Spring Boot 重新实现
-- 前端代码在两个分支间同步
