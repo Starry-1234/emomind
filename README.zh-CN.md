@@ -181,8 +181,8 @@ bun run dev
 生产模式会将所有服务构建为 Docker 镜像，并通过 Traefik 反向代理运行。
 
 ```bash
-# 构建镜像并启动所有服务
-docker compose up -d --build
+# 构建镜像并启动所有服务（仅加载生产配置）
+docker compose -f compose.yml up -d --build
 ```
 
 | 服务 | 地址 |

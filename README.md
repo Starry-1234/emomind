@@ -181,8 +181,8 @@ Open http://localhost:5174 in your browser.
 Production mode builds everything into Docker images and runs them behind Traefik.
 
 ```bash
-# Build images and start all services
-docker compose up -d --build
+# Build images and start all services (production config only)
+docker compose -f compose.yml up -d --build
 ```
 
 | Service | URL |
