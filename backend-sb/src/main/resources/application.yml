@@ -40,8 +40,9 @@ spring:
     password: ${SMTP_PASSWORD:}
     protocol: smtp
     properties:
-      mail.smtp.auth: true
+      mail.smtp.auth: ${SMTP_AUTH:true}
       mail.smtp.starttls.enable: ${SMTP_TLS:true}
+      mail.from: ${EMAILS_FROM_EMAIL:noreply@example.com}
 
 app:
   jwt:

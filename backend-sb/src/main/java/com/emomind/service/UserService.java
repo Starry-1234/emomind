@@ -43,6 +43,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final JavaMailSender mailSender;
     private final String frontendHost;
+    private final String emailsFromEmail;
 
     public UserService(UserRepository userRepository,
                        PasswordResetTokenRepository tokenRepository,
@@ -51,7 +52,8 @@ public class UserService {
                        @Lazy AuthenticationManager authenticationManager,
                        UserMapper userMapper,
                        @Autowired(required = false) JavaMailSender mailSender,
-                       @Value("${app.frontend.host:}") String frontendHost) {
+                       @Value("${app.frontend.host:}") String frontendHost,
+                       @Value("${EMAILS_FROM_EMAIL:noreply@example.com}") String emailsFromEmail) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.passwordEncoder = passwordEncoder;
@@ -60,6 +62,7 @@ public class UserService {
         this.userMapper = userMapper;
         this.mailSender = mailSender;
         this.frontendHost = frontendHost;
+        this.emailsFromEmail = emailsFromEmail;
     }
 
     public TokenResponse login(String email, String password) {
@@ -220,6 +223,7 @@ public class UserService {
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(emailsFromEmail);
             message.setTo(email);
             message.setSubject("密码重置");
             message.setText("请点击以下链接重置密码（48小时内有效）：\n" +
