@@ -55,7 +55,7 @@ A psychological assessment platform with AI chat integration, online testing, fi
 | [Git](https://git-scm.com/) | Latest | Clone the repository |
 | [Bun](https://bun.sh/) | 1.x | Frontend package manager and dev server |
 | [JDK](https://adoptium.net/) | 17+ | Spring Boot backend runtime |
-| [Maven](https://maven.apache.org/) | 3.9+ | Java dependency management (or use the bundled `./mvnw`) |
+| [Maven](https://maven.apache.org/) | 3.9+ | Java dependency management |
 
 > **Windows users**: Make sure Docker Desktop is running in WSL2 mode and the "Docker Desktop WSL 2 backend" feature is enabled.
 
@@ -161,10 +161,10 @@ This starts PostgreSQL (port `5433`) and Mailcatcher (port `10801`).
 
 ```bash
 cd backend-sb
-./mvnw spring-boot:run
+set -a && source ../.env && set +a && mvn spring-boot:run
 ```
 
-Wait for `Started EmoMindApplication in ... seconds`.
+> `set -a` ensures variables loaded by `source ../.env` are exported as environment variables; otherwise Spring Boot won't read the `.env` config. Wait for `Started EmoMindApplication in ... seconds`.
 
 **Step 3 — Frontend**:
 
@@ -203,7 +203,7 @@ docker compose down
 
 | | Development Mode | Deployment Mode |
 |--|------------------|-----------------|
-| **Backend** | `./mvnw spring-boot:run` (local JVM, hot reload) | Docker container (`docker compose up`) |
+| **Backend** | `mvn spring-boot:run` (local JVM, hot reload, source `.env` first) | Docker container (`docker compose up`) |
 | **Frontend** | `bun run dev` (Vite dev server, HMR) | Docker container (Nginx serving static build) |
 | **Database** | Docker (`db` service from `compose.override.yml`) | Docker (`db` service from `compose.yml`) |
 | **Proxy** | None (direct ports) | Traefik (reverse proxy + HTTPS) |
@@ -274,11 +274,11 @@ emomind-sb/
 # Frontend development (from frontend/ directory)
 cd frontend && bun install && bun run dev
 
-# Backend development (from backend-sb/ directory)
-cd backend-sb && ./mvnw spring-boot:run
+# Backend development (from backend-sb/ directory, source .env first)
+cd backend-sb && set -a && source ../.env && set +a && mvn spring-boot:run
 
 # Run backend tests
-cd backend-sb && ./mvnw test
+cd backend-sb && mvn test
 
 # Generate API client after backend changes
 bash ./scripts/generate-client.sh

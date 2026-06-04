@@ -55,7 +55,7 @@
 | [Git](https://git-scm.com/) | 最新版 | 克隆仓库 |
 | [Bun](https://bun.sh/) | 1.x | 前端包管理器及开发服务器 |
 | [JDK](https://adoptium.net/) | 17+ | Spring Boot 后端运行环境 |
-| [Maven](https://maven.apache.org/) | 3.9+ | Java 依赖管理（也可使用内置的 `./mvnw`）|
+| [Maven](https://maven.apache.org/) | 3.9+ | Java 依赖管理 |
 
 > **Windows 用户**：确保 Docker Desktop 运行在 WSL2 模式下，并启用 "Docker Desktop WSL 2 backend" 功能。
 
@@ -161,10 +161,10 @@ docker compose -f compose.override.yml up -d db mailcatcher
 
 ```bash
 cd backend-sb
-./mvnw spring-boot:run
+set -a && source ../.env && set +a && mvn spring-boot:run
 ```
 
-等待出现 `Started EmoMindApplication in ... seconds` 即可。
+> `set -a` 的作用是让 `source ../.env` 加载的变量自动 export 为环境变量，否则 Spring Boot 读不到 `.env` 里的配置。等待出现 `Started EmoMindApplication in ... seconds` 即可。
 
 **步骤 3 — 前端**：
 
@@ -203,7 +203,7 @@ docker compose down
 
 | | 开发模式 | 部署模式 |
 |--|----------|----------|
-| **后端** | `./mvnw spring-boot:run`（本地 JVM，热重载） | Docker 容器（`docker compose up`） |
+| **后端** | `mvn spring-boot:run`（本地 JVM，热重载，需先 `source ../.env`） | Docker 容器（`docker compose up`） |
 | **前端** | `bun run dev`（Vite 开发服务器，HMR） | Docker 容器（Nginx 托管静态构建产物） |
 | **数据库** | Docker（`compose.override.yml` 中的 `db` 服务） | Docker（`compose.yml` 中的 `db` 服务） |
 | **代理** | 无（直接使用端口） | Traefik（反向代理 + HTTPS） |
@@ -274,11 +274,11 @@ emomind-sb/
 # 前端开发（从 frontend/ 目录）
 cd frontend && bun install && bun run dev
 
-# 后端开发（从 backend-sb/ 目录）
-cd backend-sb && ./mvnw spring-boot:run
+# 后端开发（从 backend-sb/ 目录，需先加载 .env）
+cd backend-sb && set -a && source ../.env && set +a && mvn spring-boot:run
 
 # 运行后端测试
-cd backend-sb && ./mvnw test
+cd backend-sb && mvn test
 
 # 后端接口变更后重新生成前端客户端
 bash ./scripts/generate-client.sh

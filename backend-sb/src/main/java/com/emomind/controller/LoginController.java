@@ -25,7 +25,7 @@ public class LoginController {
 
     @PostMapping("/login/access-token")
     @Operation(summary = "用户登录，返回 JWT 访问令牌")
-    public ResponseEntity<TokenResponse> login(@Valid @ModelAttribute LoginRequest request) {
+    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(userService.login(request.getUsername(), request.getPassword()));
     }
 

@@ -178,9 +178,8 @@ export class AuthenticationService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/login/access-token',
-            query: {
-                request: data.request
-            }
+            body: data.request,
+            mediaType: 'application/json'
         });
     }
 }

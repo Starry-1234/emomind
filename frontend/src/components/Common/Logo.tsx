@@ -42,7 +42,7 @@ export function Logo({
             getTextStyle(),
           )}
         >
-          心驿智通
+          情之所至
         </span>
       </div>
     ) : variant === "icon" ? (
@@ -53,14 +53,14 @@ export function Logo({
           className,
         )}
       >
-        心驿智通
+        情之所至
       </span>
     ) : (
       <div className={cn("flex items-center ml-8", className)}>
         <span
           className={cn("font-black text-4xl tracking-wide", getTextStyle())}
         >
-          心驿智通
+          情之所至
         </span>
       </div>
     )
