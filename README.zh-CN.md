@@ -181,9 +181,18 @@ bun run dev
 生产模式会将所有服务构建为 Docker 镜像，并通过 Traefik 反向代理运行。
 
 ```bash
-# 构建镜像并启动所有服务（仅加载生产配置）
-docker compose -f compose.yml up -d --build
+# 步骤 1 — 编译后端 JAR（Dockerfile 需要）
+cd backend-sb && mvn clean package -DskipTests && cd ..
+
+# 步骤 2 — 启动所有服务（含 Traefik）
+# compose.yml 提供核心服务；compose.traefik.yml 提供 Traefik 代理。
+docker compose -f compose.yml -f compose.traefik.yml up -d --build
 ```
+
+> 如果宿主机上已经运行了共享的 Traefik 实例，且存在 `traefik-public` Docker 网络，可省略 `compose.traefik.yml`：
+> ```bash
+> docker compose -f compose.yml up -d --build
+> ```
 
 | 服务 | 地址 |
 |------|------|
@@ -196,7 +205,7 @@ docker compose -f compose.yml up -d --build
 停止服务：
 
 ```bash
-docker compose down
+docker compose -f compose.yml -f compose.traefik.yml down
 ```
 
 ### 开发模式 vs 部署模式

@@ -53,7 +53,7 @@ public class DifyController {
         OutputStream out = null;
         // 客户端断开时 dispose 上游 subscription，让 WebClient 立即停止从 Dify 读取，
         // 避免 blockLast() 在请求线程上无限等待慢响应耗尽 Tomcat 工作线程。
-        final java.util.concurrent.atomic.AtomicReference<reactor.core.Disposable> subscriptionRef =
+        final java.util.concurrent.atomic.AtomicReference<org.reactivestreams.Subscription> subscriptionRef =
                 new java.util.concurrent.atomic.AtomicReference<>();
         try {
             out = response.getOutputStream();
@@ -61,7 +61,7 @@ public class DifyController {
             final int[] bytesSinceFlush = {0};
 
             difyService.sendChatMessage(apiKeyName, requestBody)
-                    .doOnSubscribe(subscriptionRef.set)
+                    .doOnSubscribe(subscriptionRef::set)
                     .doOnNext(chunk -> {
                         try {
                             byte[] bytes = chunk.getBytes(StandardCharsets.UTF_8);
@@ -80,9 +80,9 @@ public class DifyController {
                     })
                     .doOnCancel(() -> {
                         log.debug("SSE stream cancelled by client");
-                        reactor.core.Disposable sub = subscriptionRef.get();
-                        if (sub != null && !sub.isDisposed()) {
-                            sub.dispose();
+                        org.reactivestreams.Subscription sub = subscriptionRef.get();
+                        if (sub != null) {
+                            sub.cancel();
                         }
                     })
                     .blockLast();
@@ -116,7 +116,7 @@ public class DifyController {
                         out.write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
                         out.flush();
                     }
-                } catch (IOException | JsonProcessingException ignored) {
+                } catch (IOException ignored) {
                     // 客户端已断开或 Jackson 异常，忽略
                 }
             }
