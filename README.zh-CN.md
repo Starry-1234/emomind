@@ -184,15 +184,9 @@ bun run dev
 # 步骤 1 — 编译后端 JAR（Dockerfile 需要）
 cd backend-sb && mvn clean package -DskipTests && cd ..
 
-# 步骤 2 — 启动所有服务（含 Traefik）
-# compose.yml 提供核心服务；compose.traefik.yml 提供 Traefik 代理。
-docker compose -f compose.yml -f compose.traefik.yml up -d --build
+# 步骤 2 — 启动所有服务（含 Traefik 代理）
+docker compose -f compose.yml up -d --build
 ```
-
-> 如果宿主机上已经运行了共享的 Traefik 实例，且存在 `traefik-public` Docker 网络，可省略 `compose.traefik.yml`：
-> ```bash
-> docker compose -f compose.yml up -d --build
-> ```
 
 | 服务 | 地址 |
 |------|------|

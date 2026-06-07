@@ -50,9 +50,8 @@ emomind-sb/
 ├── dify_workflow/          ← Dify AI 工作流 DSL 文件
 ├── doc/                    ← 设计文档与任务分解
 ├── scripts/                ← 构建脚本（含 OpenAPI 客户端生成）
-├── compose.yml             ← Docker Compose 生产配置（核心服务）
-├── compose.traefik.yml     ← Docker Compose Traefik 代理（自包含生产部署）
-├── compose.override.yml    ← Docker Compose 开发配置（基础设施 + 本地 Traefik）
+├── compose.yml             ← Docker Compose 生产配置（含 Traefik 代理）
+├── compose.override.yml    ← Docker Compose 开发配置（端口暴露 + 开发工具）
 ├── package.json            ← 前端工作区配置
 ├── bun.lock                ← 前端依赖锁
 ├── .env.example            ← 环境变量示例
@@ -176,18 +175,13 @@ cd backend-sb && mvn clean package -DskipTests && cd ..
 docker compose -f compose.yml -f compose.traefik.yml up -d --build
 ```
 
-> 若宿主机已有共享 Traefik 实例和 `traefik-public` 网络，可省略 `compose.traefik.yml`：
-> ```bash
-> docker compose -f compose.yml up -d --build
-> ```
-
-| 服务 | URL |
-|------|-----|
-| Frontend | http://localhost |
-| Backend API | http://localhost:8080 |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| Traefik Dashboard | http://localhost:8091 |
-| Adminer | http://localhost:8082 |
+> | 服务 | URL |
+> |------|-----|
+> | Frontend | http://localhost |
+> | Backend API | http://localhost:8080 |
+> | Swagger UI | http://localhost:8080/swagger-ui.html |
+> | Traefik Dashboard | http://localhost:8091 |
+> | Adminer | http://localhost:8082 |
 
 ### 常用开发命令
 
@@ -202,7 +196,7 @@ bash ./scripts/generate-client.sh
 docker compose -f compose.override.yml down
 
 # 停止生产部署
-docker compose -f compose.yml -f compose.traefik.yml down
+docker compose -f compose.yml down
 ```
 
 ## 与原项目的关系

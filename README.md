@@ -184,15 +184,9 @@ Production mode builds everything into Docker images and runs them behind Traefi
 # Step 1 — Build the backend JAR (required by the Dockerfile)
 cd backend-sb && mvn clean package -DskipTests && cd ..
 
-# Step 2 — Start all services with Traefik
-# compose.yml provides the core services; compose.traefik.yml adds the Traefik proxy.
-docker compose -f compose.yml -f compose.traefik.yml up -d --build
+# Step 2 — Start all services (includes Traefik proxy)
+docker compose -f compose.yml up -d --build
 ```
-
-> If you already have a shared Traefik instance running on the host with a `traefik-public` Docker network, you can omit `compose.traefik.yml`:
-> ```bash
-> docker compose -f compose.yml up -d --build
-> ```
 
 | Service | URL |
 |---------|-----|
