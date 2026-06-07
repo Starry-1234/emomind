@@ -177,11 +177,11 @@ docker compose -f compose.yml up -d --build
 
 > | 服务 | URL | 说明 |
 > |------|-----|------|
-> | 前端 | http://dashboard.localhost:8085 | Traefik 路由（hosts 加 `127.0.0.1 dashboard.localhost`）|
-> | 后端 API | http://api.localhost:8085 | Traefik 路由（hosts 加 `127.0.0.1 api.localhost`）|
-> | Swagger UI | http://api.localhost:8085/swagger-ui.html | Traefik 路由 |
+> | 前端 | http://dashboard.localhost:8081 | Traefik 路由（hosts 加 `127.0.0.1 dashboard.localhost`）|
+> | 后端 API | http://api.localhost:8081 | Traefik 路由（hosts 加 `127.0.0.1 api.localhost`）|
+> | Swagger UI | http://api.localhost:8081/swagger-ui.html | Traefik 路由 |
 > | Traefik Dashboard | http://localhost:8091 | 直接端口 |
-> | Adminer | http://adminer.localhost:8085 | Traefik 路由（hosts 加 `127.0.0.1 adminer.localhost`）|
+> | Adminer | http://adminer.localhost:8081 | Traefik 路由（hosts 加 `127.0.0.1 adminer.localhost`）|
 >
 > Traefik 使用非标准端口 `8085/8443` 避免本地冲突，真实服务器可改回 `80/443`。
 

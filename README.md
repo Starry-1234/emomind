@@ -190,11 +190,11 @@ docker compose -f compose.yml up -d --build
 
 | Service | URL | Note |
 |---------|-----|------|
-| Frontend | http://dashboard.localhost:8085 | Via Traefik router (add `127.0.0.1 dashboard.localhost` to hosts) |
-| Backend API | http://api.localhost:8085 | Via Traefik router (add `127.0.0.1 api.localhost` to hosts) |
-| Swagger UI | http://api.localhost:8085/swagger-ui.html | Via Traefik router |
+| Frontend | http://dashboard.localhost:8081 | Via Traefik router (add `127.0.0.1 dashboard.localhost` to hosts) |
+| Backend API | http://api.localhost:8081 | Via Traefik router (add `127.0.0.1 api.localhost` to hosts) |
+| Swagger UI | http://api.localhost:8081/swagger-ui.html | Via Traefik router |
 | Traefik Dashboard | http://localhost:8091 | Direct port |
-| Adminer (DB) | http://adminer.localhost:8085 | Via Traefik router (add `127.0.0.1 adminer.localhost` to hosts) |
+| Adminer (DB) | http://adminer.localhost:8081 | Via Traefik router (add `127.0.0.1 adminer.localhost` to hosts) |
 
 > Traefik listens on `8085` (HTTP) and `8443` (HTTPS) instead of standard `80/443` to avoid conflicts with other local services (e.g. Dify). On a real server, change these to `80:80` and `443:443` in `compose.yml`.
 

@@ -173,7 +173,7 @@ services:
     image: traefik:3.6
     restart: always
     ports:
-      - "8085:80"
+      - "8081:80"
       - "8443:443"
       - "8091:8080"
     volumes:
