@@ -188,13 +188,15 @@ cd backend-sb && mvn clean package -DskipTests && cd ..
 docker compose -f compose.yml up -d --build
 ```
 
-| 服务 | 地址 |
-|------|------|
-| 前端 | http://localhost |
-| 后端 API | http://localhost:8080 |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| Traefik Dashboard | http://localhost:8091 |
-| Adminer（数据库管理）| http://localhost:8082 |
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 前端 | http://dashboard.localhost:8085 | 通过 Traefik 路由（hosts 加 `127.0.0.1 dashboard.localhost`）|
+| 后端 API | http://api.localhost:8085 | 通过 Traefik 路由（hosts 加 `127.0.0.1 api.localhost`）|
+| Swagger UI | http://api.localhost:8085/swagger-ui.html | 通过 Traefik 路由 |
+| Traefik Dashboard | http://localhost:8091 | 直接端口访问 |
+| Adminer（数据库管理）| http://adminer.localhost:8085 | 通过 Traefik 路由（hosts 加 `127.0.0.1 adminer.localhost`）|
+
+> Traefik 使用 `8085`（HTTP）和 `8443`（HTTPS）而非标准 `80/443`，避免与本地其他服务（如 Dify）冲突。在真实服务器上部署时，可将 `compose.yml` 中的端口改回 `80:80` 和 `443:443`。
 
 停止服务：
 

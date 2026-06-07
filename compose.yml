@@ -173,8 +173,8 @@ services:
     image: traefik:3.6
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - "8085:80"
+      - "8443:443"
       - "8091:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
