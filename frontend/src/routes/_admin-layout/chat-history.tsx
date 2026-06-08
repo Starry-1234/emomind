@@ -408,7 +408,11 @@ function MessageList({
                   <div className="relative rounded-lg rounded-tl-none border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
                     <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary/30 rounded-full" />
                     <div className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-a:text-primary">
-                      <ReactMarkdown>{msg.answer}</ReactMarkdown>
+                      <ReactMarkdown>
+                        {msg.answer
+                          .replace(/^正在分析中，请稍候...\n?/, "")
+                          .replace(/^思考中...\n?/, "")}
+                      </ReactMarkdown>
                     </div>
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-1">

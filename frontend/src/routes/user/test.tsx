@@ -355,14 +355,22 @@ export function PsychologicalTestInner({
                         <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary/30 rounded-full" />
                         {msg.isStreaming ? (
                           <StreamingMessage
-                            content={msg.content || ""}
+                            content={
+                              (msg.content || "")
+                                .replace(/^正在分析中，请稍候...\n?/, "")
+                                .replace(/^思考中...\n?/, "")
+                            }
                             isStreaming={msg.isStreaming}
                             className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-table:text-sm prose-th:bg-muted prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-table:border prose-th:border prose-td:border prose-border-border prose-a:text-primary"
                           />
                         ) : (
                           <div className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-table:text-sm prose-th:bg-muted prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-table:border prose-th:border prose-td:border prose-border-border prose-a:text-primary">
                             <ReactMarkdown>
-                              {preprocessMarkdown(msg.content)}
+                              {preprocessMarkdown(
+                                (msg.content || "")
+                                  .replace(/^正在分析中，请稍候...\n?/, "")
+                                  .replace(/^思考中...\n?/, ""),
+                              )}
                             </ReactMarkdown>
                           </div>
                         )}

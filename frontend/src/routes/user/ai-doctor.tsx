@@ -334,14 +334,22 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary/30 rounded-full" />
                           {msg.isStreaming ? (
                             <StreamingMessage
-                              content={msg.content || ""}
+                              content={
+                                (msg.content || "")
+                                  .replace(/^正在分析中，请稍候...\n?/, "")
+                                  .replace(/^思考中...\n?/, "")
+                              }
                               isStreaming={msg.isStreaming}
                               className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-a:text-primary"
                             />
                           ) : (
                             <div className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-a:text-primary">
                               <ReactMarkdown>
-                                {msg.content || ""}
+                                {
+                                  (msg.content || "")
+                                    .replace(/^正在分析中，请稍候...\n?/, "")
+                                    .replace(/^思考中...\n?/, "")
+                                }
                               </ReactMarkdown>
                             </div>
                           )}
