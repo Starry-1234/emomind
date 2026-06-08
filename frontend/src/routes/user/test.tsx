@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { useEffect, useRef } from "react"
 import ReactMarkdown from "react-markdown"
+import { SealIcon } from "@/components/Common/SealIcon"
 import { MessageActions } from "@/components/chat/MessageActions"
 import { StreamingMessage } from "@/components/chat/StreamingMessage"
 import { Button } from "@/components/ui/button"
@@ -342,57 +343,70 @@ export function PsychologicalTestInner({
                       msg.role === "user" ? "items-end" : "items-start"
                     }`}
                   >
-                    {/* 时间戳 */}
-                    {msg.role === "assistant" && !msg.isStreaming && (
-                      <div className="px-1 text-[10px] text-muted-foreground">
-                        医生 · {new Date().toLocaleDateString("zh-CN")}
+                    {/* 发送者小字 */}
+                    {msg.role === "user" ? (
+                      <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
+                        <SealIcon char="问" size="sm" />
+                        <span>我问</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <SealIcon char="测" size="sm" />
+                        <span>测评师曰</span>
                       </div>
                     )}
 
                     {/* 消息内容 */}
-                    <div
-                      className={`relative text-sm leading-relaxed ${
-                        msg.role === "user"
-                          ? "rounded-2xl rounded-tr-sm bg-[#f5f0e6] dark:bg-[#2a2a28] px-4 py-3 text-foreground border border-border/50 dark:border-white/10"
-                          : "rounded-lg rounded-tl-sm border-l-[3px] border-primary bg-background px-5 py-4 text-foreground shadow-sm"
-                      }`}
-                    >
-                      {msg.role === "assistant" ? (
-                        msg.isStreaming ? (
+                    {msg.role === "user" ? (
+                      <div className="rounded-2xl rounded-tr-sm bg-primary px-4 py-3 text-sm text-primary-foreground leading-relaxed shadow-sm">
+                        {msg.content}
+                      </div>
+                    ) : (
+                      <div className="relative rounded-lg rounded-tl-sm border border-border bg-card px-5 py-4 text-sm text-card-foreground shadow-sm">
+                        <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary/30 rounded-full" />
+                        {msg.isStreaming ? (
                           <StreamingMessage
                             content={msg.content || ""}
                             isStreaming={msg.isStreaming}
-                            className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-table:text-sm prose-th:bg-muted prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-table:border prose-th:border prose-td:border prose-border-border"
+                            className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-table:text-sm prose-th:bg-muted prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-table:border prose-th:border prose-td:border prose-border-border prose-a:text-primary"
                           />
                         ) : (
-                          <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-table:text-sm prose-th:bg-muted prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-table:border prose-th:border prose-td:border prose-border-border">
+                          <div className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-table:text-sm prose-th:bg-muted prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-table:border prose-th:border prose-td:border prose-border-border prose-a:text-primary">
                             <ReactMarkdown>
                               {preprocessMarkdown(msg.content)}
                             </ReactMarkdown>
                           </div>
-                        )
-                      ) : (
-                        msg.content
-                      )}
-                    </div>
+                        )}
+                        <div className="mt-3 flex justify-end">
+                          <SealIcon char="测" size="sm" />
+                        </div>
+                      </div>
+                    )}
 
-                    {/* 操作按钮 */}
+                    {/* 操作按钮 / 时间戳 */}
                     {msg.role === "assistant" && (
-                      <MessageActions
-                        isPaused={msg.isPaused || false}
-                        isStreaming={msg.isStreaming || false}
-                        versions={msg.versions}
-                        currentVersion={msg.currentVersion}
-                        onContinue={() => handleContinue(idx)}
-                        onCopy={() =>
-                          navigator.clipboard.writeText(msg.content)
-                        }
-                        onRegenerate={() => handleRegenerate(idx)}
-                        onSwitchVersion={(direction) =>
-                          handleSwitchVersion(idx, direction)
-                        }
-                        disabled={isStreaming}
-                      />
+                      <>
+                        {!msg.isStreaming && (
+                          <div className="px-1 text-[10px] text-muted-foreground">
+                            {new Date().toLocaleDateString("zh-CN")}
+                          </div>
+                        )}
+                        <MessageActions
+                          isPaused={msg.isPaused || false}
+                          isStreaming={msg.isStreaming || false}
+                          versions={msg.versions}
+                          currentVersion={msg.currentVersion}
+                          onContinue={() => handleContinue(idx)}
+                          onCopy={() =>
+                            navigator.clipboard.writeText(msg.content)
+                          }
+                          onRegenerate={() => handleRegenerate(idx)}
+                          onSwitchVersion={(direction) =>
+                            handleSwitchVersion(idx, direction)
+                          }
+                          disabled={isStreaming}
+                        />
+                      </>
                     )}
 
                     {/* 用户小印章 */}
