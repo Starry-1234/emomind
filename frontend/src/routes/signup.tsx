@@ -89,7 +89,7 @@ export default function SignUp() {
               name="full_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                  <FormLabel className="text-xs font-medium text-foreground">
                     姓名
                   </FormLabel>
                   <FormControl>
@@ -97,7 +97,7 @@ export default function SignUp() {
                       data-testid="full-name-input"
                       placeholder="请输入姓名"
                       type="text"
-                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
@@ -111,7 +111,7 @@ export default function SignUp() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                  <FormLabel className="text-xs font-medium text-foreground">
                     邮箱
                   </FormLabel>
                   <FormControl>
@@ -119,7 +119,7 @@ export default function SignUp() {
                       data-testid="email-input"
                       placeholder="user@example.com"
                       type="email"
-                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
@@ -133,14 +133,14 @@ export default function SignUp() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                  <FormLabel className="text-xs font-medium text-foreground">
                     密码
                   </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="password-input"
                       placeholder="密码"
-                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
@@ -154,14 +154,14 @@ export default function SignUp() {
               name="confirm_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                  <FormLabel className="text-xs font-medium text-foreground">
                     确认密码
                   </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="confirm-password-input"
                       placeholder="请再次输入密码"
-                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
@@ -173,7 +173,7 @@ export default function SignUp() {
             <LoadingButton
               type="submit"
               loading={signUpMutation.isPending}
-              className="mt-1 bg-[#2d4a3e] text-[#f7f4ef] hover:bg-[#1f362c] transition-all hover:shadow-md"
+              className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-md"
             >
               注册
             </LoadingButton>
@@ -183,7 +183,7 @@ export default function SignUp() {
             已有账户？{" "}
             <RouterLink
               to="/login"
-              className="font-medium text-[#2d4a3e] underline underline-offset-4 hover:text-[#c45a43]"
+              className="font-medium text-primary underline underline-offset-4 hover:text-accent"
             >
               登录
             </RouterLink>

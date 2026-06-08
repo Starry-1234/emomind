@@ -10,14 +10,14 @@ interface AuthLayoutProps {
  * 心理主题登录布局 —— 静水涟漪（Framer Motion 版）
  *
  * 设计概念：
- * - 米色背景象征安静、安全的心理空间
+ * - 背景随主题变化，象征安静、安全的心理空间
  * - 背景是明显的水波涟漪，缓缓扩散、循环往复
  * - 中央卡片是稳定的锚点，给人归属感
  * - 所有文字使用清晰可读的深色调
  */
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-[#f0ece5] px-6 py-12">
+    <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background px-6 py-12">
       {/* 宣纸纹理 */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"
@@ -37,7 +37,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               height: `${280 + i * 140}px`,
               marginLeft: `-${(280 + i * 140) / 2}px`,
               marginTop: `-${(280 + i * 140) / 2}px`,
-              boxShadow: `0 0 0 3px rgba(45, 74, 62, 0.15)`,
+              boxShadow: "0 0 0 3px var(--ripple-color)",
             }}
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{
@@ -59,7 +59,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         className="pointer-events-none absolute left-1/2 top-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background:
-            "radial-gradient(circle, rgba(45,74,62,0.06) 0%, transparent 70%)",
+            "radial-gradient(circle, var(--ripple-center) 0%, transparent 70%)",
           filter: "blur(24px)",
         }}
         animate={{
@@ -85,7 +85,10 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="rounded-xl bg-[#fdfcfa] p-10 shadow-[0_4px_24px_rgba(45,74,62,0.08)] sm:p-12">
+        <div
+          className="rounded-xl bg-card p-10 sm:p-12"
+          style={{ boxShadow: "0 4px 24px var(--card-shadow)" }}
+        >
           {/* 卡片顶部装饰 —— 波浪线 */}
           <div className="mb-8 flex justify-center">
             <svg
@@ -93,7 +96,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               height="12"
               viewBox="0 0 48 12"
               fill="none"
-              className="text-[#2d4a3e]/30"
+              className="text-primary/30"
             >
               <path
                 d="M2 6C6 2 10 2 14 6C18 10 22 10 26 6C30 2 34 2 38 6C42 10 46 10 46 6"
@@ -106,10 +109,10 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
           {/* 品牌区 */}
           <div className="mb-8 flex flex-col items-center gap-3">
-            <h1 className="font-serif-zh text-3xl font-semibold tracking-wide text-[#1a1a1a]">
+            <h1 className="font-serif-zh text-3xl font-semibold tracking-wide text-foreground">
               情之所至
             </h1>
-            <p className="text-center text-sm leading-relaxed text-[#4a4a4a]">
+            <p className="text-center text-sm leading-relaxed text-muted-foreground">
               关照内心，从此刻开始
             </p>
           </div>
@@ -119,7 +122,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
           {/* 底部小字 */}
           <div className="mt-8 text-center">
-            <p className="text-[11px] tracking-widest text-[#6b6b6b]">
+            <p className="text-[11px] tracking-widest text-muted-foreground">
               倾听 · 觉察 · 接纳
             </p>
           </div>

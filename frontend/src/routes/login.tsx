@@ -94,7 +94,7 @@ function Login() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                  <FormLabel className="text-xs font-medium text-foreground">
                     邮箱
                   </FormLabel>
                   <FormControl>
@@ -102,7 +102,7 @@ function Login() {
                       data-testid="email-input"
                       placeholder="user@example.com"
                       type="email"
-                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
@@ -117,7 +117,7 @@ function Login() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center">
-                    <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                    <FormLabel className="text-xs font-medium text-foreground">
                       密码
                     </FormLabel>
                     <RouterLink
@@ -131,7 +131,7 @@ function Login() {
                     <PasswordInput
                       data-testid="password-input"
                       placeholder="密码"
-                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
@@ -143,7 +143,7 @@ function Login() {
             <LoadingButton
               type="submit"
               loading={loginMutation.isPending}
-              className="mt-1 bg-[#2d4a3e] text-[#f7f4ef] hover:bg-[#1f362c] transition-all hover:shadow-md"
+              className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-md"
             >
               登录
             </LoadingButton>
@@ -153,7 +153,7 @@ function Login() {
             还没有账户？{" "}
             <RouterLink
               to="/signup"
-              className="font-medium text-[#2d4a3e] underline underline-offset-4 hover:text-[#c45a43]"
+              className="font-medium text-primary underline underline-offset-4 hover:text-accent"
             >
               注册
             </RouterLink>

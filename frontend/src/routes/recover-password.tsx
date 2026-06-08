@@ -90,7 +90,7 @@ function RecoverPassword() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                  <FormLabel className="text-xs font-medium text-foreground">
                     邮箱
                   </FormLabel>
                   <FormControl>
@@ -98,7 +98,7 @@ function RecoverPassword() {
                       data-testid="email-input"
                       placeholder="user@example.com"
                       type="email"
-                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
@@ -110,7 +110,7 @@ function RecoverPassword() {
             <LoadingButton
               type="submit"
               loading={mutation.isPending}
-              className="mt-1 bg-[#2d4a3e] text-[#f7f4ef] hover:bg-[#1f362c] transition-all hover:shadow-md"
+              className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-md"
             >
               继续
             </LoadingButton>
@@ -120,7 +120,7 @@ function RecoverPassword() {
             记得密码？{" "}
             <RouterLink
               to="/login"
-              className="font-medium text-[#2d4a3e] underline underline-offset-4 hover:text-[#c45a43]"
+              className="font-medium text-primary underline underline-offset-4 hover:text-accent"
             >
               登录
             </RouterLink>

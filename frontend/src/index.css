@@ -97,6 +97,11 @@
   --sidebar-accent-foreground: #1a1a1a;
   --sidebar-border: #d9d3c9;
   --sidebar-ring: #2d4a3e;
+
+  /* 登录页水波动画 */
+  --ripple-color: rgba(45, 74, 62, 0.15);
+  --ripple-center: rgba(45, 74, 62, 0.06);
+  --card-shadow: rgba(45, 74, 62, 0.08);
 }
 
 /* 温馨主题 —— 烛黄 */
@@ -138,6 +143,11 @@
   --sidebar-accent-foreground: #3d3229;
   --sidebar-border: #d9d0c1;
   --sidebar-ring: #8b5e4a;
+
+  /* 登录页水波动画 */
+  --ripple-color: rgba(139, 94, 74, 0.15);
+  --ripple-center: rgba(139, 94, 74, 0.06);
+  --card-shadow: rgba(139, 94, 74, 0.08);
 }
 
 /* 深色主题 —— 夜读墨 */
@@ -179,6 +189,11 @@
   --sidebar-accent-foreground: #e8e2d9;
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: #7ba392;
+
+  /* 登录页水波动画 */
+  --ripple-color: rgba(123, 163, 146, 0.15);
+  --ripple-center: rgba(123, 163, 146, 0.06);
+  --card-shadow: rgba(0, 0, 0, 0.3);
 }
 
 /* ========================================

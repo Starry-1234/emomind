@@ -109,14 +109,14 @@ function ResetPassword() {
               name="new_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                  <FormLabel className="text-xs font-medium text-foreground">
                     新密码
                   </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="new-password-input"
                       placeholder="请输入新密码"
-                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
@@ -130,14 +130,14 @@ function ResetPassword() {
               name="confirm_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                  <FormLabel className="text-xs font-medium text-foreground">
                     确认密码
                   </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="confirm-password-input"
                       placeholder="请再次输入新密码"
-                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
@@ -149,7 +149,7 @@ function ResetPassword() {
             <LoadingButton
               type="submit"
               loading={mutation.isPending}
-              className="mt-1 bg-[#2d4a3e] text-[#f7f4ef] hover:bg-[#1f362c] transition-all hover:shadow-md"
+              className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-md"
             >
               重置密码
             </LoadingButton>
@@ -159,7 +159,7 @@ function ResetPassword() {
             记得密码？{" "}
             <RouterLink
               to="/login"
-              className="font-medium text-[#2d4a3e] underline underline-offset-4 hover:text-[#c45a43]"
+              className="font-medium text-primary underline underline-offset-4 hover:text-accent"
             >
               登录
             </RouterLink>
