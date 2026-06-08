@@ -240,7 +240,7 @@ export function PsychologicalTestInner({
         </div>
         <div>
           <h1 className="font-serif-zh text-sm font-semibold">心理测评</h1>
-          <p className="text-xs text-muted-foreground">专业心理量表 · AI 智能分析报告</p>
+          <p className="text-xs text-muted-foreground">专业心理量表 · 智能分析报告</p>
         </div>
       </div>
 
@@ -265,7 +265,7 @@ export function PsychologicalTestInner({
                 </div>
 
                 <div className="space-y-4 text-sm leading-relaxed text-foreground">
-                  <p>你好呀！我是你的心理测试小助手。这里是一个温暖的角落，可以帮助你更好地了解自己的内心世界。👋</p>
+                  <p>你好呀！我是你的心理测试小助手。这里是一个温暖的角落，可以帮助你更好地了解自己的内心世界。</p>
                   <p>你可以直接输入想聊的话题，或者点击下方快捷入口开始。</p>
                 </div>
 

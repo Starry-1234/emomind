@@ -140,7 +140,7 @@ function AdminHome() {
               to: "/chat-history",
               icon: () => <SealIcon char="话" size="lg" />,
               title: "用户会话记录",
-              desc: "查看用户的 AI 咨询会话",
+              desc: "查看用户咨询会话",
               tone: "secondary" as const,
             },
             {

@@ -5,14 +5,12 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardList,
-  Inbox,
-  Loader2,
   Search,
-  User as UserIcon,
   X,
 } from "lucide-react"
 import { useState } from "react"
 import ReactMarkdown from "react-markdown"
+import { SealIcon } from "@/components/Common/SealIcon"
 import { TestRecordsService, type UserResponse, UsersService } from "@/client"
 import {
   AlertDialog,
@@ -326,7 +324,7 @@ function TestRecordsAdmin() {
         <div className="flex w-56 flex-shrink-0 flex-col border-r">
           <div className="flex items-center justify-between border-b px-3 py-3">
             <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-muted-foreground" />
+              <SealIcon char="户" size="sm" />
               <span className="text-sm font-semibold">用户列表</span>
             </div>
             {filteredUsers.length > 0 && (
@@ -349,11 +347,11 @@ function TestRecordsAdmin() {
           <ScrollArea className="flex-1 px-1">
             {usersLoading ? (
               <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
-                加载中...
+                正在调取案卷…
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-xs text-muted-foreground">
-                <Inbox className="h-8 w-8" />
+                <SealIcon char="空" size="lg" className="opacity-50" />
                 <span>暂无用户</span>
               </div>
             ) : (
@@ -408,16 +406,16 @@ function TestRecordsAdmin() {
 
           {!selectedUserId ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-xs text-muted-foreground">
-              <UserIcon className="h-10 w-10" />
+              <SealIcon char="户" size="lg" className="opacity-50" />
               <span>请先选择一个用户</span>
             </div>
           ) : recordsLoading ? (
-            <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
+              正在调取测评记录…
             </div>
           ) : records.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-xs text-muted-foreground">
-              <Inbox className="h-8 w-8" />
+              <SealIcon char="空" size="lg" className="opacity-50" />
               <span>该用户暂无测评记录</span>
             </div>
           ) : (

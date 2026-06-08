@@ -1,11 +1,3 @@
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  Play,
-  RefreshCw,
-} from "lucide-react"
 import { useState } from "react"
 
 interface MessageActionsProps {
@@ -54,19 +46,13 @@ export function MessageActions({
         type="button"
         onClick={handleCopyClick}
         disabled={disabled}
-        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`inline-flex items-center rounded-md px-2 py-1 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          copied
+            ? "text-primary"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        }`}
       >
-        {copied ? (
-          <>
-            <Check className="size-3 text-green-500" />
-            <span className="text-green-600">已复制</span>
-          </>
-        ) : (
-          <>
-            <Copy className="size-3" />
-            <span>复制</span>
-          </>
-        )}
+        {copied ? "已复制" : "复制"}
       </button>
 
       {/* 重新生成按钮 */}
@@ -74,10 +60,9 @@ export function MessageActions({
         type="button"
         onClick={onRegenerate}
         disabled={disabled}
-        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <RefreshCw className="size-3" />
-        <span>重新生成</span>
+        重答
       </button>
 
       {/* 继续生成按钮（仅在暂停状态显示） */}
@@ -86,10 +71,9 @@ export function MessageActions({
           type="button"
           onClick={onContinue}
           disabled={disabled}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center rounded-md px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Play className="size-3" />
-          <span>继续生成</span>
+          续写
         </button>
       )}
 
@@ -102,7 +86,7 @@ export function MessageActions({
             disabled={disabled || currentVer <= 0}
             className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <ChevronLeft className="size-3" />
+            <span className="font-serif-zh">〈</span>
           </button>
           <span className="min-w-[3ch] text-center tabular-nums text-muted-foreground">
             {currentVer + 1}/{totalVersions}
@@ -113,7 +97,7 @@ export function MessageActions({
             disabled={disabled || currentVer >= totalVersions - 1}
             className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <ChevronRight className="size-3" />
+            <span className="font-serif-zh">〉</span>
           </button>
         </div>
       )}

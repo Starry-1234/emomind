@@ -494,7 +494,7 @@ function UserHome() {
             key: "ai-doctor",
             icon: () => <SealIcon char="医" size="lg" />,
             title: "智能心理医生",
-            desc: "AI 倾听你的心声，提供专业心理支持",
+            desc: "倾听你的心声，提供专业心理支持",
             cta: "开始对话",
           },
           {

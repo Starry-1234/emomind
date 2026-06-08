@@ -2,9 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import {
   Clock,
-  Inbox,
   Search,
-  User as UserIcon,
   X,
 } from "lucide-react"
 import { SealIcon } from "@/components/Common/SealIcon"
@@ -143,7 +141,7 @@ function ChatHistory() {
         <div className="flex w-56 flex-shrink-0 flex-col border-r">
           <div className="flex items-center justify-between border-b px-3 py-3">
             <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-muted-foreground" />
+              <SealIcon char="户" size="sm" />
               <span className="text-sm font-semibold">用户列表</span>
             </div>
             {filteredUsers.length > 0 && (
@@ -166,11 +164,11 @@ function ChatHistory() {
           <ScrollArea className="flex-1 px-1">
             {usersLoading ? (
               <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
-                加载中...
+                正在调取案卷…
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-xs text-muted-foreground">
-                <Inbox className="h-8 w-8" />
+                <SealIcon char="空" size="lg" className="opacity-50" />
                 <span>暂无用户</span>
               </div>
             ) : (
@@ -221,7 +219,7 @@ function ChatHistory() {
           </div>
           {!selectedUserId ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-xs text-muted-foreground">
-              <UserIcon className="h-10 w-10" />
+              <SealIcon char="户" size="lg" className="opacity-50" />
               <span>请先选择一个用户</span>
             </div>
           ) : (
@@ -239,11 +237,11 @@ function ChatHistory() {
               <ScrollArea className="flex-1 px-1">
                 {convsLoading ? (
                   <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
-                    加载中...
+                    正在整理会话…
                   </div>
                 ) : conversations.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-8 text-xs text-muted-foreground">
-                    <Inbox className="h-8 w-8" />
+                    <SealIcon char="空" size="lg" className="opacity-50" />
                     <span>该用户暂无会话</span>
                   </div>
                 ) : (
@@ -369,7 +367,7 @@ function MessageList({
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-        加载消息中...
+        正在整理信笺…
       </div>
     )
   }
@@ -377,7 +375,7 @@ function MessageList({
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-        暂无消息记录
+        暂无信笺往来
       </div>
     )
   }
@@ -416,7 +414,7 @@ function MessageList({
                     </div>
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-1">
-                    AI · {formatTime(msg.created_at)}
+                    医者 · {formatTime(msg.created_at)}
                   </div>
                 </div>
                 <div className="text-[10px] text-muted-foreground pt-2">医者曰</div>
