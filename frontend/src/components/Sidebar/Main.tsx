@@ -1,5 +1,4 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import type { LucideIcon } from "lucide-react"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -14,7 +13,7 @@ import {
 } from "@/contexts/ConversationContext"
 
 export type Item = {
-  icon: LucideIcon
+  icon: React.ElementType
   title: string
   path: string
 }

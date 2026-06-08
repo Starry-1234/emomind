@@ -10,8 +10,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import { Brain, Loader2, MessageSquare, Plus, Stethoscope, X } from "lucide-react"
+import { Loader2, Plus, X } from "lucide-react"
 import { useState } from "react"
+import { SealIcon } from "@/components/Common/SealIcon"
 import { Badge } from "@/components/ui/badge"
 import {
   SidebarGroup,
@@ -139,7 +140,7 @@ export function ConversationList() {
         isActive={currentSessionId === conv.id}
         onClick={() => handleSelectConversation(conv)}
       >
-        <MessageSquare className="size-4" />
+        <SealIcon char="话" />
         <span className="truncate flex-1">{conv.name || "新对话"}</span>
         <Badge
           variant="outline"
@@ -205,7 +206,7 @@ export function ConversationList() {
             {doctorConversations.length > 0 && (
               <div>
                 <div className="flex items-center gap-1.5 px-2 pt-2 pb-1">
-                  <Stethoscope className="size-3 text-primary" />
+                  <SealIcon char="医" size="sm" />
                   <span className="text-[11px] font-medium text-muted-foreground">
                     咨询记录
                   </span>
@@ -220,7 +221,7 @@ export function ConversationList() {
             {testConversations.length > 0 && (
               <div>
                 <div className="flex items-center gap-1.5 px-2 pt-2 pb-1">
-                  <Brain className="size-3 text-primary" />
+                  <SealIcon char="测" size="sm" />
                   <span className="text-[11px] font-medium text-muted-foreground">
                     测评记录
                   </span>

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { ClipboardCheck, FileText, MessageSquare, Users } from "lucide-react"
+import { SealIcon } from "@/components/Common/SealIcon"
 import { AdminService } from "@/client"
 import type { AdminStatsResponse } from "@/client"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
@@ -42,7 +42,7 @@ function StatCard({
         <div
           className={`flex size-11 shrink-0 items-center justify-center rounded-md ${accentColor}`}
         >
-          <Icon className="size-5" />
+          <Icon />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
@@ -89,7 +89,7 @@ function AdminHome() {
       {/* 统计卡片 */}
       <section className="animate-fade-in-up delay-100 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          icon={Users}
+          icon={() => <SealIcon char="户" size="lg" />}
           label="总用户数"
           value={isLoading ? "--" : (stats?.total_users ?? 0)}
           subValue={`今日新增 ${stats?.today_new_users ?? 0} 人`}
@@ -102,7 +102,7 @@ function AdminHome() {
         />
 
         <StatCard
-          icon={ClipboardCheck}
+          icon={() => <SealIcon char="录" size="lg" />}
           label="测评记录总数"
           value={isLoading ? "--" : (stats?.total_test_records ?? 0)}
           subValue={`今日新增 ${stats?.today_new_test_records ?? 0} 条`}
@@ -115,7 +115,7 @@ function AdminHome() {
         />
 
         <StatCard
-          icon={FileText}
+          icon={() => <SealIcon char="档" size="lg" />}
           label="分析报告总数"
           value={isLoading ? "--" : (stats?.total_analysis_reports ?? 0)}
           accentColor="bg-[#c45a43]/8 text-[#c45a43]"
@@ -131,28 +131,28 @@ function AdminHome() {
           {[
             {
               to: "/user-manage",
-              icon: Users,
+              icon: () => <SealIcon char="户" size="lg" />,
               title: "用户管理",
               desc: "查看和管理所有注册用户",
               tone: "primary" as const,
             },
             {
               to: "/chat-history",
-              icon: MessageSquare,
+              icon: () => <SealIcon char="话" size="lg" />,
               title: "用户会话记录",
               desc: "查看用户的 AI 咨询会话",
               tone: "secondary" as const,
             },
             {
               to: "/admin-test-records",
-              icon: ClipboardCheck,
+              icon: () => <SealIcon char="录" size="lg" />,
               title: "用户测评记录",
               desc: "查看用户的测评记录与报告",
               tone: "accent" as const,
             },
             {
               href: "http://localhost:8080/swagger-ui.html",
-              icon: FileText,
+              icon: () => <SealIcon char="文" size="lg" />,
               title: "API 文档",
               desc: "查看后端 API 接口文档",
               tone: "muted" as const,
@@ -172,7 +172,7 @@ function AdminHome() {
                         : "bg-secondary text-muted-foreground"
                     } transition-colors`}
                   >
-                    <item.icon className="size-4" />
+                    <item.icon />
                   </div>
                   <div>
                     <CardTitle className="font-serif-zh text-sm">

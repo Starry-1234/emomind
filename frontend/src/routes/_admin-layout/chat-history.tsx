@@ -3,11 +3,11 @@ import { createFileRoute } from "@tanstack/react-router"
 import {
   Clock,
   Inbox,
-  MessageSquare,
   Search,
   User as UserIcon,
   X,
 } from "lucide-react"
+import { SealIcon } from "@/components/Common/SealIcon"
 import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import { type UserResponse, UsersService } from "@/client"
@@ -210,7 +210,7 @@ function ChatHistory() {
         <div className="flex w-64 flex-shrink-0 flex-col border-r">
           <div className="flex items-center justify-between border-b px-3 py-3">
             <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <SealIcon char="话" />
               <span className="text-sm font-semibold">会话记录</span>
             </div>
             {conversations.length > 0 && (
@@ -293,8 +293,7 @@ function ChatHistory() {
         <div className="flex min-w-0 flex-1 flex-col">
           {!selectedConvId ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
-              <MessageSquare className="h-12 w-12" />
-              <span className="text-sm">
+              <span className="font-serif-zh text-sm">
                 {!selectedUserId
                   ? "请先选择用户，再查看会话"
                   : "请选择一个会话查看详情"}

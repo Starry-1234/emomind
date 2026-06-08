@@ -1,5 +1,4 @@
-import { Brain, History, Home, MessageSquare, Stethoscope } from "lucide-react"
-
+import { SealIcon } from "@/components/Common/SealIcon"
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
 import {
@@ -14,11 +13,11 @@ import { type Item, Main } from "./Main"
 import { User } from "./User"
 
 const userItems: Item[] = [
-  { icon: Home, title: "首页", path: "/user" },
-  { icon: Stethoscope, title: "智能心理医生", path: "/user/ai-doctor" },
-  { icon: Brain, title: "智能心理测评", path: "/user/test" },
-  { icon: History, title: "测评报告历史", path: "/user/test-records" },
-  { icon: MessageSquare, title: "咨询报告历史", path: "/user/consultations" },
+  { icon: () => <SealIcon char="首" />, title: "首页", path: "/user" },
+  { icon: () => <SealIcon char="医" />, title: "智能心理医生", path: "/user/ai-doctor" },
+  { icon: () => <SealIcon char="测" />, title: "智能心理测评", path: "/user/test" },
+  { icon: () => <SealIcon char="记" />, title: "测评报告历史", path: "/user/test-records" },
+  { icon: () => <SealIcon char="档" />, title: "咨询报告历史", path: "/user/consultations" },
 ]
 
 export function UserSidebar() {

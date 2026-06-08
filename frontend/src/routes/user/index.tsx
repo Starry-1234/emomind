@@ -1,13 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import {
-  Calendar,
-  ChevronRight,
-  ClipboardCheck,
-  MessageSquare,
-  Stethoscope,
-  TrendingUp,
-} from "lucide-react"
+import { ChevronRight } from "lucide-react"
+import { SealIcon } from "@/components/Common/SealIcon"
 import { useEffect, useMemo, useState } from "react"
 import { TestRecordsService } from "@/client"
 import { Button } from "@/components/ui/button"
@@ -417,7 +411,7 @@ function UserHome() {
       <section className="grid gap-4 sm:grid-cols-3">
         {[
           {
-            icon: MessageSquare,
+            icon: () => <SealIcon char="话" size="lg" />,
             label: "对话",
             value: countsLoading
               ? "--"
@@ -427,7 +421,7 @@ function UserHome() {
             tone: "primary",
           },
           {
-            icon: ClipboardCheck,
+            icon: () => <SealIcon char="录" size="lg" />,
             label: "测评次数",
             value: countsLoading ? "--" : testCount,
             sub: "已完成量表",
@@ -435,7 +429,7 @@ function UserHome() {
             tone: "accent",
           },
           {
-            icon: Calendar,
+            icon: () => <SealIcon char="日" size="lg" />,
             label: "连续使用",
             value: streakDays,
             sub: "天",
@@ -468,7 +462,7 @@ function UserHome() {
                     : "bg-secondary text-muted-foreground"
                 }`}
               >
-                <stat.icon className="size-5" />
+                <stat.icon />
               </div>
             </div>
           </div>
@@ -479,7 +473,7 @@ function UserHome() {
       <section className="animate-fade-in-up delay-400 memo-card rounded-lg">
         <div className="border-b border-border/60 px-6 py-4">
           <div className="flex items-center gap-2">
-            <TrendingUp className="size-4 text-[#2d4a3e]" />
+            <SealIcon char="势" />
             <h2 className="font-serif-zh text-base font-semibold">
               七日心象
             </h2>
@@ -498,14 +492,14 @@ function UserHome() {
         {[
           {
             key: "ai-doctor",
-            icon: Stethoscope,
+            icon: () => <SealIcon char="医" size="lg" />,
             title: "智能心理医生",
             desc: "AI 倾听你的心声，提供专业心理支持",
             cta: "开始对话",
           },
           {
             key: "test",
-            icon: ClipboardCheck,
+            icon: () => <SealIcon char="录" size="lg" />,
             title: "心理测评",
             desc: "专业量表评估，了解你的心理健康状态",
             cta: "开始测评",
@@ -517,7 +511,7 @@ function UserHome() {
           >
             <div className="flex items-start gap-4">
               <div className="flex size-11 shrink-0 items-center justify-center rounded-md bg-[#2d4a3e]/8 text-[#2d4a3e] transition-colors group-hover:bg-[#2d4a3e] group-hover:text-[#f7f4ef]">
-                <item.icon className="size-5" />
+                <item.icon />
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-serif-zh text-base font-semibold">
@@ -580,7 +574,7 @@ function UserHome() {
         <div className="memo-card rounded-lg">
           <div className="border-b border-border/60 px-6 py-4">
             <div className="flex items-center gap-2">
-              <ClipboardCheck className="size-4 text-[#2d4a3e]" />
+              <SealIcon char="录" />
               <h2 className="font-serif-zh text-base font-semibold">
                 最近测评
               </h2>
@@ -651,8 +645,7 @@ function UserHome() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center">
-                <ClipboardCheck className="mb-3 size-8 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">暂无测评记录</p>
+                <p className="font-serif-zh text-sm text-muted-foreground">暂无测评记录</p>
                 <p className="mt-0.5 text-xs text-muted-foreground/70">
                   完成一次测评后将在这里显示
                 </p>
