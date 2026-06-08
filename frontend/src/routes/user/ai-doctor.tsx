@@ -239,7 +239,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
             >
               {/* 欢迎信笺 */}
               <div className="relative w-full max-w-lg">
-                <div className="rounded-lg border bg-[#fdfcfa] p-8 shadow-sm">
+                <div className="rounded-lg border bg-card p-8 shadow-sm">
                   {/* 顶部装饰线 */}
                   <div className="mb-6 flex items-center gap-3">
                     <div className="h-px flex-1 bg-border" />
