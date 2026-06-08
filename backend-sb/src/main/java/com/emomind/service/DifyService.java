@@ -7,6 +7,7 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -14,6 +15,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -53,11 +55,30 @@ public class DifyService {
 
     public Map<String, Object> uploadFile(String apiKeyName, Map<String, Object> requestBody) {
         String apiKey = difyProperties.resolveApiKey(apiKeyName);
+
+        String fileName = (String) requestBody.get("file_name");
+        String fileDataBase64 = (String) requestBody.get("file_data");
+        String user = (String) requestBody.get("user");
+
+        if (fileName == null || fileDataBase64 == null) {
+            throw new IllegalArgumentException("file_name and file_data are required");
+        }
+
+        byte[] fileBytes = Base64.getDecoder().decode(fileDataBase64);
+
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("file", fileBytes)
+                .filename(fileName)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM);
+        if (user != null) {
+            builder.part("user", user);
+        }
+
         return difyWebClient.post()
                 .uri("/files/upload")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(requestBody)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .bodyValue(builder.build())
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block();
