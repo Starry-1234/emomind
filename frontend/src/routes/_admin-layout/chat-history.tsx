@@ -389,27 +389,28 @@ function MessageList({
     <ScrollArea className="flex-1 px-4 py-3">
       <div className="flex flex-col gap-3">
         {sorted.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.query ? "justify-end" : "justify-start"}`}
-          >
+          <div key={msg.id} className="flex flex-col gap-3">
             {msg.query && (
-              <div className="max-w-[70%]">
-                <div className="rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-sm text-primary-foreground">
-                  {msg.query}
-                </div>
-                <div className="mt-1 text-right text-[10px] text-muted-foreground">
-                  用户 · {formatTime(msg.created_at)}
+              <div className="flex justify-end">
+                <div className="max-w-[70%]">
+                  <div className="rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-sm text-primary-foreground">
+                    {msg.query}
+                  </div>
+                  <div className="mt-1 text-right text-[10px] text-muted-foreground">
+                    用户 · {formatTime(msg.created_at)}
+                  </div>
                 </div>
               </div>
             )}
             {msg.answer && (
-              <div className="max-w-[70%]">
-                <div className="rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm text-foreground prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
-                  <ReactMarkdown>{msg.answer}</ReactMarkdown>
-                </div>
-                <div className="mt-1 text-[10px] text-muted-foreground">
-                  AI · {formatTime(msg.created_at)}
+              <div className="flex justify-start">
+                <div className="max-w-[70%]">
+                  <div className="rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm text-foreground prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
+                    <ReactMarkdown>{msg.answer}</ReactMarkdown>
+                  </div>
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    AI · {formatTime(msg.created_at)}
+                  </div>
                 </div>
               </div>
             )}
