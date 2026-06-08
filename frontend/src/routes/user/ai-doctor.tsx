@@ -276,10 +276,10 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           <StreamingMessage
                             content={msg.content || ""}
                             isStreaming={msg.isStreaming}
-                            className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground"
+                            className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground"
                           />
                         ) : (
-                          <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
+                          <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
                             <ReactMarkdown>{msg.content || ""}</ReactMarkdown>
                           </div>
                         )
