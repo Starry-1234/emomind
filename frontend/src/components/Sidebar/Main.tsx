@@ -72,7 +72,11 @@ export function Main({ items }: MainProps) {
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
-            const isActive = currentPath.startsWith(item.path)
+            // 首页（/user 或 /admin）使用精确匹配，避免子路径也高亮
+            const isRoot = item.path === "/user" || item.path === "/admin"
+            const isActive = isRoot
+              ? currentPath === item.path
+              : currentPath.startsWith(item.path)
 
             return (
               <SidebarMenuItem key={item.title}>

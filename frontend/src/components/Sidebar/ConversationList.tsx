@@ -146,7 +146,7 @@ export function ConversationList() {
           className={`ml-1 shrink-0 text-[10px] leading-none px-1.5 py-0.5 ${
             conv.moduleType === "ai-doctor"
               ? "border-primary/30 text-primary"
-              : "border-violet-300 text-violet-600"
+              : "border-primary/30 text-primary"
           }`}
         >
           {conv.moduleType === "ai-doctor" ? "医生" : "测评"}
@@ -220,7 +220,7 @@ export function ConversationList() {
             {testConversations.length > 0 && (
               <div>
                 <div className="flex items-center gap-1.5 px-2 pt-2 pb-1">
-                  <Brain className="size-3 text-violet-500" />
+                  <Brain className="size-3 text-primary" />
                   <span className="text-[11px] font-medium text-muted-foreground">
                     测评记录
                   </span>

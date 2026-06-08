@@ -1,9 +1,13 @@
-export function Footer() {
+interface FooterProps {
+  noBorder?: boolean
+}
+
+export function Footer({ noBorder = false }: FooterProps) {
   return (
-    <footer className="border-t py-2 px-6">
-      <div className="flex justify-end">
-        <p className="text-muted-foreground text-xs">
-          情之所至 — 基于多模态大模型的心理动态监测系统
+    <footer className={`py-2 px-6 ${noBorder ? "" : "border-t"}`}>
+      <div className="flex justify-center">
+        <p className="text-center text-[11px] tracking-wide text-muted-foreground/70">
+          情之所至 — 基于多模态大模型融合分析的心理动态监测系统
         </p>
       </div>
     </footer>

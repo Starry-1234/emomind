@@ -1,12 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import {
-  Brain,
   Clock,
   Inbox,
   MessageSquare,
   Search,
-  Stethoscope,
   User as UserIcon,
   X,
 } from "lucide-react"
@@ -34,7 +32,6 @@ import {
   getMessages,
 } from "@/services/difyApi"
 
-type ModuleType = "ai-doctor" | "test"
 
 export const Route = createFileRoute("/_admin-layout/chat-history")({
   component: ChatHistory,
@@ -64,7 +61,6 @@ function ChatHistory() {
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [deleteConvId, setDeleteConvId] = useState<string | null>(null)
-  const [moduleType, setModuleType] = useState<ModuleType>("ai-doctor")
 
   // 1) 用户列表
   const { data: usersRes, isLoading: usersLoading } = useQuery({
@@ -88,11 +84,11 @@ function ChatHistory() {
     (u: UserResponse) => u.id === selectedUserId,
   ) as UserResponse | undefined
 
-  // 2) 会话列表
+  // 2) 会话列表（固定为 ai-doctor，心理测评记录请去「用户测评记录」页面）
   const { data: convsRes, isLoading: convsLoading } = useQuery({
-    queryKey: ["admin-conversations", selectedUserId, moduleType],
+    queryKey: ["admin-conversations", selectedUserId],
     queryFn: () =>
-      getConversations(selectedUserId!, { limit: 50, apiKeyName: moduleType }),
+      getConversations(selectedUserId!, { limit: 50, apiKeyName: "ai-doctor" }),
     enabled: !!selectedUserId,
   })
 
@@ -114,10 +110,10 @@ function ChatHistory() {
   // 4) 删除会话
   const deleteMutation = useMutation({
     mutationFn: (convId: string) =>
-      deleteConversation(convId, selectedUserId!, moduleType),
+      deleteConversation(convId, selectedUserId!, "ai-doctor"),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["admin-conversations", selectedUserId, moduleType],
+        queryKey: ["admin-conversations", selectedUserId],
       })
       if (selectedConvId === deleteConvId) {
         setSelectedConvId(null)
@@ -135,12 +131,6 @@ function ChatHistory() {
   // 联动：切换用户时重置会话
   const handleSelectUser = (userId: string) => {
     setSelectedUserId(userId)
-    setSelectedConvId(null)
-  }
-
-  // 联动：切换模块时重置会话
-  const handleSelectModule = (mod: ModuleType) => {
-    setModuleType(mod)
     setSelectedConvId(null)
   }
 
@@ -227,33 +217,6 @@ function ChatHistory() {
                 {conversations.length}
               </Badge>
             )}
-          </div>
-          {/* 模块切换 */}
-          <div className="flex border-b">
-            <button
-              type="button"
-              onClick={() => handleSelectModule("ai-doctor")}
-              className={`flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${
-                moduleType === "ai-doctor"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Stethoscope className="h-3.5 w-3.5" />
-              咨询
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectModule("test")}
-              className={`flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${
-                moduleType === "test"
-                  ? "border-b-2 border-violet-500 text-violet-600"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Brain className="h-3.5 w-3.5" />
-              测评
-            </button>
           </div>
           {!selectedUserId ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-xs text-muted-foreground">

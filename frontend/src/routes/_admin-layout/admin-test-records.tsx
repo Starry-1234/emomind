@@ -91,17 +91,17 @@ function getScoreColor(
     for (const r of scoringRanges) {
       if (score >= r.min && score <= r.max) {
         if (r.label.includes("正常") || r.label.includes("良好"))
-          return "bg-emerald-100 text-emerald-700"
-        if (r.label.includes("关注")) return "bg-amber-100 text-amber-700"
+          return "bg-[#5a7a6a]/10 text-[#5a7a6a] border-[#5a7a6a]/20"
+        if (r.label.includes("关注")) return "bg-[#8b7355]/10 text-[#8b7355] border-[#8b7355]/20"
         if (r.label.includes("寻求帮助") || r.label.includes("严重"))
-          return "bg-rose-100 text-rose-700"
+          return "bg-[#c45a43]/10 text-[#c45a43] border-[#c45a43]/20"
       }
     }
   }
   // 兼容老数据：无 scoring_ranges 时回退到硬编码
-  if (score >= 80) return "bg-emerald-100 text-emerald-700"
-  if (score >= 60) return "bg-amber-100 text-amber-700"
-  return "bg-rose-100 text-rose-700"
+  if (score >= 80) return "bg-[#5a7a6a]/10 text-[#5a7a6a] border-[#5a7a6a]/20"
+  if (score >= 60) return "bg-[#8b7355]/10 text-[#8b7355] border-[#8b7355]/20"
+  return "bg-[#c45a43]/10 text-[#c45a43] border-[#c45a43]/20"
 }
 
 function getScoreLabel(
@@ -133,8 +133,7 @@ function RecordDetailPanel({ record }: { record: TestRecord | null }) {
   if (!record) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
-        <ClipboardList className="h-12 w-12" />
-        <span className="text-sm">请选择一个测评记录查看详情</span>
+        <span className="font-serif-zh text-sm">请选择一个测评记录查看详情</span>
       </div>
     )
   }
@@ -175,8 +174,8 @@ function RecordDetailPanel({ record }: { record: TestRecord | null }) {
         <div className="space-y-4">
           {/* 用户主题 */}
           {record.user_topic && (
-            <div className="rounded-lg bg-violet-50 border border-violet-100 p-3">
-              <p className="text-xs font-medium text-violet-600 mb-1">
+            <div className="rounded-lg bg-secondary/50 border border-border p-3">
+              <p className="text-xs font-medium text-primary mb-1">
                 测评主题
               </p>
               <p className="text-sm text-foreground">{record.user_topic}</p>
@@ -207,7 +206,7 @@ function RecordDetailPanel({ record }: { record: TestRecord | null }) {
                     return (
                       <div key={q.id} className="text-sm">
                         <p className="font-medium mb-2">
-                          <span className="text-violet-500 mr-1">
+                          <span className="text-primary mr-1">
                             {qIdx + 1}.
                           </span>
                           {q.text}
@@ -220,7 +219,7 @@ function RecordDetailPanel({ record }: { record: TestRecord | null }) {
                                 key={optIdx}
                                 className={`text-xs px-2 py-1 rounded-full border ${
                                   isSelected
-                                    ? "bg-violet-100 border-violet-300 text-violet-700 font-medium"
+                                    ? "bg-primary/10 border-primary/20 text-primary font-medium"
                                     : "bg-muted/50 border-muted text-muted-foreground"
                                 }`}
                               >

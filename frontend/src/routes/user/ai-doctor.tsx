@@ -1,13 +1,12 @@
+import { motion, AnimatePresence } from "framer-motion"
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
 import {
   Brain,
   FileText,
   Loader2,
   Mic,
-  Paperclip,
   Send,
   Square,
-  Stethoscope,
   Video,
   X,
 } from "lucide-react"
@@ -16,7 +15,6 @@ import ReactMarkdown from "react-markdown"
 import { AnalysisReportsService } from "@/client"
 import { MessageActions } from "@/components/chat/MessageActions"
 import { StreamingMessage } from "@/components/chat/StreamingMessage"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useConversation } from "@/contexts/ConversationContext"
 import useAuth from "@/hooks/useAuth"
@@ -35,6 +33,47 @@ function AiDoctorLayout() {
   return <Outlet />
 }
 
+function formatTime(ts: number) {
+  return new Date(ts * 1000).toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+/* ── 研墨动画 ────────────────────────────────────── */
+
+function InkGrinding() {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="size-2 rounded-full bg-primary/40"
+            animate={{ scale: [1, 1.6, 1], opacity: [0.3, 0.7, 0.3] }}
+            transition={{
+              duration: 1.4,
+              repeat: Infinity,
+              delay: i * 0.25,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+      <span className="text-sm text-muted-foreground">研墨中</span>
+    </div>
+  )
+}
+
+/* ── 消息进场动画变体 ─────────────────────────────── */
+
+const userMessageTransition = { duration: 0.4, ease: "easeInOut" as const }
+const assistantMessageTransition = { duration: 0.4, ease: "easeInOut" as const }
+
+/* ── Page ──────────────────────────────────────────── */
+
 export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
   const { user } = useAuth()
   const userId = user?.id || "anonymous"
@@ -44,7 +83,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
     loadConversations,
     selectConversationById,
   } = useConversation()
-  const { isWarmTheme } = useCurrentTheme()
+  useCurrentTheme() // keep hook for theme side-effects
   const navigate = useNavigate()
 
   // 挂载状态跟踪
@@ -61,8 +100,6 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
 
   useEffect(() => {
     if (propSessionId && propSessionId !== activeConvId) {
-      // 如果 activeConvId 曾被设为非空后又变空（404 导致），且 propSessionId 是真实 ID
-      // → 该会话不存在，导航离开过时 URL
       if (activeConvId === "" && hadActiveIdRef.current) {
         navigate({ to: "/user/ai-doctor", replace: true })
         return
@@ -75,12 +112,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
     }
   }, [propSessionId, activeConvId, setActiveConvId, navigate])
 
-  // 基础路由（propSessionId 为 undefined）时用空字符串，表示"新对话"模式
   const effectiveSessionId = propSessionId ?? ""
 
-  // 新会话创建回调：仅当组件仍挂载时导航
   const handleSessionCreated = (conversationId: string) => {
-    // 用 selectConversationById 确保写到正确模块，避免 currentContext 竞态
     selectConversationById(conversationId, "ai-doctor")
     loadConversations()
     if (isMountedRef.current) {
@@ -106,7 +140,6 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
     handleRegenerate,
     handleSwitchVersion,
     handleKeyDown,
-    handleFileSelect,
     categorizeFile,
     removeAttachment,
   } = useChat(
@@ -118,12 +151,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
     "ai-doctor",
   )
 
-  // ── 基础路由安全网：确保没有 stale 消息残留 ──────────────────────────────
-  // useChat 内部已有 sessionId="" 清消息逻辑，但作为双重保险：
-  // 如果组件因 React 复用而非 remount，内部 useLayoutEffect 可能不触发
+  // 基础路由安全网
   useEffect(() => {
     if (!propSessionId && messages.length > 0) {
-      // 检查是否有正在进行的流式请求，避免中断
       const hasStreaming = messages.some((m) => m.isStreaming)
       if (!hasStreaming) {
         setMessages([])
@@ -131,7 +161,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
     }
   }, [propSessionId, messages.length, messages, setMessages])
 
-  // 用户发送消息后自动滚动到底部，AI 回复时不滚动
+  // 用户发送消息后自动滚动到底部
   const prevMessagesLength = useRef(0)
   useEffect(() => {
     if (messages.length > prevMessagesLength.current) {
@@ -145,7 +175,6 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
 
   // UI refs
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const analysisFileRef = useRef<HTMLInputElement>(null)
   const analysisAbortControllerRef = useRef<AbortController | null>(null)
 
@@ -157,22 +186,10 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
   // 文件图标
   const getFileIcon = (file: File) => {
     if (file.type.startsWith("audio"))
-      return (
-        <Mic
-          className={`size-4 ${isWarmTheme ? "text-warm-primary" : "text-purple-400"}`}
-        />
-      )
+      return <Mic className="size-4 text-[#8b5e4a]" />
     if (file.type.startsWith("video"))
-      return (
-        <Video
-          className={`size-4 ${isWarmTheme ? "text-warm-primary" : "text-blue-400"}`}
-        />
-      )
-    return (
-      <FileText
-        className={`size-4 ${isWarmTheme ? "text-warm-primary" : "text-green-400"}`}
-      />
-    )
+      return <Video className="size-4 text-[#5a7a6a]" />
+    return <FileText className="size-4 text-[#6b6b6b]" />
   }
 
   // 组件卸载时中止正在进行的分析
@@ -185,303 +202,354 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
 
   // 开场白
   const openingStatement =
-    "您好呀，我是您专属的心理医生朋友，您可以上传音频、视频甚至输入一段话来帮我分析您现在的心理状态，也可以输入「智能问答」让我来为您生成你想要的题目进行测试哦！"
+    "您好，我是您专属的心理医生朋友。\n\n您可以上传音频、视频或文档，让我帮您分析心理状况；也可以输入「智能问答」，让我为您生成心理测试题目。"
 
   return (
     <div className="flex h-full gap-4 p-4">
       {/* 聊天区域 */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card">
-        {/* 顶栏 */}
-        <div className="shrink-0 flex items-center gap-2 border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
-              <Stethoscope className="size-4 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-sm font-semibold">智能心理医生</h1>
-              <p className="text-xs text-muted-foreground">
-                多模态心理状况分析
-              </p>
-            </div>
+        {/* ── 顶栏 ── */}
+        <div className="shrink-0 flex items-center gap-3 border-b px-5 py-3">
+          {/* 印章图标 */}
+          <div className="flex size-8 items-center justify-center rounded border-2 border-primary/80">
+            <span className="font-serif-zh text-sm font-bold text-primary">
+              医
+            </span>
+          </div>
+          <div>
+            <h1 className="font-serif-zh text-sm font-semibold">
+              智能心理医生
+            </h1>
+            <p className="text-xs text-muted-foreground">多模态心理状况分析</p>
+          </div>
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-[#5a7a6a]" />
+            <span className="text-[11px] text-muted-foreground">在线</span>
           </div>
         </div>
 
-        {/* 消息区域 */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+        {/* ── 消息区域 ── */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-6">
           {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-6">
-              <div
-                className={`flex size-16 items-center justify-center rounded-full ${
-                  isWarmTheme ? "warm-gradient-bg warm-shadow" : "bg-primary/10"
-                }`}
-              >
-                <Brain
-                  className={`size-8 ${isWarmTheme ? "text-white" : "text-primary"}`}
-                />
-              </div>
-              <div className="max-w-md text-center">
-                <h2 className="mb-2 text-lg font-semibold">
-                  多模态心理状况分析
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {openingStatement}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="mx-auto max-w-3xl space-y-4">
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  {msg.role === "assistant" && (
-                    <Avatar className="mt-0.5 size-8 flex-shrink-0">
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        <Stethoscope className="size-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div className="max-w-[80%] space-y-1">
-                    {/* 消息文件 */}
-                    {msg.files && msg.files.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {msg.files.map((f) => (
-                          <div
-                            key={f.id}
-                            className="text-xs text-muted-foreground"
-                          >
-                            {f.type === "image" ? (
-                              <img
-                                src={f.url}
-                                alt="附件"
-                                className="max-h-48 rounded-md"
-                              />
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded border px-2 py-1">
-                                <FileText className="size-3" />
-                                文件
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {/* 消息内容 */}
-                    <div
-                      className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-                    >
-                      {msg.role === "assistant" ? (
-                        msg.isStreaming ? (
-                          <StreamingMessage
-                            content={msg.content || ""}
-                            isStreaming={msg.isStreaming}
-                            className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground"
-                          />
-                        ) : (
-                          <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
-                            <ReactMarkdown>{msg.content || ""}</ReactMarkdown>
-                          </div>
-                        )
+            <motion.div
+              className="flex h-full flex-col items-center justify-center gap-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {/* 欢迎信笺 */}
+              <div className="relative w-full max-w-lg">
+                <div className="rounded-lg border bg-[#fdfcfa] p-8 shadow-sm">
+                  {/* 顶部装饰线 */}
+                  <div className="mb-6 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="font-serif-zh text-xs tracking-widest text-muted-foreground">
+                      展信安
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <div className="space-y-4 text-sm leading-relaxed text-foreground">
+                    {openingStatement.split("\n").map((line, i) =>
+                      line ? (
+                        <p key={i}>{line}</p>
                       ) : (
-                        msg.content || (msg.isStreaming ? "" : "...")
-                      )}
-                    </div>
-                    {msg.role === "assistant" && (
-                      <MessageActions
-                        isPaused={msg.isPaused || false}
-                        isStreaming={msg.isStreaming || false}
-                        versions={msg.versions}
-                        currentVersion={msg.currentVersion}
-                        onContinue={() => handleContinue(idx)}
-                        onCopy={() =>
-                          navigator.clipboard.writeText(msg.content)
-                        }
-                        onRegenerate={() => handleRegenerate(idx)}
-                        onSwitchVersion={(direction) =>
-                          handleSwitchVersion(idx, direction)
-                        }
-                        disabled={isStreaming}
-                      />
+                        <div key={i} className="h-2" />
+                      ),
                     )}
                   </div>
-                  {msg.role === "user" && (
-                    <Avatar className="mt-0.5 size-8 flex-shrink-0">
-                      <AvatarFallback className="text-xs">
-                        {(user?.full_name || "U").slice(0, 1).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
+
+                  {/* 底部印章 */}
+                  <div className="mt-6 flex justify-end">
+                    <div className="flex size-10 items-center justify-center rounded border-2 border-accent/70">
+                      <span className="font-serif-zh text-xs font-bold text-accent">
+                        医
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              ))}
-              {/* 思考中指示器 */}
+              </div>
+            </motion.div>
+          ) : (
+            <div className="mx-auto max-w-3xl space-y-6">
+              <AnimatePresence initial={false}>
+                {messages.map((msg, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={
+                      msg.role === "user"
+                        ? { opacity: 0, x: 30, scale: 0.97 }
+                        : { opacity: 0, x: -30, scale: 0.97 }
+                    }
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={
+                      msg.role === "user"
+                        ? userMessageTransition
+                        : assistantMessageTransition
+                    }
+                    className={`flex ${
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[85%] space-y-1.5 ${
+                        msg.role === "user" ? "items-end" : "items-start"
+                      }`}
+                    >
+                      {/* 时间戳 */}
+                      {msg.role === "assistant" && !msg.isStreaming && (
+                        <div className="px-1 text-[10px] text-muted-foreground">
+                          医生 · {formatTime(Date.now() / 1000)}
+                        </div>
+                      )}
+
+                      {/* 消息文件 */}
+                      {msg.files && msg.files.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 px-1">
+                          {msg.files.map((f) => (
+                            <div
+                              key={f.id}
+                              className="text-xs text-muted-foreground"
+                            >
+                              {f.type === "image" ? (
+                                <img
+                                  src={f.url}
+                                  alt="附件"
+                                  className="max-h-48 rounded-md border"
+                                />
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded border bg-background px-2 py-1">
+                                  <FileText className="size-3" />
+                                  文件
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 消息内容 */}
+                      <div
+                        className={`relative text-sm leading-relaxed ${
+                          msg.role === "user"
+                            ? "rounded-2xl rounded-tr-sm bg-[#f5f0e6] dark:bg-[#2a2a28] px-4 py-3 text-foreground border border-border/50 dark:border-white/10"
+                            : "rounded-lg rounded-tl-sm border-l-[3px] border-primary bg-background px-5 py-4 text-foreground shadow-sm"
+                        }`}
+                      >
+                        {msg.role === "assistant" ? (
+                          msg.isStreaming ? (
+                            <StreamingMessage
+                              content={msg.content || ""}
+                              isStreaming={msg.isStreaming}
+                              className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground"
+                            />
+                          ) : (
+                            <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
+                              <ReactMarkdown>
+                                {msg.content || ""}
+                              </ReactMarkdown>
+                            </div>
+                          )
+                        ) : (
+                          msg.content || (msg.isStreaming ? "" : "...")
+                        )}
+                      </div>
+
+                      {/* 操作按钮 */}
+                      {msg.role === "assistant" && (
+                        <MessageActions
+                          isPaused={msg.isPaused || false}
+                          isStreaming={msg.isStreaming || false}
+                          versions={msg.versions}
+                          currentVersion={msg.currentVersion}
+                          onContinue={() => handleContinue(idx)}
+                          onCopy={() =>
+                            navigator.clipboard.writeText(msg.content)
+                          }
+                          onRegenerate={() => handleRegenerate(idx)}
+                          onSwitchVersion={(direction) =>
+                            handleSwitchVersion(idx, direction)
+                          }
+                          disabled={isStreaming}
+                        />
+                      )}
+
+                      {/* 用户小印章 */}
+                      {msg.role === "user" && (
+                        <div className="flex justify-end px-1">
+                          <span className="text-[10px] text-muted-foreground/60">
+                            我
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {/* 研墨中指示器 */}
               {isStreaming &&
                 !messages.some(
                   (m) => m.role === "assistant" && m.isStreaming && m.content,
                 ) && (
-                  <div className="flex gap-3">
-                    <Avatar className="mt-0.5 size-8 flex-shrink-0">
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        <Stethoscope className="size-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-2.5">
-                      <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        思考中...
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="flex size-8 items-center justify-center rounded border border-primary/30 bg-primary/5">
+                      <span className="font-serif-zh text-xs font-bold text-primary">
+                        医
                       </span>
                     </div>
-                  </div>
+                    <div className="rounded-lg border-l-[3px] border-primary bg-background px-5 py-3 shadow-sm">
+                      <InkGrinding />
+                    </div>
+                  </motion.div>
                 )}
               <div ref={messagesEndRef} />
             </div>
           )}
         </div>
 
-        {/* 输入区域 */}
-        <div className="shrink-0 border-t bg-background p-4">
+        {/* ── 输入区域 —— 书写台 ── */}
+        <div className="shrink-0 border-t bg-background/80 backdrop-blur-sm px-4 py-4">
           <div className="mx-auto max-w-3xl">
-            <div className="rounded-2xl border border-border/60 bg-card shadow-sm transition-all hover:border-border">
-              {/* 附件预览区域 */}
+            {/* 附件预览 */}
+            <AnimatePresence>
               {attachedFiles.length > 0 && (
-                <div className="border-b border-border/60 px-4 py-3">
-                  <div className="flex flex-wrap gap-2">
-                    {attachedFiles.map((file, idx) => {
-                      const isImage = file.type.startsWith("image")
-                      const previewUrl = isImage
-                        ? URL.createObjectURL(file)
-                        : null
-                      return (
-                        <div
-                          key={`${file.name}-${idx}`}
-                          className={`group relative flex items-center gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 text-xs transition-all hover:border-border ${isImage ? "pr-2" : "max-w-[200px]"}`}
-                        >
-                          <div className="shrink-0">
-                            {isImage && previewUrl ? (
-                              <div className="size-10 overflow-hidden rounded-md">
-                                <img
-                                  src={previewUrl}
-                                  alt={file.name}
-                                  className="size-full object-cover"
-                                  onLoad={() => URL.revokeObjectURL(previewUrl)}
-                                />
-                              </div>
-                            ) : (
-                              <div className="flex size-8 items-center justify-center rounded-md bg-primary/10">
-                                {getFileIcon(file)}
-                              </div>
-                            )}
-                          </div>
-                          {!isImage && (
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate text-sm font-medium text-foreground">
-                                {file.name}
-                              </div>
-                              <div className="truncate text-xs text-muted-foreground">
-                                {(file.size / 1024).toFixed(1)} KB
-                              </div>
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            className="absolute right-1 top-1 rounded-full bg-background/80 p-0.5 opacity-0 shadow-sm transition-opacity hover:bg-destructive/10 group-hover:opacity-100"
-                            onClick={() => {
-                              removeAttachment(idx)
-                              if (previewUrl) URL.revokeObjectURL(previewUrl)
-                            }}
-                          >
-                            <X className="size-3 text-muted-foreground hover:text-destructive" />
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 文本输入区域 */}
-              <div className="px-4 py-3">
-                <textarea
-                  ref={inputRef}
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="输入消息，或上传文件进行分析..."
-                  className="w-full resize-none border-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                  rows={1}
-                  disabled={isStreaming}
-                  style={{ maxHeight: "120px", minHeight: "24px" }}
-                  onInput={(e) => {
-                    const target = e.target as HTMLTextAreaElement
-                    target.style.height = "24px"
-                    target.style.height = `${Math.min(target.scrollHeight, 120)}px`
-                  }}
-                />
-              </div>
-
-              {/* 工具栏区域 */}
-              <div className="flex items-center justify-between border-t border-border/60 px-4 py-2">
-                <div className="flex items-center gap-2">
-                  {/* 默认文件上传已禁用，请使用「心理状况分析」上传文件 */}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowAnalysisUpload(true)}
-                    disabled={isStreaming}
-                  >
-                    <Brain className="size-4 mr-1" />
-                    <span className="text-xs">心理状况分析</span>
-                  </Button>
-                </div>
-
-                <Button
-                  size="icon-sm"
-                  className="rounded-lg bg-primary hover:bg-primary/90"
-                  onClick={() => {
-                    if (isAnalyzing) {
-                      analysisAbortControllerRef.current?.abort()
-                      analysisAbortControllerRef.current = null
-                      setIsAnalyzing(false)
-                      sessionStorage.removeItem("ai-doctor_streaming")
-                      setMessages((prev) => {
-                        const newMsgs = [...prev]
-                        const last = newMsgs[newMsgs.length - 1]
-                        if (last?.isStreaming) {
-                          newMsgs[newMsgs.length - 1] = {
-                            ...last,
-                            isStreaming: false,
-                          }
-                        }
-                        return newMsgs
-                      })
-                    } else if (isStreaming) {
-                      handleStop()
-                    } else {
-                      handleSend()
-                    }
-                  }}
-                  disabled={
-                    !isAnalyzing &&
-                    !isStreaming &&
-                    !inputText.trim() &&
-                    attachedFiles.length === 0
-                  }
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-3 flex flex-wrap gap-2"
                 >
-                  {isAnalyzing || isStreaming ? (
-                    <Square className="size-4 fill-current" />
-                  ) : (
-                    <Send className="size-4" />
-                  )}
+                  {attachedFiles.map((file, idx) => {
+                    const isImage = file.type.startsWith("image")
+                    const previewUrl = isImage
+                      ? URL.createObjectURL(file)
+                      : null
+                    return (
+                      <motion.div
+                        key={`${file.name}-${idx}`}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="group relative flex items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-xs"
+                      >
+                        {isImage && previewUrl ? (
+                          <div className="size-8 overflow-hidden rounded-md">
+                            <img
+                              src={previewUrl}
+                              alt={file.name}
+                              className="size-full object-cover"
+                              onLoad={() => URL.revokeObjectURL(previewUrl)}
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
+                            {getFileIcon(file)}
+                          </div>
+                        )}
+                        {!isImage && (
+                          <span className="max-w-[120px] truncate text-xs">
+                            {file.name}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className="rounded-full p-0.5 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10"
+                          onClick={() => {
+                            removeAttachment(idx)
+                            if (previewUrl) URL.revokeObjectURL(previewUrl)
+                          }}
+                        >
+                          <X className="size-3 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      </motion.div>
+                    )
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* 输入框 */}
+            <div className="relative flex items-end gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-sm transition-colors focus-within:border-primary/40 focus-within:shadow-md">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowAnalysisUpload(true)}
+                  disabled={isStreaming}
+                >
+                  <Brain className="size-4 mr-1" />
+                  <span className="text-xs">分析</span>
                 </Button>
               </div>
+
+              <textarea
+                ref={inputRef}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="在此书写您的心事…"
+                className="min-h-[24px] flex-1 resize-none border-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 placeholder:italic"
+                rows={1}
+                disabled={isStreaming}
+                style={{ maxHeight: "120px" }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement
+                  target.style.height = "24px"
+                  target.style.height = `${Math.min(target.scrollHeight, 120)}px`
+                }}
+              />
+
+              <Button
+                size="icon-sm"
+                className="h-8 w-8 rounded-full bg-primary hover:bg-primary/90 shrink-0"
+                onClick={() => {
+                  if (isAnalyzing) {
+                    analysisAbortControllerRef.current?.abort()
+                    analysisAbortControllerRef.current = null
+                    setIsAnalyzing(false)
+                    sessionStorage.removeItem("ai-doctor_streaming")
+                    setMessages((prev) => {
+                      const newMsgs = [...prev]
+                      const last = newMsgs[newMsgs.length - 1]
+                      if (last?.isStreaming) {
+                        newMsgs[newMsgs.length - 1] = {
+                          ...last,
+                          isStreaming: false,
+                        }
+                      }
+                      return newMsgs
+                    })
+                  } else if (isStreaming) {
+                    handleStop()
+                  } else {
+                    handleSend()
+                  }
+                }}
+                disabled={
+                  !isAnalyzing &&
+                  !isStreaming &&
+                  !inputText.trim() &&
+                  attachedFiles.length === 0
+                }
+              >
+                {isAnalyzing || isStreaming ? (
+                  <Square className="size-3.5 fill-current" />
+                ) : (
+                  <Send className="size-3.5" />
+                )}
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 心理状况分析 - 文件上传模态框 */}
+      {/* ── 心理状况分析 - 文件上传模态框 ── */}
       {showAnalysisUpload && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <button
@@ -496,9 +564,17 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
               setIsAnalyzing(false)
             }}
           />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-background p-6 shadow-2xl">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="relative z-10 w-full max-w-md rounded-xl bg-card p-6 shadow-2xl border"
+          >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">心理状况分析</h3>
+              <h3 className="font-serif-zh text-lg font-semibold">
+                心理状况分析
+              </h3>
               <Button
                 type="button"
                 variant="ghost"
@@ -545,15 +621,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           analysisFileRef.current.click()
                         }
                       }}
-                      className={`flex flex-col items-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all ${
-                        isWarmTheme
-                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
-                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
-                      }`}
+                      className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border/60 p-4 transition-all hover:border-primary hover:bg-primary/5"
                     >
-                      <FileText
-                        className={`size-8 ${isWarmTheme ? "text-primary" : "text-blue-500"}`}
-                      />
+                      <FileText className="size-8 text-muted-foreground" />
                       <span className="text-sm font-medium">文档</span>
                     </button>
 
@@ -565,15 +635,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           analysisFileRef.current.click()
                         }
                       }}
-                      className={`flex flex-col items-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all ${
-                        isWarmTheme
-                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
-                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
-                      }`}
+                      className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border/60 p-4 transition-all hover:border-primary hover:bg-primary/5"
                     >
-                      <Mic
-                        className={`size-8 ${isWarmTheme ? "text-primary" : "text-purple-500"}`}
-                      />
+                      <Mic className="size-8 text-muted-foreground" />
                       <span className="text-sm font-medium">音频</span>
                     </button>
 
@@ -585,15 +649,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           analysisFileRef.current.click()
                         }
                       }}
-                      className={`flex flex-col items-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all ${
-                        isWarmTheme
-                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
-                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
-                      }`}
+                      className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border/60 p-4 transition-all hover:border-primary hover:bg-primary/5"
                     >
-                      <Video
-                        className={`size-8 ${isWarmTheme ? "text-primary" : "text-green-500"}`}
-                      />
+                      <Video className="size-8 text-muted-foreground" />
                       <span className="text-sm font-medium">视频</span>
                     </button>
                   </div>
@@ -607,35 +665,33 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                     {analysisFiles.map((file, idx) => (
                       <div
                         key={`${file.name}-${idx}`}
-                        className={`rounded-lg border p-3 ${
-                          isWarmTheme
-                            ? "bg-primary/10 border-primary/20"
-                            : "bg-muted/30"
-                        }`}
+                        className="rounded-lg border bg-muted/30 p-3"
                       >
                         <div className="flex items-center gap-3">
-                          <div
-                            className={`flex size-8 items-center justify-center rounded-lg ${
-                              isWarmTheme ? "bg-primary/20" : "bg-primary/10"
-                            }`}
-                          >
+                          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
                             {file.type.startsWith("audio") ? (
-                              <Mic className={`size-4 ${isWarmTheme ? "text-primary" : "text-purple-500"}`} />
+                              <Mic className="size-4 text-[#8b5e4a]" />
                             ) : file.type.startsWith("video") ? (
-                              <Video className={`size-4 ${isWarmTheme ? "text-primary" : "text-green-500"}`} />
+                              <Video className="size-4 text-[#5a7a6a]" />
                             ) : (
-                              <FileText className={`size-4 ${isWarmTheme ? "text-primary" : "text-blue-500"}`} />
+                              <FileText className="size-4 text-[#6b6b6b]" />
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">{file.name}</p>
+                            <p className="truncate text-sm font-medium">
+                              {file.name}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               {(file.size / 1024 / 1024).toFixed(2)} MB
                             </p>
                           </div>
                           <button
                             type="button"
-                            onClick={() => setAnalysisFiles((prev) => prev.filter((_, i) => i !== idx))}
+                            onClick={() =>
+                              setAnalysisFiles((prev) =>
+                                prev.filter((_, i) => i !== idx),
+                              )
+                            }
                             className="rounded-full p-1 hover:bg-destructive/10"
                           >
                             <X className="size-4 text-muted-foreground" />
@@ -649,17 +705,14 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                       type="button"
                       onClick={() => {
                         if (analysisFileRef.current) {
-                          analysisFileRef.current.accept = ".pdf,.doc,.docx,.txt,.md"
+                          analysisFileRef.current.accept =
+                            ".pdf,.doc,.docx,.txt,.md"
                           analysisFileRef.current.click()
                         }
                       }}
-                      className={`flex flex-col items-center gap-1 rounded-xl border-2 border-dashed p-2 transition-all ${
-                        isWarmTheme
-                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
-                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
-                      }`}
+                      className="flex flex-col items-center gap-1 rounded-xl border-2 border-dashed border-border/60 p-2 transition-all hover:border-primary hover:bg-primary/5"
                     >
-                      <FileText className={`size-5 ${isWarmTheme ? "text-primary" : "text-blue-500"}`} />
+                      <FileText className="size-5 text-muted-foreground" />
                       <span className="text-xs font-medium">+ 文档</span>
                     </button>
                     <button
@@ -670,13 +723,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           analysisFileRef.current.click()
                         }
                       }}
-                      className={`flex flex-col items-center gap-1 rounded-xl border-2 border-dashed p-2 transition-all ${
-                        isWarmTheme
-                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
-                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
-                      }`}
+                      className="flex flex-col items-center gap-1 rounded-xl border-2 border-dashed border-border/60 p-2 transition-all hover:border-primary hover:bg-primary/5"
                     >
-                      <Mic className={`size-5 ${isWarmTheme ? "text-primary" : "text-purple-500"}`} />
+                      <Mic className="size-5 text-muted-foreground" />
                       <span className="text-xs font-medium">+ 音频</span>
                     </button>
                     <button
@@ -687,13 +736,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           analysisFileRef.current.click()
                         }
                       }}
-                      className={`flex flex-col items-center gap-1 rounded-xl border-2 border-dashed p-2 transition-all ${
-                        isWarmTheme
-                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
-                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
-                      }`}
+                      className="flex flex-col items-center gap-1 rounded-xl border-2 border-dashed border-border/60 p-2 transition-all hover:border-primary hover:bg-primary/5"
                     >
-                      <Video className={`size-5 ${isWarmTheme ? "text-primary" : "text-green-500"}`} />
+                      <Video className="size-5 text-muted-foreground" />
                       <span className="text-xs font-medium">+ 视频</span>
                     </button>
                   </div>
@@ -716,12 +761,15 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   const abortController = new AbortController()
                   analysisAbortControllerRef.current = abortController
 
-                  // 并行上传所有文件
                   const uploadResults = await Promise.all(
-                    analysisFiles.map((file) => uploadFile(file, userId, "ai-doctor")),
+                    analysisFiles.map((file) =>
+                      uploadFile(file, userId, "ai-doctor"),
+                    ),
                   )
 
-                  const fileCategories = analysisFiles.map((f) => categorizeFile(f))
+                  const fileCategories = analysisFiles.map((f) =>
+                    categorizeFile(f),
+                  )
                   const fileNames = analysisFiles.map((f) => f.name).join("、")
                   const categoryLabels = fileCategories.map((c) =>
                     c === "audio" ? "音频" : c === "video" ? "视频" : "文档",
@@ -740,7 +788,6 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   }
                   setMessages((prev) => [...prev, assistantMsg])
 
-                  // 构建所有文件的 fileData
                   const allFileData = uploadResults.map((result, idx) => ({
                     type:
                       fileCategories[idx] === "audio"
@@ -833,7 +880,10 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                         const reportData = {
                           file_name: analysisFiles.map((f) => f.name).join(", "),
                           file_type: "multi",
-                          file_size: analysisFiles.reduce((sum, f) => sum + f.size, 0),
+                          file_size: analysisFiles.reduce(
+                            (sum, f) => sum + f.size,
+                            0,
+                          ),
                           analysis_result: actualAnalysisResult,
                           conversation_id:
                             conversationId || activeConvId || undefined,
@@ -927,7 +977,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                 AI 正在分析您的档案，请稍候...
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
       )}
     </div>

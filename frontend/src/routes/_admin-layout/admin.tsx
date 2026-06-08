@@ -37,16 +37,16 @@ function StatCard({
   accentColor: string
 }) {
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="memo-card rounded-lg transition-shadow hover:shadow-md">
       <CardContent className="flex items-center gap-4 p-5">
         <div
-          className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${accentColor}`}
+          className={`flex size-11 shrink-0 items-center justify-center rounded-md ${accentColor}`}
         >
           <Icon className="size-5" />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-muted-foreground text-xs font-medium">{label}</p>
-          <p className="text-2xl font-bold">{value}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium text-muted-foreground">{label}</p>
+          <p className="font-serif-zh text-2xl font-semibold">{value}</p>
           {subValue && <p className={`text-xs ${subColor}`}>{subValue}</p>}
         </div>
       </CardContent>
@@ -72,17 +72,22 @@ function AdminHome() {
   })
 
   return (
-    <div className="mx-auto max-w-6xl flex flex-col gap-6 p-6 md:p-8">
+    <div className="ink-wash-bg mx-auto max-w-6xl flex flex-col gap-8 p-6 md:p-10">
       {/* 顶部问候 */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">
-          <span className="mr-2">👋</span>管理后台
+      <header className="animate-fade-in-up">
+        <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
+          {dateStr}
+        </p>
+        <h1 className="font-serif-zh text-3xl font-semibold tracking-tight text-foreground">
+          管理后台
         </h1>
-        <p className="text-muted-foreground text-sm">{dateStr}</p>
-      </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          系统运行概览与用户数据
+        </p>
+      </header>
 
       {/* 统计卡片 */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="animate-fade-in-up delay-100 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           icon={Users}
           label="总用户数"
@@ -90,10 +95,10 @@ function AdminHome() {
           subValue={`今日新增 ${stats?.today_new_users ?? 0} 人`}
           subColor={
             stats?.today_new_users && stats.today_new_users > 0
-              ? "text-emerald-600"
+              ? "text-[#5a7a6a]"
               : "text-muted-foreground"
           }
-          accentColor="bg-blue-50 text-blue-600"
+          accentColor="bg-[#2d4a3e]/8 text-[#2d4a3e]"
         />
 
         <StatCard
@@ -103,110 +108,119 @@ function AdminHome() {
           subValue={`今日新增 ${stats?.today_new_test_records ?? 0} 条`}
           subColor={
             stats?.today_new_test_records && stats.today_new_test_records > 0
-              ? "text-emerald-600"
+              ? "text-[#5a7a6a]"
               : "text-muted-foreground"
           }
-          accentColor="bg-violet-50 text-violet-600"
+          accentColor="bg-[#8b7355]/10 text-[#8b7355]"
         />
 
         <StatCard
           icon={FileText}
           label="分析报告总数"
           value={isLoading ? "--" : (stats?.total_analysis_reports ?? 0)}
-          accentColor="bg-emerald-50 text-emerald-600"
+          accentColor="bg-[#c45a43]/8 text-[#c45a43]"
         />
-      </div>
+      </section>
 
       {/* 快捷入口 */}
-      <div>
-        <h2 className="text-base font-semibold mb-3">快捷入口</h2>
+      <section className="animate-fade-in-up delay-200">
+        <h2 className="font-serif-zh text-base font-semibold mb-3">
+          快捷入口
+        </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Link to="/user-manage">
-            <Card className="hover:shadow-md transition-shadow group relative overflow-hidden">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Users className="size-4" />
-                </div>
-                <div>
-                  <CardTitle className="text-sm">用户管理</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    查看和管理所有注册用户
-                  </p>
-                </div>
-                <div className="pointer-events-none absolute -right-6 -top-6 size-28 rounded-full bg-blue-50 opacity-0 transition-opacity group-hover:opacity-100" />
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link to="/chat-history">
-            <Card className="hover:shadow-md transition-shadow group relative overflow-hidden">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-                  <MessageSquare className="size-4" />
-                </div>
-                <div>
-                  <CardTitle className="text-sm">用户会话记录</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    查看用户的 AI 咨询会话
-                  </p>
-                </div>
-                <div className="pointer-events-none absolute -right-6 -top-6 size-28 rounded-full bg-violet-50 opacity-0 transition-opacity group-hover:opacity-100" />
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link to="/admin-test-records">
-            <Card className="hover:shadow-md transition-shadow group relative overflow-hidden">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                  <ClipboardCheck className="size-4" />
-                </div>
-                <div>
-                  <CardTitle className="text-sm">用户测评记录</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    查看用户的测评记录与报告
-                  </p>
-                </div>
-                <div className="pointer-events-none absolute -right-6 -top-6 size-28 rounded-full bg-amber-50 opacity-0 transition-opacity group-hover:opacity-100" />
-              </CardContent>
-            </Card>
-          </Link>
-
-          <a
-            href="http://localhost:8080/swagger-ui.html"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Card className="hover:shadow-md transition-shadow group relative overflow-hidden">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                  <FileText className="size-4" />
-                </div>
-                <div>
-                  <CardTitle className="text-sm">API 文档</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    查看后端 API 接口文档
-                  </p>
-                </div>
-                <div className="pointer-events-none absolute -right-6 -top-6 size-28 rounded-full bg-emerald-50 opacity-0 transition-opacity group-hover:opacity-100" />
-              </CardContent>
-            </Card>
-          </a>
+          {[
+            {
+              to: "/user-manage",
+              icon: Users,
+              title: "用户管理",
+              desc: "查看和管理所有注册用户",
+              tone: "primary" as const,
+            },
+            {
+              to: "/chat-history",
+              icon: MessageSquare,
+              title: "用户会话记录",
+              desc: "查看用户的 AI 咨询会话",
+              tone: "secondary" as const,
+            },
+            {
+              to: "/admin-test-records",
+              icon: ClipboardCheck,
+              title: "用户测评记录",
+              desc: "查看用户的测评记录与报告",
+              tone: "accent" as const,
+            },
+            {
+              href: "http://localhost:8080/swagger-ui.html",
+              icon: FileText,
+              title: "API 文档",
+              desc: "查看后端 API 接口文档",
+              tone: "muted" as const,
+            },
+          ].map((item) => {
+            const inner = (
+              <Card className="memo-card group relative overflow-hidden rounded-lg transition-all hover:shadow-md">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-md ${
+                      item.tone === "primary"
+                        ? "bg-[#2d4a3e]/8 text-[#2d4a3e] group-hover:bg-[#2d4a3e] group-hover:text-[#f7f4ef]"
+                        : item.tone === "secondary"
+                        ? "bg-[#8b7355]/10 text-[#8b7355] group-hover:bg-[#8b7355] group-hover:text-[#f7f4ef]"
+                        : item.tone === "accent"
+                        ? "bg-[#c45a43]/8 text-[#c45a43] group-hover:bg-[#c45a43] group-hover:text-white"
+                        : "bg-secondary text-muted-foreground"
+                    } transition-colors`}
+                  >
+                    <item.icon className="size-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="font-serif-zh text-sm">
+                      {item.title}
+                    </CardTitle>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {item.desc}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+            return "href" in item ? (
+              <a
+                key={item.title}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {inner}
+              </a>
+            ) : (
+              <Link key={item.title} to={item.to}>
+                {inner}
+              </Link>
+            )
+          })}
         </div>
-      </div>
+      </section>
 
       {/* 管理员信息 */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-        <CardContent className="flex items-start gap-3 py-4">
-          <span className="text-xl">🔐</span>
-          <div>
-            <p className="text-sm font-medium text-foreground/80">当前管理员</p>
-            <p className="mt-1 text-base text-foreground/60">
-              {user?.email || "admin@emomind.com"}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <section className="animate-fade-in-up delay-300">
+        <Card className="memo-card rounded-lg border-l-4 border-l-[#2d4a3e]">
+          <CardContent className="flex items-start gap-3 py-4">
+            <div className="flex size-10 items-center justify-center rounded-full bg-[#2d4a3e]/8 text-[#2d4a3e]">
+              <span className="font-serif-zh text-sm font-bold">管</span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground/80">
+                当前管理员
+              </p>
+              <p className="mt-0.5 text-base text-foreground/60">
+                {user?.email || "admin@emomind.com"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   )
 }

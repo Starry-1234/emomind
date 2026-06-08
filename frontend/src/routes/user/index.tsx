@@ -1,11 +1,9 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import {
-  Brain,
   Calendar,
   ChevronRight,
   ClipboardCheck,
-  Loader2,
   MessageSquare,
   Stethoscope,
   TrendingUp,
@@ -13,14 +11,6 @@ import {
 import { useEffect, useMemo, useState } from "react"
 import { TestRecordsService } from "@/client"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
 import { getConversationCount, getConversations } from "@/services/difyApi"
 
@@ -53,7 +43,7 @@ function getQuoteOfTheDay() {
   return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length]
 }
 
-// ===== 分数等级颜色（使用测评记录中的 scoring_ranges）=====
+// ===== 分数等级颜色（东方色系）=====
 type ScoringRange = { min: number; max: number; label: string }
 
 function getScoreColor(
@@ -65,18 +55,17 @@ function getScoreColor(
     for (const r of scoringRanges) {
       if (score >= r.min && score <= r.max) {
         if (r.label.includes("正常") || r.label.includes("良好"))
-          return "text-emerald-600"
-        if (r.label.includes("关注")) return "text-amber-600"
+          return "text-[#5a7a6a]"
+        if (r.label.includes("关注")) return "text-[#8b7355]"
         if (r.label.includes("严重") || r.label.includes("危险"))
-          return "text-rose-600"
+          return "text-[#c45a43]"
       }
     }
   }
-  // 兜底：百分比判断
   const pct = score
-  if (pct >= 80) return "text-emerald-600"
-  if (pct >= 60) return "text-amber-600"
-  return "text-rose-600"
+  if (pct >= 80) return "text-[#5a7a6a]"
+  if (pct >= 60) return "text-[#8b7355]"
+  return "text-[#c45a43]"
 }
 
 function getLevelBadge(
@@ -84,23 +73,23 @@ function getLevelBadge(
   scoringRanges: ScoringRange[] | null | undefined,
 ) {
   if (score === null || score === undefined)
-    return "bg-muted text-muted-foreground"
+    return "bg-secondary text-muted-foreground"
   if (scoringRanges?.length) {
     for (const r of scoringRanges) {
       if (score >= r.min && score <= r.max) {
         if (r.label.includes("正常") || r.label.includes("良好"))
-          return "bg-emerald-50 text-emerald-700 border-emerald-200"
+          return "bg-[#5a7a6a]/10 text-[#5a7a6a] border-[#5a7a6a]/20"
         if (r.label.includes("关注"))
-          return "bg-amber-50 text-amber-700 border-amber-200"
+          return "bg-[#8b7355]/10 text-[#8b7355] border-[#8b7355]/20"
         if (r.label.includes("严重") || r.label.includes("危险"))
-          return "bg-rose-50 text-rose-700 border-rose-200"
+          return "bg-[#c45a43]/10 text-[#c45a43] border-[#c45a43]/20"
       }
     }
   }
   const pct = score
-  if (pct >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200"
-  if (pct >= 60) return "bg-amber-50 text-amber-700 border-amber-200"
-  return "bg-rose-50 text-rose-700 border-rose-200"
+  if (pct >= 80) return "bg-[#5a7a6a]/10 text-[#5a7a6a] border-[#5a7a6a]/20"
+  if (pct >= 60) return "bg-[#8b7355]/10 text-[#8b7355] border-[#8b7355]/20"
+  return "bg-[#c45a43]/10 text-[#c45a43] border-[#c45a43]/20"
 }
 
 function getLevelLabel(
@@ -121,19 +110,24 @@ function getLevelLabel(
   return "需关注"
 }
 
-// ===== 简易折线图组件 =====
-function MiniChart({ data }: { data: { day: string; score: number }[] }) {
+// ===== 水墨风格趋势图 =====
+function InkTrendChart({ data }: { data: { day: string; score: number }[] }) {
   const maxScore = 100
-  const chartW = 400
-  const chartH = 200
-  const padX = 40
-  const padY = 32
+  const chartW = 640
+  const chartH = 220
+  const padX = 48
+  const padY = 40
   const innerW = chartW - padX * 2
   const innerH = chartH - padY * 2
 
-  // 健康区间（百分比）：60-80 为正常区间
-  const healthyMinY = padY + innerH - (80 / maxScore) * innerH
-  const healthyMaxY = padY + innerH - (60 / maxScore) * innerH
+  const validData = data.filter((d) => d.score > 0)
+  if (validData.length < 2) {
+    return (
+      <div className="flex h-[180px] items-center justify-center text-sm text-muted-foreground">
+        近七日暂无测评数据
+      </div>
+    )
+  }
 
   const points = data.map((d, i) => ({
     x: padX + (i / (data.length - 1)) * innerW,
@@ -142,29 +136,50 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
     value: d.score,
   }))
 
-  const linePath = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
-    .join(" ")
+  // 平滑曲线（catmull-rom spline 转 bezier）
+  const linePath = points.reduce((acc, p, i, arr) => {
+    if (i === 0) return `M ${p.x} ${p.y}`
+    const prev = arr[i - 1]
+    const cp1x = prev.x + (p.x - prev.x) / 3
+    const cp1y = prev.y
+    const cp2x = p.x - (p.x - prev.x) / 3
+    const cp2y = p.y
+    return `${acc} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p.x} ${p.y}`
+  }, "")
+
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${padY + innerH} L ${points[0].x} ${padY + innerH} Z`
 
   return (
     <svg
       viewBox={`0 0 ${chartW} ${chartH}`}
       className="w-full"
-      style={{ maxHeight: 200 }}
+      style={{ maxHeight: 220 }}
       role="img"
       aria-label="心理健康评分趋势图"
     >
       <title>心理健康评分趋势图</title>
-      {/* 健康区间背景色（60-80 分） */}
+
+      {/* 水墨晕染背景区域 */}
+      <defs>
+        <linearGradient id="inkArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#2d4a3e" stopOpacity="0.25" />
+          <stop offset="60%" stopColor="#2d4a3e" stopOpacity="0.06" />
+          <stop offset="100%" stopColor="#2d4a3e" stopOpacity="0" />
+        </linearGradient>
+        <filter id="inkBlur">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" />
+        </filter>
+      </defs>
+
+      {/* 健康区间（60-80） */}
       <rect
         x={padX}
-        y={healthyMinY}
+        y={padY + innerH - (80 / maxScore) * innerH}
         width={innerW}
-        height={healthyMaxY - healthyMinY}
-        fill="#22c55e"
-        opacity={0.06}
-        rx={4}
+        height={(20 / maxScore) * innerH}
+        fill="#5a7a6a"
+        opacity={0.05}
+        rx={2}
       />
 
       {/* 网格线 */}
@@ -178,14 +193,16 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
               x2={chartW - padX}
               y2={y}
               stroke="currentColor"
-              strokeOpacity={0.08}
+              strokeOpacity={0.06}
+              strokeDasharray={v === 60 || v === 80 ? "4 4" : "0"}
             />
             <text
-              x={padX - 8}
-              y={y + 4}
+              x={padX - 10}
+              y={y + 3}
               textAnchor="end"
               className="fill-muted-foreground"
               fontSize={10}
+              fontFamily="var(--font-sans)"
             >
               {v}
             </text>
@@ -193,95 +210,84 @@ function MiniChart({ data }: { data: { day: string; score: number }[] }) {
         )
       })}
 
-      {/* 面积填充 */}
-      <path d={areaPath} fill="url(#trendGradient)" opacity={0.25} />
+      {/* 水墨面积填充 */}
+      <path
+        d={areaPath}
+        fill="url(#inkArea)"
+        className="ink-fill"
+      />
 
-      {/* 折线 */}
+      {/* 水墨主线条 */}
       <path
         d={linePath}
         fill="none"
-        stroke="var(--color-primary)"
+        stroke="#2d4a3e"
         strokeWidth={2.5}
         strokeLinecap="round"
         strokeLinejoin="round"
+        className="ink-stroke"
+        style={{ filter: "url(#inkBlur)" }}
+      />
+      <path
+        d={linePath}
+        fill="none"
+        stroke="#2d4a3e"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="ink-stroke"
       />
 
-      {/* 数据点 + 百分比数值 */}
+      {/* 数据点 */}
       {points.map((p, i) => (
-        <g key={i}>
+        <g key={i} className="animate-fade-in-up" style={{ animationDelay: `${0.8 + i * 0.1}s` }}>
           <circle
             cx={p.x}
             cy={p.y}
-            r={4}
-            fill="var(--color-primary)"
-            stroke="white"
+            r={5}
+            fill="var(--card)"
+            stroke="#2d4a3e"
             strokeWidth={2}
           />
-          {/* 百分比数值 */}
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r={10}
+            fill="#2d4a3e"
+            opacity={0}
+            className="transition-opacity duration-300 hover:opacity-10"
+            style={{ cursor: "pointer" }}
+          >
+            <title>{`${p.label}: ${p.value}%`}</title>
+          </circle>
           <text
             x={p.x}
-            y={p.y - 10}
+            y={p.y - 12}
             textAnchor="middle"
             className="fill-foreground"
             fontSize={11}
             fontWeight={600}
+            fontFamily="var(--font-sans)"
           >
             {p.value}%
           </text>
-          {/* 日期标签 */}
           <text
             x={p.x}
-            y={chartH - 4}
+            y={chartH - 8}
             textAnchor="middle"
             className="fill-muted-foreground"
             fontSize={11}
+            fontFamily="var(--font-sans)"
           >
             {p.label}
           </text>
         </g>
       ))}
-
-      {/* 健康区间标注 */}
-      <text
-        x={chartW - padX + 4}
-        y={healthyMinY + 10}
-        className="fill-green-500"
-        fontSize={9}
-        opacity={0.7}
-      >
-        正常
-      </text>
-      <text
-        x={chartW - padX + 4}
-        y={padY + 12}
-        className="fill-red-400"
-        fontSize={9}
-        opacity={0.7}
-      >
-        预警
-      </text>
-
-      {/* 渐变定义 */}
-      <defs>
-        <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop
-            offset="0%"
-            stopColor="var(--color-primary)"
-            stopOpacity={0.4}
-          />
-          <stop
-            offset="100%"
-            stopColor="var(--color-primary)"
-            stopOpacity={0.02}
-          />
-        </linearGradient>
-      </defs>
     </svg>
   )
 }
 
 // ===== 智能导航辅助函数 =====
-// 简化版：不再创建本地会话，直接导航到基础路由或最近的远程会话
 async function smartNavigate(
   userId: string,
   contextKey: "ai-doctor" | "test",
@@ -296,7 +302,6 @@ async function smartNavigate(
   })
 
   if (result.data.length > 0) {
-    // 有历史会话 → 跳转到最近的
     const mostRecent = result.data.reduce((latest, conv) =>
       conv.updated_at > latest.updated_at ? conv : latest,
     )
@@ -306,7 +311,6 @@ async function smartNavigate(
         : "/user/test/chat/$sessionId"
     navigate({ to: chatRoute, params: { sessionId: mostRecent.id } })
   } else {
-    // 无历史会话 → 导航到基础路由（新对话模式）
     const modulePath =
       contextKey === "ai-doctor" ? "/user/ai-doctor" : "/user/test"
     navigate({ to: modulePath })
@@ -334,7 +338,6 @@ function UserHome() {
     weekday: "long",
   })
 
-  // 获取最近测评记录
   const { data: testRecordsData } = useQuery({
     queryKey: ["test-records-home"],
     queryFn: () => TestRecordsService.getRecords1({ pageable: { page: 0, size: 100 } }),
@@ -350,7 +353,6 @@ function UserHome() {
         ])
         setChatCount(chat)
         setTestChatCount(testChat)
-        // 测评次数用真实的测评记录数，而不是对话次数
         setTestCount(records.length)
       } catch {
         // ignore
@@ -361,7 +363,6 @@ function UserHome() {
     fetchCounts()
   }, [userId, records.length])
 
-  // 从真实记录计算最近7天趋势（归一化为百分比，多次测评取日均值）
   const trendData = useMemo(() => {
     const now = new Date()
     const days: { day: string; score: number }[] = []
@@ -374,7 +375,6 @@ function UserHome() {
         if (!r.created_at || r.total_score === null) return false
         return r.created_at.slice(0, 10) === dateStr
       })
-      // 多次测评取百分比均值
       const score =
         dayRecords.length > 0
           ? Math.round(
@@ -389,284 +389,311 @@ function UserHome() {
     return days
   }, [records])
 
-  // 取最近3条记录展示
   const recentRecords = records.slice(0, 3)
 
   return (
-    <div className="mx-auto max-w-6xl flex flex-col gap-6 p-6 md:p-8">
+    <div className="ink-wash-bg mx-auto max-w-6xl flex flex-col gap-8 p-6 md:p-10">
       {/* 顶部问候 */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">
-          <span className="mr-2">👋</span>你好，欢迎回来
-        </h1>
-        <p className="text-muted-foreground text-sm">{dateStr}</p>
-      </div>
+      <header className="animate-fade-in-up relative">
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
+            {dateStr}
+          </p>
+          <h1 className="font-serif-zh text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+            情之所至，今日安否
+          </h1>
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+            {quote}
+          </p>
+        </div>
+        <div className="absolute -right-4 -top-4 hidden size-24 opacity-[0.03] md:block">
+          <svg viewBox="0 0 100 100" fill="currentColor">
+            <circle cx="50" cy="50" r="45" />
+          </svg>
+        </div>
+      </header>
 
       {/* 统计卡片 */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="gap-4 py-5">
-          <CardContent className="flex items-center gap-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <MessageSquare className="size-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-muted-foreground text-xs font-medium">
-                对话次数
-              </p>
-              <div className="mt-0.5 flex items-center gap-3 text-sm">
-                <span className="truncate">
-                  医生：
-                  <span className="font-bold text-foreground">
-                    {countsLoading ? "--" : chatCount}
-                  </span>
-                </span>
-                <span className="text-border">|</span>
-                <span className="truncate">
-                  测评：
-                  <span className="font-bold text-foreground">
-                    {countsLoading ? "--" : testChatCount}
-                  </span>
-                </span>
+      <section className="grid gap-4 sm:grid-cols-3">
+        {[
+          {
+            icon: MessageSquare,
+            label: "对话",
+            value: countsLoading
+              ? "--"
+              : `${chatCount} / ${testChatCount}`,
+            sub: "医生 · 测评",
+            delay: "delay-100",
+            tone: "primary",
+          },
+          {
+            icon: ClipboardCheck,
+            label: "测评次数",
+            value: countsLoading ? "--" : testCount,
+            sub: "已完成量表",
+            delay: "delay-200",
+            tone: "accent",
+          },
+          {
+            icon: Calendar,
+            label: "连续使用",
+            value: streakDays,
+            sub: "天",
+            delay: "delay-300",
+            tone: "muted",
+          },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className={`animate-fade-in-up memo-card rounded-lg p-5 ${stat.delay}`}
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  {stat.label}
+                </p>
+                <p className="mt-1 font-serif-zh text-2xl font-semibold text-foreground">
+                  {stat.value}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {stat.sub}
+                </p>
+              </div>
+              <div
+                className={`flex size-10 items-center justify-center rounded-md ${
+                  stat.tone === "primary"
+                    ? "bg-[#2d4a3e]/8 text-[#2d4a3e]"
+                    : stat.tone === "accent"
+                    ? "bg-[#c45a43]/8 text-[#c45a43]"
+                    : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                <stat.icon className="size-5" />
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="gap-4 py-5">
-          <CardContent className="flex items-center gap-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-              <ClipboardCheck className="size-5" />
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs font-medium">
-                测评次数
-              </p>
-              <p className="text-2xl font-bold">
-                {countsLoading ? "--" : testCount}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="gap-4 py-5">
-          <CardContent className="flex items-center gap-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-              <Calendar className="size-5" />
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs font-medium">
-                连续使用天数
-              </p>
-              <p className="text-2xl font-bold">{streakDays}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        ))}
+      </section>
 
       {/* 心理健康趋势 */}
-      <Card>
-        <CardHeader className="pb-2">
+      <section className="animate-fade-in-up delay-400 memo-card rounded-lg">
+        <div className="border-b border-border/60 px-6 py-4">
           <div className="flex items-center gap-2">
-            <TrendingUp className="size-5 text-primary" />
-            <CardTitle className="text-base">心理测评健康指数趋势</CardTitle>
+            <TrendingUp className="size-4 text-[#2d4a3e]" />
+            <h2 className="font-serif-zh text-base font-semibold">
+              七日心象
+            </h2>
           </div>
-          <CardDescription>
-            近 7 天心理测评健康指数（归一化百分比）
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <MiniChart data={trendData} />
-        </CardContent>
-      </Card>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            近七日心理测评健康指数走势
+          </p>
+        </div>
+        <div className="px-4 py-5 md:px-6">
+          <InkTrendChart data={trendData} />
+        </div>
+      </section>
 
       {/* 快捷入口 */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="group relative overflow-hidden transition-shadow hover:shadow-md">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Stethoscope className="size-5" />
+      <section className="animate-fade-in-up delay-500 grid gap-4 md:grid-cols-2">
+        {[
+          {
+            key: "ai-doctor",
+            icon: Stethoscope,
+            title: "智能心理医生",
+            desc: "AI 倾听你的心声，提供专业心理支持",
+            cta: "开始对话",
+          },
+          {
+            key: "test",
+            icon: ClipboardCheck,
+            title: "心理测评",
+            desc: "专业量表评估，了解你的心理健康状态",
+            cta: "开始测评",
+          },
+        ].map((item) => (
+          <div
+            key={item.key}
+            className="memo-card group relative overflow-hidden rounded-lg p-5"
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-md bg-[#2d4a3e]/8 text-[#2d4a3e] transition-colors group-hover:bg-[#2d4a3e] group-hover:text-[#f7f4ef]">
+                <item.icon className="size-5" />
               </div>
-              <div>
-                <CardTitle className="text-base">智能心理医生</CardTitle>
-                <CardDescription>
-                  AI 倾听你的心声，提供专业心理支持
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardFooter>
-            <Button
-              className="w-full gap-2"
-              variant="outline"
-              disabled={navLoading === "ai-doctor"}
-              onClick={async () => {
-                if (navLoading) return
-                setNavLoading("ai-doctor")
-                try {
-                  await smartNavigate(userId, "ai-doctor", navigate)
-                } catch {
-                  navigate({ to: "/user/ai-doctor" })
-                } finally {
-                  setNavLoading(null)
-                }
-              }}
-            >
-              {navLoading === "ai-doctor" ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <>
-                  开始对话
-                  <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                </>
-              )}
-            </Button>
-          </CardFooter>
-          <div className="pointer-events-none absolute -right-6 -top-6 size-28 rounded-full bg-primary/5" />
-        </Card>
-
-        <Card className="group relative overflow-hidden transition-shadow hover:shadow-md">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
-                <Brain className="size-5" />
-              </div>
-              <div>
-                <CardTitle className="text-base">心理测评</CardTitle>
-                <CardDescription>
-                  专业量表评估，了解你的心理健康状态
-                </CardDescription>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-serif-zh text-base font-semibold">
+                  {item.title}
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                  {item.desc}
+                </p>
               </div>
             </div>
-          </CardHeader>
-          <CardFooter>
-            <Button
-              className="w-full gap-2"
-              variant="outline"
-              disabled={navLoading === "test"}
-              onClick={async () => {
-                if (navLoading) return
-                setNavLoading("test")
-                try {
-                  await smartNavigate(userId, "test", navigate)
-                } catch {
-                  navigate({ to: "/user/test" })
-                } finally {
-                  setNavLoading(null)
-                }
-              }}
-            >
-              {navLoading === "test" ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <>
-                  开始测评
-                  <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                </>
-              )}
-            </Button>
-          </CardFooter>
-          <div className="pointer-events-none absolute -right-6 -top-6 size-28 rounded-full bg-violet-50" />
-        </Card>
-      </div>
-
-      {/* 最近测评记录 */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <ClipboardCheck className="size-5 text-primary" />
-            <CardTitle className="text-base">最近测评记录</CardTitle>
-          </div>
-          <CardDescription>查看您近期的测评结果</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {recentRecords.length > 0 ? (
-            <div className="flex flex-col divide-y">
-              {recentRecords.map((record) => {
-                const recordDate = record.created_at
-                  ? new Date(record.created_at).toLocaleDateString("zh-CN", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
+            <div className="mt-4 flex items-center justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                className="brush-btn gap-1 border-border/60 bg-background/60 text-xs"
+                disabled={navLoading === item.key}
+                onClick={async () => {
+                  if (navLoading) return
+                  setNavLoading(item.key)
+                  try {
+                    await smartNavigate(
+                      userId,
+                      item.key as "ai-doctor" | "test",
+                      navigate,
+                    )
+                  } catch {
+                    navigate({
+                      to:
+                        item.key === "ai-doctor"
+                          ? "/user/ai-doctor"
+                          : "/user/test",
                     })
-                  : "未知日期"
-                return (
-                  <div
-                    key={record.id}
-                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-sm font-medium">{record.test_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {recordDate}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {record.total_score !== null &&
-                        record.total_score !== undefined &&
-                        (() => {
-                          const max = record.total_max ?? 100
-                          const scoringRanges =
-                            (record.scoring_ranges as
-                              | ScoringRange[]
-                              | null
-                              | undefined) ?? null
-                          return (
+                  } finally {
+                    setNavLoading(null)
+                  }
+                }}
+              >
+                {navLoading === item.key ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    加载中
+                  </span>
+                ) : (
+                  <>
+                    {item.cta}
+                    <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </>
+                )}
+              </Button>
+            </div>
+            {/* 装饰水墨圆 */}
+            <div className="pointer-events-none absolute -bottom-8 -right-8 size-32 rounded-full bg-[#2d4a3e]/[0.02] transition-transform duration-700 group-hover:scale-110" />
+          </div>
+        ))}
+      </section>
+
+      {/* 最近测评记录 + 每日一言 */}
+      <section className="animate-fade-in-up delay-600 grid gap-4 lg:grid-cols-[1fr_320px]">
+        {/* 最近记录 */}
+        <div className="memo-card rounded-lg">
+          <div className="border-b border-border/60 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <ClipboardCheck className="size-4 text-[#2d4a3e]" />
+              <h2 className="font-serif-zh text-base font-semibold">
+                最近测评
+              </h2>
+            </div>
+          </div>
+          <div className="px-6 py-2">
+            {recentRecords.length > 0 ? (
+              <div className="flex flex-col">
+                {recentRecords.map((record, idx) => {
+                  const recordDate = record.created_at
+                    ? new Date(record.created_at).toLocaleDateString("zh-CN", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "未知日期"
+                  const scoringRanges =
+                    (record.scoring_ranges as ScoringRange[] | null | undefined) ??
+                    null
+                  return (
+                    <div
+                      key={record.id}
+                      className="group flex items-center justify-between border-b border-border/40 py-4 last:border-b-0 transition-colors hover:bg-secondary/30 -mx-6 px-6"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-[10px] font-medium text-muted-foreground">
+                          {idx + 1}
+                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <p className="text-sm font-medium text-foreground">
+                            {record.test_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {recordDate}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {record.total_score !== null &&
+                          record.total_score !== undefined && (
                             <span
-                              className={`text-lg font-bold ${getScoreColor(record.total_score, scoringRanges)}`}
+                              className={`font-serif-zh text-lg font-semibold ${getScoreColor(
+                                record.total_score,
+                                scoringRanges,
+                              )}`}
                             >
                               {record.total_score}
-                              <span className="text-xs font-normal text-muted-foreground">
-                                /{max}
+                              <span className="ml-0.5 text-xs font-normal text-muted-foreground">
+                                /{record.total_max ?? 100}
                               </span>
                             </span>
-                          )
-                        })()}
-                      {record.total_score !== null &&
-                        record.total_score !== undefined &&
-                        (() => {
-                          const scoringRanges =
-                            (record.scoring_ranges as
-                              | ScoringRange[]
-                              | null
-                              | undefined) ?? null
-                          return (
+                          )}
+                        {record.total_score !== null &&
+                          record.total_score !== undefined && (
                             <span
-                              className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${getLevelBadge(record.total_score, scoringRanges)}`}
+                              className={`rounded-sm border px-2 py-0.5 text-[10px] font-medium ${getLevelBadge(
+                                record.total_score,
+                                scoringRanges,
+                              )}`}
                             >
                               {getLevelLabel(record.total_score, scoringRanges)}
                             </span>
-                          )
-                        })()}
+                          )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <ClipboardCheck className="mb-2 size-8 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">暂无测评记录</p>
-              <p className="text-xs text-muted-foreground/70">
-                完成一次测评后将在这里显示
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 每日一言 */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-        <CardContent className="flex items-start gap-3 py-4">
-          <span className="text-xl">💡</span>
-          <div>
-            <p className="text-sm font-medium text-foreground/80">每日一言</p>
-            <p className="mt-1 text-base leading-relaxed text-foreground/60 italic">
-              「{quote}」
-            </p>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <ClipboardCheck className="mb-3 size-8 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">暂无测评记录</p>
+                <p className="mt-0.5 text-xs text-muted-foreground/70">
+                  完成一次测评后将在这里显示
+                </p>
+              </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* 每日一言 - 便签风格 */}
+        <div className="animate-paper-float relative">
+          <div className="memo-card h-full rounded-lg bg-[#faf8f3] rotate-[0.3deg]">
+            <div className="h-2 w-full bg-[#c45a43]/20 rounded-t-lg" />
+            <div className="p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="seal text-[10px] px-1 py-0.5 border-[#c45a43]/60 text-[#c45a43]">
+                  日签
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  今日寄语
+                </span>
+              </div>
+              <p className="font-serif-zh text-base leading-relaxed text-foreground/90">
+                「{quote}」
+              </p>
+              <div className="mt-4 flex justify-end">
+                <span className="font-serif-zh text-xs text-muted-foreground/70">
+                  — 致今日的你
+                </span>
+              </div>
+            </div>
+          </div>
+          {/* 阴影层 */}
+          <div
+            className="absolute inset-0 -z-10 rounded-lg bg-[#2d4a3e]/[0.03]"
+            style={{ transform: "rotate(-0.8deg) translate(4px, 4px)" }}
+          />
+        </div>
+      </section>
+
+      {/* 底部留白，让水墨背景透气 */}
+      <div className="h-4" />
     </div>
   )
 }

@@ -4,8 +4,6 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
-  ClipboardList,
-  FileText,
   Loader2,
   MoreVertical,
 } from "lucide-react"
@@ -132,17 +130,17 @@ function TestRecords() {
       for (const r of scoringRanges) {
         if (score >= r.min && score <= r.max) {
           if (r.label.includes("正常") || r.label.includes("良好"))
-            return "bg-green-100 text-green-700"
-          if (r.label.includes("关注")) return "bg-yellow-100 text-yellow-700"
+            return "bg-[#5a7a6a]/10 text-[#5a7a6a] border-[#5a7a6a]/20"
+          if (r.label.includes("关注")) return "bg-[#8b7355]/10 text-[#8b7355] border-[#8b7355]/20"
           if (r.label.includes("寻求帮助") || r.label.includes("严重"))
-            return "bg-red-100 text-red-700"
+            return "bg-[#c45a43]/10 text-[#c45a43] border-[#c45a43]/20"
         }
       }
     }
     // fallback 硬编码（老数据）
-    if (score >= 80) return "bg-green-100 text-green-700"
-    if (score >= 60) return "bg-yellow-100 text-yellow-700"
-    return "bg-red-100 text-red-700"
+    if (score >= 80) return "bg-[#5a7a6a]/10 text-[#5a7a6a] border-[#5a7a6a]/20"
+    if (score >= 60) return "bg-[#8b7355]/10 text-[#8b7355] border-[#8b7355]/20"
+    return "bg-[#c45a43]/10 text-[#c45a43] border-[#c45a43]/20"
   }
 
   const getScoreLabel = (
@@ -181,11 +179,11 @@ function TestRecords() {
     <div className="flex h-full flex-col overflow-hidden rounded-lg border bg-card">
       {/* 顶栏 */}
       <div className="flex items-center gap-3 border-b px-5 py-3">
-        <div className="flex size-8 items-center justify-center rounded-full bg-violet-100">
-          <ClipboardList className="size-4 text-violet-600" />
+        <div className="flex size-8 items-center justify-center rounded border-2 border-primary/80">
+          <span className="font-serif-zh text-sm font-bold text-primary">记</span>
         </div>
         <div>
-          <h1 className="text-sm font-semibold">测评记录</h1>
+          <h1 className="font-serif-zh text-sm font-semibold">测评记录</h1>
           <p className="text-xs text-muted-foreground">查看历史测评结果</p>
         </div>
       </div>
@@ -202,11 +200,8 @@ function TestRecords() {
           </div>
         ) : records.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-3">
-            <div className="size-16 rounded-full bg-violet-50 flex items-center justify-center">
-              <FileText className="size-8 text-violet-300" />
-            </div>
             <div className="text-center">
-              <p className="text-sm font-medium text-foreground">
+              <p className="font-serif-zh text-sm font-medium text-foreground">
                 暂无测评记录
               </p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -373,8 +368,8 @@ function TestRecords() {
             <div className="space-y-4">
               {/* 用户主题 */}
               {selectedRecordData.user_topic && (
-                <div className="rounded-lg bg-violet-50 border border-violet-100 p-3">
-                  <p className="text-xs font-medium text-violet-600 mb-1">
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <p className="text-xs font-medium text-primary mb-1">
                     测评主题
                   </p>
                   <p className="text-sm text-foreground">
@@ -433,7 +428,7 @@ function TestRecords() {
                           return (
                             <div key={q.id} className="text-sm">
                               <p className="font-medium mb-2">
-                                <span className="text-violet-500 mr-1">
+                                <span className="text-primary mr-1">
                                   {qIdx + 1}.
                                 </span>
                                 {q.text}
@@ -447,7 +442,7 @@ function TestRecords() {
                                       key={optIdx}
                                       className={`text-xs px-2 py-1 rounded-full border ${
                                         isSelected
-                                          ? "bg-violet-100 border-violet-300 text-violet-700 font-medium"
+                                          ? "bg-primary/10 border-primary/20 text-primary font-medium"
                                           : "bg-muted/50 border-muted text-muted-foreground"
                                       }`}
                                     >

@@ -11,14 +11,12 @@ export const useCurrentTheme = () => {
   const isDarkTheme = resolvedTheme === "dark"
   const isLightTheme = resolvedTheme === "light"
   const isNoneTheme = resolvedTheme === "none"
-  const isColorfulTheme = resolvedTheme === "colorful"
 
   return {
     isWarmTheme,
     isDarkTheme,
     isLightTheme,
     isNoneTheme,
-    isColorfulTheme,
     resolvedTheme,
     // 便捷的主题类名生成器
     getThemeClassNames: (
@@ -28,7 +26,6 @@ export const useCurrentTheme = () => {
         dark?: string
         light?: string
         none?: string
-        colorful?: string
       },
     ) => {
       const classNames = [baseClass]
@@ -41,8 +38,6 @@ export const useCurrentTheme = () => {
         classNames.push(options.light)
       } else if (isNoneTheme && options?.none) {
         classNames.push(options.none)
-      } else if (isColorfulTheme && options?.colorful) {
-        classNames.push(options.colorful)
       }
 
       return classNames.join(" ")
@@ -54,8 +49,6 @@ export const useCurrentTheme = () => {
     // 判断是否为冷色调主题
     isCoolTone: isDarkTheme || isLightTheme,
     // 判断是否使用了自定义主题
-    isCustomTheme: isWarmTheme || isColorfulTheme,
-    // 判断是否为动画主题
-    isAnimatedTheme: isColorfulTheme,
+    isCustomTheme: isWarmTheme,
   }
 }

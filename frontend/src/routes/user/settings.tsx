@@ -33,12 +33,16 @@ function UserSettings() {
   return (
     <div className="mx-auto max-w-7xl flex flex-col gap-6 p-6 md:p-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">用户设置</h1>
-        <p className="text-muted-foreground">管理您的账户信息与偏好设置</p>
+        <h1 className="font-serif-zh text-2xl font-semibold tracking-tight">
+          用户设置
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          管理您的账户信息与偏好设置
+        </p>
       </div>
 
       <Tabs defaultValue="my-profile">
-        <TabsList>
+        <TabsList className="bg-secondary/60">
           {tabsConfig.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.title}

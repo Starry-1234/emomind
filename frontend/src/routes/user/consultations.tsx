@@ -114,12 +114,12 @@ function Consultations() {
   const getFileTypeColor = (fileType: string | null | undefined) => {
     if (!fileType) return "bg-gray-100 text-gray-600"
     const lower = fileType.toLowerCase()
-    if (lower.includes("pdf")) return "bg-red-100 text-red-700"
+    if (lower.includes("pdf")) return "bg-[#c45a43]/10 text-[#c45a43] border-[#c45a43]/20"
     if (lower.includes("doc") || lower.includes("word"))
-      return "bg-blue-100 text-blue-700"
+      return "bg-[#8b7355]/10 text-[#8b7355] border-[#8b7355]/20"
     if (lower.includes("image") || lower.includes("img"))
-      return "bg-green-100 text-green-700"
-    return "bg-violet-100 text-violet-700"
+      return "bg-[#5a7a6a]/10 text-[#5a7a6a] border-[#5a7a6a]/20"
+    return "bg-primary/10 text-primary border-primary/20"
   }
 
   const handleViewDetail = (id: string) => {
@@ -137,11 +137,11 @@ function Consultations() {
     <div className="flex h-full flex-col overflow-hidden rounded-lg border bg-card">
       {/* 顶栏 */}
       <div className="flex items-center gap-3 border-b px-5 py-3">
-        <div className="flex size-8 items-center justify-center rounded-full bg-emerald-100">
-          <FileText className="size-4 text-emerald-600" />
+        <div className="flex size-8 items-center justify-center rounded border-2 border-primary/80">
+          <span className="font-serif-zh text-sm font-bold text-primary">档</span>
         </div>
         <div>
-          <h1 className="text-sm font-semibold">咨询记录</h1>
+          <h1 className="font-serif-zh text-sm font-semibold">咨询记录</h1>
           <p className="text-xs text-muted-foreground">查看文件分析历史</p>
         </div>
       </div>
@@ -158,11 +158,8 @@ function Consultations() {
           </div>
         ) : reports.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-3">
-            <div className="size-16 rounded-full bg-emerald-50 flex items-center justify-center">
-              <FileText className="size-8 text-emerald-300" />
-            </div>
             <div className="text-center">
-              <p className="text-sm font-medium text-foreground">
+              <p className="font-serif-zh text-sm font-medium text-foreground">
                 暂无咨询记录
               </p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -286,7 +283,7 @@ function Consultations() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="size-4 text-emerald-600" />
+              <FileText className="size-4 text-primary" />
               {selectedReportData?.file_name}
             </DialogTitle>
           </DialogHeader>

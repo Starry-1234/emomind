@@ -101,27 +101,26 @@ function ResetPassword() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-6"
+          className="flex flex-col gap-5"
         >
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">重置密码</h1>
-          </div>
-
           <div className="grid gap-4">
             <FormField
               control={form.control}
               name="new_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>新密码</FormLabel>
+                  <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                    新密码
+                  </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="new-password-input"
                       placeholder="请输入新密码"
+                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -131,31 +130,37 @@ function ResetPassword() {
               name="confirm_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>确认密码</FormLabel>
+                  <FormLabel className="text-xs font-medium text-[#3d3d3d]">
+                    确认密码
+                  </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="confirm-password-input"
                       placeholder="请再次输入新密码"
+                      className="border-[#d9d3c9] bg-[#faf8f5] transition-colors focus-visible:border-[#2d4a3e] focus-visible:ring-[#2d4a3e]/20"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
 
             <LoadingButton
               type="submit"
-              className="w-full"
               loading={mutation.isPending}
+              className="mt-1 bg-[#2d4a3e] text-[#f7f4ef] hover:bg-[#1f362c] transition-all hover:shadow-md"
             >
               重置密码
             </LoadingButton>
           </div>
 
-          <div className="text-center text-sm">
+          <div className="text-center text-xs text-muted-foreground">
             记得密码？{" "}
-            <RouterLink to="/login" className="underline underline-offset-4">
+            <RouterLink
+              to="/login"
+              className="font-medium text-[#2d4a3e] underline underline-offset-4 hover:text-[#c45a43]"
+            >
               登录
             </RouterLink>
           </div>

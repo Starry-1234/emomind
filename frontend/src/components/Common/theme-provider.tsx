@@ -6,7 +6,7 @@ import {
   useState,
 } from "react"
 
-export type Theme = "dark" | "light" | "system" | "warm" | "none" | "colorful"
+export type Theme = "dark" | "light" | "system" | "warm" | "none"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -16,7 +16,7 @@ type ThemeProviderProps = {
 
 type ThemeProviderState = {
   theme: Theme
-  resolvedTheme: "dark" | "light" | "warm" | "none" | "colorful"
+  resolvedTheme: "dark" | "light" | "warm" | "none"
   setTheme: (theme: Theme) => void
 }
 
@@ -35,11 +35,16 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme,
+    () => {
+      const stored = localStorage.getItem(storageKey) as Theme | "colorful" | null
+      // 迁移旧用户的 colorful 主题到 light
+      if (stored === "colorful") return "light"
+      return (stored as Theme) || defaultTheme
+    },
   )
 
   const getResolvedTheme = useCallback(
-    (theme: Theme): "dark" | "light" | "warm" | "none" | "colorful" => {
+    (theme: Theme): "dark" | "light" | "warm" | "none" => {
       if (theme === "system") {
         return window.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
@@ -51,7 +56,7 @@ export function ThemeProvider({
   )
 
   const [resolvedTheme, setResolvedTheme] = useState<
-    "dark" | "light" | "warm" | "none" | "colorful"
+    "dark" | "light" | "warm" | "none"
   >(() => getResolvedTheme(theme))
 
   const updateTheme = useCallback((newTheme: Theme) => {
@@ -70,7 +75,6 @@ export function ThemeProvider({
     }
 
     if (newTheme === "none") {
-      // 对于"无"主题，不添加任何类，使用默认样式
       return
     }
 
