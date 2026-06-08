@@ -390,8 +390,8 @@ function MessageList({
         {sorted.map((msg) => (
           <div key={msg.id} className="flex flex-col gap-4">
             {msg.query && (
-              <div className="flex justify-end items-end gap-2">
-                <div className="text-[10px] text-muted-foreground pb-2">我问</div>
+              <div className="flex justify-end items-start gap-2">
+                <div className="text-[10px] text-muted-foreground pt-2">我问</div>
                 <div className="max-w-[75%]">
                   <div className="rounded-2xl rounded-br-md bg-primary px-4 py-3 text-sm text-primary-foreground leading-relaxed shadow-sm">
                     {msg.query}
@@ -403,7 +403,7 @@ function MessageList({
               </div>
             )}
             {msg.answer && (
-              <div className="flex justify-start items-end gap-2">
+              <div className="flex justify-start items-start gap-2">
                 <div className="max-w-[85%]">
                   <div className="relative rounded-lg rounded-tl-none border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
                     <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary/30 rounded-full" />
@@ -415,7 +415,7 @@ function MessageList({
                     AI · {formatTime(msg.created_at)}
                   </div>
                 </div>
-                <div className="text-[10px] text-muted-foreground pb-2">医者曰</div>
+                <div className="text-[10px] text-muted-foreground pt-2">医者曰</div>
               </div>
             )}
           </div>

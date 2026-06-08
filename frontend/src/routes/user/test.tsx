@@ -333,12 +333,12 @@ export function PsychologicalTestInner({
                       ? userMessageTransition
                       : assistantMessageTransition
                   }
-                  className={`flex items-end gap-2 ${
+                  className={`flex items-start gap-2 ${
                     msg.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
                   {msg.role === "assistant" && (
-                    <div className="text-[10px] text-muted-foreground pb-1">测评师曰</div>
+                    <div className="text-[10px] text-muted-foreground pt-2">测评师曰</div>
                   )}
                   <div
                     className={`max-w-[80%] space-y-1.5 ${
@@ -396,7 +396,7 @@ export function PsychologicalTestInner({
                     )}
                   </div>
                   {msg.role === "user" && (
-                    <div className="text-[10px] text-muted-foreground pb-1">我问</div>
+                    <div className="text-[10px] text-muted-foreground pt-2">我问</div>
                   )}
                 </motion.div>
               ))}
