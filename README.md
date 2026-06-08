@@ -152,7 +152,7 @@ Development mode runs the backend and frontend **outside** Docker for fast hot-r
 **Step 1 — Infrastructure services**:
 
 ```bash
-docker compose -f compose.override.yml up -d db mailcatcher
+docker compose up -d db mailcatcher
 ```
 
 This starts PostgreSQL (port `5433`) and Mailcatcher (port `10801`).

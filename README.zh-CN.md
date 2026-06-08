@@ -152,7 +152,7 @@ VITE_API_URL=http://localhost:8080
 **步骤 1 — 基础服务**：
 
 ```bash
-docker compose -f compose.override.yml up -d db mailcatcher
+docker compose up -d db mailcatcher
 ```
 
 这会启动 PostgreSQL（端口 `5433`）和 Mailcatcher（端口 `10801`）。

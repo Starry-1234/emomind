@@ -145,7 +145,7 @@ VITE_API_URL=http://localhost:8080
 **Step 1 — 基础设施服务**:
 
 ```bash
-docker compose -f compose.override.yml up -d db mailcatcher
+docker compose up -d db mailcatcher
 ```
 
 **Step 2 — 后端**:
