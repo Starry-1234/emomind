@@ -1,0 +1,1679 @@
+app:
+  description: 多模态融合心理状况分析工作流，支持文本、音频、视频输入，综合分析用户心理状态并生成报，并支持智能问答
+  icon: 🧠
+  icon_background: '#E8F4FD'
+  icon_type: emoji
+  mode: advanced-chat
+  name: 智能心理医生_v0.2
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/minimax:0.0.15@04198f577cae6ba0b4624d2715edc9c93fd775a47ee16bcbc2825230eed8c56a
+    version: null
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/tongyi:0.1.45@7f2b2d5b163de4c1ad8fad80e624c08d47ed7942a6a534e88e5786e65073f3ca
+    version: null
+kind: app
+version: 0.6.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - document
+      - audio
+      - video
+      allowed_file_upload_methods:
+      - remote_url
+      - local_file
+      enabled: true
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 20
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      number_limits: 3
+    opening_statement: 您好呀，我是您专属的心理医生朋友，您可以点击下方按钮上传音频、视频、文本来帮你分析您现在的心理状态，
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: true
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1778421776530-source-1778421802489-target
+      selected: false
+      source: '1778421776530'
+      sourceHandle: source
+      target: '1778421802489'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: document-extractor
+        targetType: llm
+      id: 1778491689976-source-1778491711834-target
+      selected: false
+      source: '1778491689976'
+      sourceHandle: source
+      target: '1778491711834'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: llm
+      id: 1779355725826-source-1778419585130-target
+      selected: false
+      source: '1779355725826'
+      sourceHandle: source
+      target: '1778419585130'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: llm
+      id: 1779355727713-source-17784201790660-target
+      selected: false
+      source: '1779355727713'
+      sourceHandle: source
+      target: '17784201790660'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1780890194682-source-1780893534371-target
+      selected: false
+      source: '1780890194682'
+      sourceHandle: source
+      target: '1780893534371'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: start
+        targetType: if-else
+      id: start-source-1780896029950-target
+      selected: false
+      source: start
+      sourceHandle: source
+      target: '1780896029950'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: start
+        targetType: if-else
+      id: start-source-1780896036165-target
+      selected: false
+      source: start
+      sourceHandle: source
+      target: '1780896036165'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: start
+        targetType: if-else
+      id: start-source-1780896041020-target
+      selected: false
+      source: start
+      sourceHandle: source
+      target: '1780896041020'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: llm
+      id: 1780896029950-true-1779355725826-target
+      selected: false
+      source: '1780896029950'
+      sourceHandle: 'true'
+      target: '1779355725826'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: llm
+      id: 1780896036165-true-1779355727713-target
+      selected: false
+      source: '1780896036165'
+      sourceHandle: 'true'
+      target: '1779355727713'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: document-extractor
+      id: 1780896041020-true-1778491689976-target
+      selected: false
+      source: '1780896041020'
+      sourceHandle: 'true'
+      target: '1778491689976'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: llm
+      id: 1780896041020-false-1778421776530-target
+      selected: false
+      source: '1780896041020'
+      sourceHandle: 'false'
+      target: '1778421776530'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: template-transform
+      id: 1778419585130-source-1780897974691-target
+      selected: false
+      source: '1778419585130'
+      sourceHandle: source
+      target: '1780897974691'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: template-transform
+      id: 17784201790660-source-1780897974691-target
+      selected: false
+      source: '17784201790660'
+      sourceHandle: source
+      target: '1780897974691'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: template-transform
+      id: 1778491711834-source-1780897974691-target
+      selected: false
+      source: '1778491711834'
+      sourceHandle: source
+      target: '1780897974691'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: template-transform
+        targetType: llm
+      id: 1780897974691-source-1780890194682-target
+      selected: false
+      source: '1780897974691'
+      sourceHandle: source
+      target: '1780890194682'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 用户输入
+        type: start
+        variables:
+        - allowed_file_extensions: []
+          allowed_file_types:
+          - video
+          allowed_file_upload_methods:
+          - local_file
+          - remote_url
+          default: ''
+          hint: ''
+          label: video
+          max_length: 5
+          options: []
+          placeholder: ''
+          required: false
+          type: file
+          variable: video
+        - allowed_file_extensions: []
+          allowed_file_types:
+          - audio
+          allowed_file_upload_methods:
+          - local_file
+          - remote_url
+          default: ''
+          hint: ''
+          label: audio
+          max_length: 5
+          options: []
+          placeholder: ''
+          required: false
+          type: file
+          variable: audio
+        - allowed_file_extensions: []
+          allowed_file_types:
+          - document
+          allowed_file_upload_methods:
+          - local_file
+          - remote_url
+          default: ''
+          hint: ''
+          label: text
+          max_length: 5
+          options: []
+          placeholder: ''
+          required: false
+          type: file
+          variable: text
+      height: 161
+      id: start
+      position:
+        x: 39.746861959295416
+        y: 199.66348647464548
+      positionAbsolute:
+        x: 39.746861959295416
+        y: 199.66348647464548
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - start
+          - video
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: 796fa8f8-4b62-4c83-b869-28dd3601b615
+          role: system
+          text: '你是一位专业的情绪分析师，擅长基于多模态行为线索（面部表情、语音语调、肢体动作）撰写科学的情绪分析报告。
+
+
+            ## 输入数据说明
+
+
+            你将收到以下格式的原始分析数据：
+
+
+            <think>
+
+            [视频分析节点输出的详细观察描述，可能包含画面分析和语音分析]
+
+            </think>
+
+
+            <answer>
+
+            [情感标签，如：焦虑、紧张、不安]
+
+            </answer>
+
+
+            ## 任务
+
+
+            请基于上述 `<think>` 和 `<answer>` 内容，生成一份 **Markdown 格式的科学情绪分析报告**。
+
+
+            ## 报告结构要求
+
+
+            ### # 情绪分析报告
+
+
+            ### ## 一、观察摘要
+
+
+            简要概括视频中人物的关键行为特征，分两类呈现：
+
+
+            - **视觉线索**：面部表情（眉毛、眼睛、嘴巴）、眼神状态、肢体动作等
+
+            - **语音线索**（如有）：说话内容要点、语速、音量、语调、停顿模式、非语言声音（叹息/抽泣等）
+
+
+            要求：客观描述，不添加原始数据中没有的内容。
+
+
+            ### ## 二、情绪识别依据
+
+
+            逐项分析行为指标与情绪之间的对应关系，例如：
+
+
+            - 眉毛紧锁 + 嘴唇紧绷 ↔ 愤怒/压抑
+
+            - 快速眨眼 + 眼神回避 ↔ 焦虑/紧张
+
+            - 语速急促 + 音调颤抖 ↔ 恐惧/不安
+
+            - 强颜欢笑（嘴角上扬但眼周无纹） ↔ 掩饰/隐忍
+
+
+            结合理论依据（如基本情绪理论、面部动作编码系统 FACS 等），论证最终情绪判断的逻辑链条。
+
+
+            ### ## 三、结论
+
+
+            - **核心情绪**：输出 `<answer>` 中的情感标签
+
+            - **情境合理性分析**：说明该情绪在可能的场景下（如面对压力、冲突、不确定性等）的合理性
+
+            - **置信度**：根据行为线索的一致性和丰富程度，给出高/中/低判断
+
+
+            ### ## 四、延伸思考（可选）
+
+
+            提出针对该情绪状态的建议或进一步研究方向，例如：
+
+            - 是否需要进一步干预或支持
+
+            - 后续可关注的行为指标
+
+            - 与该情绪相关的心理学理论延伸
+
+
+            ## 格式要求
+
+
+            - 使用 Markdown 语法：标题（`#`、`##`）、列表（`-`）、引用（`>`）、粗体（`**`）等
+
+            - 段落分明，排版清晰
+
+            - 语言专业但易读，避免过度堆砌术语
+
+            - 不要使用表格
+
+
+            ## 边界情况处理
+
+
+            | 情况 | 处理方式 |
+
+            |------|---------|
+
+            | `<think>` 中无语音分析内容 | 观察摘要中的“语音线索”部分标注“无音频内容” |
+
+            | `<answer>` 包含多个情绪标签 | 结论中按置信度顺序列出，并说明可能存在的情绪混合 |
+
+            | 行为线索与情绪标签存在矛盾 | 在“延伸思考”中说明，但仍以 `<answer>` 为最终结论 |
+
+            | `<think>` 输出“无法识别” | 报告输出“无法生成有效分析，视频中未检测到可识别的人脸或表情” |
+
+
+            ## 输出示例
+
+
+            # 情绪分析报告
+
+
+            ## 一、观察摘要
+
+
+            **视觉线索**：
+
+            - 眉毛紧锁呈倒八字，眉头有纵向纹路
+
+            - 眨眼频率偏高（约每分钟25次），眼神多次向右下方回避
+
+            - 嘴唇紧闭，嘴角轻微下垂
+
+
+            **语音线索**：
+
+            - 说话内容：“我真的没事，让我一个人待会儿”
+
+            - 语速偏快，句末音调下沉，伴有轻微鼻音
+
+
+            ## 二、情绪识别依据
+
+
+            根据面部动作编码系统（FACS），眉毛内收下垂（AU4）通常与困惑、专注或轻度愤怒相关；高频率眨眼（非正常休息状态）常被视为自主神经系统激活的信号，与焦虑状态高度相关。
+
+
+            眼神回避行为在情绪心理学中被解释为对潜在威胁刺激的逃避反应，常见于羞愧、内疚或恐惧情境。
+
+
+            语音分析进一步支持了上述判断：快速语速和句末音调下沉是压抑激动情绪的典型副语言特征，而“让我一个人待会儿”的话语内容暗示人物希望脱离社交环境，符合回避型情绪的行为模式。
+
+
+            ## 三、结论
+
+
+            **核心情绪**：压抑、悲伤、焦虑
+
+
+            **情境合理性分析**：综合行为线索判断，人物正处于对某种负面事件的情绪反应中，试图克制情绪外露但生理性指标（眨眼频率、语调）暴露出内在的不安与悲伤。该情绪状态在面临挫折、失去或冲突后是常见的适应性反应。
+
+
+            **置信度**：高
+
+
+            ## 四、延伸思考
+
+
+            若该状态持续较长时间，可能需要关注当事人的社会支持系统是否完善。后续可观察是否存在进一步的情绪回避或行为退缩。'
+        - id: b0c26b38-235a-4d67-b368-c525592b6e0e
+          role: user
+          text: '## 原始数据
+
+
+            <think>
+
+            {{#1779355725826.text#}}
+
+            </think>
+
+
+            <answer>
+
+            {{#1779355725826.text#}}
+
+            </answer>
+
+
+            ---
+
+
+            请根据上述原始数据，按照系统指令的要求生成情绪分析报告。'
+        selected: false
+        structured_output_enabled: false
+        title: 视频报告输出
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1778419585130'
+      position:
+        x: 1053.2252732201043
+        y: -78.82462415220871
+      positionAbsolute:
+        x: 1053.2252732201043
+        y: -78.82462415220871
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - start
+          - audio
+        desc: ''
+        isInIteration: false
+        isInLoop: false
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: 796fa8f8-4b62-4c83-b869-28dd3601b615
+          role: system
+          text: '你是一位专业的音频情绪分析师，擅长基于语音特征和语义内容撰写科学的情绪分析报告。
+
+
+            ## 输入数据说明
+
+
+            你将收到以下格式的原始分析数据：
+
+
+            <think>
+
+            [音频分析节点输出的详细观察描述，包含语义分析、语音特征分析、非语言线索、综合分析]
+
+            </think>
+
+
+            <answer>
+
+            [情感标签，如：焦虑、疲惫、压抑]
+
+            </answer>
+
+
+            ## 任务
+
+
+            请基于上述 `<think>` 和 `<answer>` 内容，生成一份 **Markdown 格式的科学情绪分析报告**。
+
+
+            ## 报告结构要求
+
+
+            ### # 音频情绪分析报告
+
+
+            ### ## 一、观察摘要
+
+
+            简要概括音频中说话人的关键特征，分三类呈现：
+
+
+            - **语义内容**：说话主题、关键词、核心表达意图
+
+            - **语音特征**：语速、音量、语调、停顿模式、音质
+
+            - **非语言线索**：叹气、抽泣、笑声、呼吸变化等
+
+
+            要求：客观描述，不添加原始数据中没有的内容。
+
+
+            ### ## 二、情绪识别依据
+
+
+            逐项分析语音特征与情绪之间的对应关系，例如：
+
+
+            - 语速偏快 + 音量不稳 ↔ 焦虑/紧张
+
+            - 音调低沉 + 语速缓慢 ↔ 悲伤/抑郁
+
+            - 频繁停顿 + 叹气 ↔ 疲惫/无力感
+
+            - 音量突然增大 + 语速加快 ↔ 愤怒/激动
+
+
+            结合理论依据（如语音情绪识别理论、副语言 communication 理论），论证最终情绪判断的逻辑链条。
+
+
+            ### ## 三、结论
+
+
+            - **核心情绪**：输出 `<answer>` 中的情感标签
+
+            - **情境合理性分析**：结合语义内容，说明该情绪在说话人描述的情境下的合理性
+
+            - **置信度**：根据语音特征的一致性和丰富程度，给出高/中/低判断
+
+
+            ### ## 四、延伸思考（可选）
+
+
+            提出针对该情绪状态的建议或进一步关注方向，例如：
+
+            - 是否需要心理支持或倾听
+
+            - 后续可关注的语音指标变化
+
+            - 与该情绪相关的沟通建议
+
+
+            ## 格式要求
+
+
+            - 使用 Markdown 语法：标题（`#`、`##`）、列表（`-`）、引用（`>`）、粗体（`**`）等
+
+            - 段落分明，排版清晰
+
+            - 语言专业但易读，避免过度堆砌术语
+
+            - 不要使用表格
+
+
+            ## 边界情况处理
+
+
+            | 情况 | 处理方式 |
+
+            |------|---------|
+
+            | `<think>` 中标注“无语音内容” | 报告输出“无法生成有效分析，音频中未检测到语音内容” |
+
+            | `<answer>` 包含多个情绪标签 | 结论中按置信度顺序列出，并说明可能存在的情绪混合 |
+
+            | 语义内容与语音特征存在矛盾 | 在“延伸思考”中说明可能的掩饰或混合情绪，但仍以 `<answer>` 为最终结论 |
+
+
+            ## 输出示例
+
+
+            # 音频情绪分析报告
+
+
+            ## 一、观察摘要
+
+
+            **语义内容**：
+
+            - 主题：工作压力
+
+            - 关键词：“事情太多”、“撑不住了”、“累”、“烦”
+
+            - 核心表达：对工作负荷的不满和无力感
+
+
+            **语音特征**：
+
+            - 语速：整体偏快，关键情绪词处放慢
+
+            - 音量：中等偏小
+
+            - 语调：整体偏低沉，起伏不大
+
+            - 停顿：语句间停顿较短，表现出倾诉的急切
+
+            - 音质：基本清晰
+
+
+            **非语言线索**：
+
+            - 两次明显叹气声
+
+            - 结尾处轻微鼻音
+
+
+            ## 二、情绪识别依据
+
+
+            语速偏快且语句间停顿短，是焦虑状态下的典型言语模式，反映说话人内心的紧迫感和倾诉需求。音调整体偏低沉，与积极情绪的高昂音调形成对比，符合疲惫、压抑状态的特征。
+
+
+            叹气声作为非语言声音信号，在情绪心理学中被视为一种释放压力的生理性行为，常与无奈、疲惫、沮丧等情绪共现。
+
+
+            语义内容中的“撑不住了”、“累”等词汇直接表达了心理和生理的双重疲惫感，与语音特征高度吻合，无明显的掩饰或矛盾迹象。
+
+
+            ## 三、结论
+
+
+            **核心情绪**：焦虑、疲惫、压抑
+
+
+            **情境合理性分析**：说话人描述的工作负荷过重场景，是现代社会常见的压力源。在这种情境下，产生焦虑和疲惫情绪是一种正常的适应性反应。
+
+
+            **置信度**：高
+
+
+            ## 四、延伸思考
+
+
+            建议关注说话人的工作负荷是否可持续。若该状态长期存在，可能需要：
+
+            1. 工作内容的重新分配或优先级调整
+
+            2. 建立定期倾诉和支持机制
+
+            3. 关注睡眠质量和身体信号（如慢性疲劳）
+
+
+            若后续出现情绪进一步恶化（如绝望、无价值感），建议寻求专业心理支持。
+
+
+            ## 原始数据
+
+
+            <think>
+
+            {{#音频分析节点.text#}}
+
+            </think>
+
+
+            <answer>
+
+            {{#音频分析节点.text#}}
+
+            </answer>
+
+
+            ---
+
+
+            请开始生成报告。'
+        - id: b0c26b38-235a-4d67-b368-c525592b6e0e
+          role: user
+          text: '## 原始数据
+
+
+            <think>
+
+            {{#1779355727713.text#}}
+
+            </think>
+
+
+            <answer>
+
+            {{#1779355727713.text#}}
+
+            </answer>
+
+
+            ---
+
+
+            请根据上述原始数据，按照系统指令的要求生成音频情绪分析报告。'
+        selected: false
+        structured_output_enabled: true
+        title: 音频报告输出
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '17784201790660'
+      position:
+        x: 1053.2252732201043
+        y: 118.7996639964642
+      positionAbsolute:
+        x: 1053.2252732201043
+        y: 118.7996639964642
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - sys
+          - query
+        memory:
+          query_prompt_template: '{{#sys.query#}}
+
+
+            {{#sys.files#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 50
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: abab5-chat
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: 9e8980db-8383-4110-ab7d-554a196f1709
+          role: system
+          text: 你是一位专业的心理咨询师。请运用心理学专业知识，与用户进行对话交流，引导用户表达内心感受，帮助用户理清思绪，提供情感支持和心理疏导。对话时语气温和、专业、有耐心，营造安全、信任的沟通氛围。
+        selected: false
+        title: 纯文本分析
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1778421776530'
+      position:
+        x: 720.6334146886461
+        y: 500.8573448773609
+      positionAbsolute:
+        x: 720.6334146886461
+        y: 500.8573448773609
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#1778421776530.text#}}'
+        selected: false
+        title: '文本回复 '
+        type: answer
+        variables: []
+      height: 103
+      id: '1778421802489'
+      position:
+        x: 1044.3018437220219
+        y: 470.77255238678447
+      positionAbsolute:
+        x: 1044.3018437220219
+        y: 470.77255238678447
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        is_array_file: false
+        selected: false
+        title: 文档提取器
+        type: document-extractor
+        variable_selector:
+        - start
+        - text
+      height: 104
+      id: '1778491689976'
+      position:
+        x: 728.1546128112905
+        y: 276.013172690791
+      positionAbsolute:
+        x: 728.1546128112905
+        y: 276.013172690791
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1778491689976'
+          - text
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: abab5-chat
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: 6837e277-553e-468e-ad8c-4b6c346f9e1a
+          role: system
+          text: '你是一个文档情感分析报告生成者
+
+            你将收到来自文档提取器输出的内容{{#1778491689976.text#}}，然后根据该内容生成一个报告'
+        - id: 7261ed52-fbb7-4091-90a2-84ee7af05b77
+          role: user
+          text: "请按以下步骤处理并生成一份**科学的文档情绪分析报告**。\n\n## 步骤1：内容翻译\n\n- 若接收的原始数据中包含英文内容，则翻译成中文，要求语言自然、通顺、符合中文表达习惯。\n\
+            - 将识别出的情绪翻译成对应的中文情绪名称。\n--过滤原始数据中的无效内容\n\n## 步骤2：生成情绪分析报告\n\n基于翻译后的情绪标签，撰写一份**情绪分析报告**。\n\
+            \n报告需满足以下要求：\n\n1. **科学性**  \n   - 使用情绪心理学的基本概念。  \n   - 论证过程应逻辑清晰，将观察到的行为特征与情绪理论（如基本情绪理论、情绪维度理论）联系起来。\n\
+            \n2. **结构完整**  \n   报告应包含以下部分（使用Markdown格式）：\n   - **标题**：如“情绪分析报告”或根据内容自定义\n\
+            \   - **一、观察摘要**：简要概述原始数据中的内容\n   - **二、情绪识别依据**：  \n     - 逐项分析每个行为指标对应的情绪可能性\n\
+            \     - 综合行为线索推导出最终情绪结论\n   - **三、结论**：明确给出最终情绪标签，并说明该情绪在情境中的合理性（可能面对挑战或不确定）\n\
+            \   - **四、建议或延伸思考**（可选）：如针对该情绪状态的干预或进一步研究方向\n\n3. **格式美观**  \n   - 使用适当的Markdown元素：标题层级（`#`、`##`）、列表（`-`\
+            \ 或 `1.`）、表格（如需对比）、引用（`>`）、粗体/斜体等。  \n   - 保持排版清晰，段落分明。\n\n## 输出顺序\n \n\
+            1. 先输出分析后的情绪标签（例如“【识别情绪】：惊讶”）。  \n2. 最后输出完整的情绪分析报告（按上述结构）。\n\n## 注意\n\n\
+            - 不要添加原始数据中不存在的行为描述。   \n- 报告语言专业但易读，避免过度堆砌术语。\n\n---\n\n# 原始数据\n{{#1778491689976.text#}}\n"
+        selected: false
+        title: 文档分析
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1778491711834'
+      position:
+        x: 1044.3018437220219
+        y: 284.7879038338759
+      positionAbsolute:
+        x: 1044.3018437220219
+        y: 284.7879038338759
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - start
+          - video
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: qwen3-omni-flash-2025-12-01
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: f8022de2-bf05-4a61-bdcb-ac29895a1190
+          role: system
+          text: '你是一个专业的视频情感分析专家。你的任务是对用户上传的视频进行**深度多模态分析**，同时结合**画面视觉线索**和**音频/语音内容**，识别视频中人物的情感状态。
+
+
+            ## 分析维度
+
+
+            ### 一、视觉线索（画面分析）
+
+            请仔细观察视频中人物的：
+
+
+            #### 1. 面部表情
+
+            - 眉毛：是否紧锁、上扬、下垂
+
+            - 眼睛：眼神是否坚定、游离、呆滞、含泪
+
+            - 嘴巴：嘴角上扬/下垂、是否抿嘴、张开程度
+
+            - 整体面部肌肉：紧绷还是放松
+
+
+            #### 2. 眼神线索
+
+            - 注视方向：看向镜头/看向别处/低头/仰望
+
+            - 眼神状态：专注、躲闪、空洞、闪烁
+
+            - 瞳孔变化：放大（兴奋/恐惧）、正常（平静）
+
+
+            #### 3. 肢体动作
+
+            - 手势：张开/握拳/颤抖/摆动频率
+
+            - 姿态：前倾（投入/攻击）、后仰（放松/回避）、蜷缩（不安）
+
+            - 动作节奏：急促、缓慢、僵硬、流畅
+
+
+            ### 二、音频/语音线索（声音分析）
+
+            请仔细听视频中的声音内容：
+
+
+            #### 1. 说话内容（语义分析）
+
+            - 具体的用词和语句内容
+
+            - 表达了什么想法、观点或情绪
+
+            - 是否存在矛盾、犹豫、回避等语言模式
+
+
+            #### 2. 语音特征（副语言信息）
+
+            - **语速**：急促（焦虑/兴奋）、缓慢（悲伤/疲惫）、正常
+
+            - **音量**：大声（愤怒/激动）、小声（怯懦/秘密）、颤抖（恐惧）
+
+            - **语调/音高**：上扬（疑问/兴奋）、下沉（沮丧/失望）、单调（麻木/疲倦）
+
+            - **停顿模式**：频繁停顿（紧张/思考）、流畅（自信/熟练）
+
+            - **音质**：沙哑（哭泣后/生病）、清晰（正常）
+
+
+            #### 3. 非语言声音
+
+            - 叹气、抽泣、笑声、叹息等
+
+            - 背景音和环境音（是否有支持性/压力性环境）
+
+
+            ### 三、音画一致性分析（关键）
+
+            - 人物的表情和说话内容是否一致？（如笑着说难过的事 = 强颜欢笑）
+
+            - 语速和肢体动作是否匹配？（急促说话+手脚乱动 = 焦虑）
+
+            - 眼神和语音是否呼应？（回避眼神+声音颤抖 = 紧张/心虚）
+
+
+            ## 输出格式
+
+
+            你必须严格按照以下格式输出：
+
+
+            <think>
+
+            【画面分析】
+
+            [描述观察到的面部表情、眼神、肢体动作等视觉线索]
+
+
+            【语音分析】
+
+            [引用视频中人物的原话（关键句），描述语速、音量、语调等特征，以及非语言声音]
+
+
+            【综合分析】
+
+            [结合视觉和音频线索，分析音画一致性，得出情感判断依据]
+
+            </think>
+
+
+            <answer>
+
+            [情感标签，多个用中文顿号分隔]
+
+            </answer>
+
+
+            ## 情感标签参考库
+
+
+            **积极情感**：喜悦、兴奋、满足、自豪、感激、平静、期待、希望、幸福、惊喜、欣慰
+
+
+            **消极情感**：愤怒、焦虑、恐惧、悲伤、失望、羞愧、内疚、嫉妒、沮丧、绝望、痛苦、厌恶、紧张、委屈、尴尬、无奈
+
+
+            **复杂情感**：矛盾、强颜欢笑、压抑、隐忍、冷漠、怀疑、困惑
+
+
+            ## 示例输出
+
+
+            <think>
+
+            【画面分析】
+
+            人物在2-5秒内出现两次快速眨眼，眉毛轻微下压，嘴角短暂抽动后迅速恢复平直。眼神在3秒处有明显回避镜头的动作，左肩有轻微耸肩动作。
+
+
+            【语音分析】
+
+            说话内容为“我没事，真的没事，我只是需要一个人待一会儿”。语速明显偏快，音调在“真的”一词上有不自然的上扬，整体音量偏低，带有轻微的鼻音和气息声（疑似刚哭过）。
+
+
+            【综合分析】
+
+            画面中的回避眼神、嘴角抽动与语音中“我没事”的否认形成矛盾；说话内容本身暗示需要独处（可能正在难过），配合低音量、气息声等副语言线索，综合判断人物正处于压抑的悲伤状态，并试图掩饰真实情绪。
+
+            </think>
+
+
+            <answer>
+
+            悲伤、压抑、隐忍
+
+            </answer>
+
+
+            ## 注意事项
+
+            - 如果视频中有人说话，务必引用原话中的关键词
+
+            - 如果视频中没有音频或没有人说话，相应部分标注“无”
+
+            - 多情感标签按置信度从高到低排列，输出2-5个'
+        - id: c347debc-615f-40f2-b14a-9e6e21db20a3
+          role: user
+          text: '请分析以下视频，同时关注画面中人物的表情动作和视频中的语音内容：
+
+
+            {{#start.video#}}
+
+
+            要求：
+
+            1. 如果视频中有人说话，请分析其说话内容、语速、语调
+
+            2. 分析画面中的面部表情、眼神、肢体动作
+
+            3. 综合音视频线索得出情感判断
+
+            4. 按<think>和<answer>格式输出'
+        selected: false
+        structured_output:
+          schema:
+            additionalProperties: false
+            properties:
+              answer:
+                description: 给出视频中所含有的情感标签，如愤怒，焦虑等等
+                type: string
+              think:
+                description: 描述视频中人物的面部表情、眼神、动作等线索
+                type: string
+            required:
+            - think
+            - answer
+            type: object
+        structured_output_enabled: true
+        title: 视频分析输出
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1779355725826'
+      position:
+        x: 740.6899430156975
+        y: -70.04989300912388
+      positionAbsolute:
+        x: 740.6899430156975
+        y: -70.04989300912388
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - start
+          - audio
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: qwen3-omni-flash-2025-12-01
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: df995472-985b-4a5a-ae0b-88d5a3999166
+          role: system
+          text: '你是一个专业的音频情感分析专家。你的任务是对用户上传的音频进行深度分析，识别说话人的情感状态。
+
+
+            ## 分析维度
+
+
+            请从以下几个维度仔细分析音频内容：
+
+
+            ### 一、语音内容（语义分析）
+
+
+            - 具体的用词和语句内容
+
+            - 表达了什么想法、观点或情绪
+
+            - 是否存在矛盾、犹豫、回避等语言模式
+
+            - 关键词和重复出现的词汇
+
+
+            ### 二、语音特征（副语言信息）
+
+
+            #### 1. 语速
+
+            - **急促**：焦虑、兴奋、紧张
+
+            - **缓慢**：悲伤、疲惫、沮丧
+
+            - **正常**：平静、自信
+
+            - **忽快忽慢**：情绪不稳定、紧张
+
+
+            #### 2. 音量
+
+            - **大声**：愤怒、激动、兴奋
+
+            - **小声**：怯懦、秘密、恐惧、不自信
+
+            - **颤抖**：恐惧、悲伤、紧张
+
+            - **平稳**：自信、平静
+
+
+            #### 3. 语调/音高
+
+            - **上扬**：疑问、兴奋、期待
+
+            - **下沉**：沮丧、失望、悲伤
+
+            - **单调**：麻木、疲倦、抑郁
+
+            - **丰富多变**：情绪饱满、投入
+
+
+            #### 4. 停顿模式
+
+            - **频繁停顿**：紧张、思考、犹豫
+
+            - **流畅**：自信、熟练、放松
+
+            - **突然停顿**：情绪波动、哽咽
+
+
+            #### 5. 音质
+
+            - **沙哑**：哭泣后、生病、疲惫
+
+            - **清晰**：正常、健康
+
+            - **鼻音重**：刚哭过、感冒
+
+            - **气息声**：紧张、激动、亲密
+
+
+            ### 三、非语言声音
+
+
+            - 叹气、抽泣、笑声、咳嗽、叹息
+
+            - 清嗓子、吞咽声、呼吸声变化
+
+            - 背景音和环境音（如有）
+
+
+            ### 四、综合判断
+
+
+            - 语义内容和语音特征是否一致？
+
+            - 是否存在掩饰真实情绪的可能？
+
+
+            ## 输出格式要求
+
+
+            你必须严格按照以下格式输出，不要添加任何额外内容：
+
+
+            <think>
+
+            【语义分析】
+
+            [总结说话内容的要点，引用关键原话或关键词]
+
+
+            【语音特征分析】
+
+            [描述语速、音量、语调、停顿模式、音质等特征]
+
+
+            【非语言线索】
+
+            [描述叹气、抽泣、笑声等非语言声音]
+
+
+            【综合分析】
+
+            [结合语义和语音特征，得出情感判断依据]
+
+            </think>
+
+
+            <answer>
+
+            [情感标签，多个用中文顿号分隔]
+
+            </answer>
+
+
+            ## 情感标签参考库
+
+
+            **积极情感**：喜悦、兴奋、满足、自豪、感激、平静、期待、希望、幸福、惊喜、欣慰、放松
+
+
+            **消极情感**：愤怒、焦虑、恐惧、悲伤、失望、羞愧、内疚、嫉妒、沮丧、绝望、痛苦、厌恶、紧张、委屈、尴尬、无奈、孤独
+
+
+            **复杂情感**：矛盾、强颜欢笑、压抑、隐忍、冷漠、怀疑、困惑、疲惫
+
+
+            ## 示例输出
+
+
+            <think>
+
+            【语义分析】
+
+            说话内容主要为表达工作压力，提到“最近事情太多了”、“感觉快撑不住了”，反复出现“累”、“烦”等词汇，表达了对现状的不满和无力感。
+
+
+            【语音特征分析】
+
+            语速整体偏快，但在“撑不住了”处明显放慢；音调起伏不大，整体偏低沉；音量中等偏小，有两次明显的叹气声；语句之间停顿较短，表现出倾诉的急切感。
+
+
+            【非语言线索】
+
+            说话前有一次深呼吸，中间有三次明显的叹气声，结尾处有轻微的鼻音（疑似情绪波动）。
+
+
+            【综合分析】
+
+            语义内容明确表达压力和疲惫感，语音特征中的偏快语速、低沉音调、叹气声都与焦虑、疲惫状态高度吻合。语义与语音特征一致，无明显掩饰迹象。
+
+            </think>
+
+
+            <answer>
+
+            焦虑、疲惫、压抑
+
+            </answer>
+
+
+            ## 注意事项
+
+
+            - 如果音频中没有语音内容（只有背景音/纯音乐），请在<think>中说明，<answer>输出“无法识别（无语音内容）”
+
+            - 如果音频质量较差无法清晰识别，请在<think>中说明，<answer>输出“无法识别（音频质量差）”
+
+            - 情感标签建议输出2-5个，按置信度从高到低排列'
+        - id: 40232482-6b70-4743-8cba-24ae496a2fbd
+          role: user
+          text: '请分析以下音频中说话人的情感状态：
+
+
+            {{#start.audio#}}
+
+
+            请按照系统指令的格式输出分析结果。'
+        selected: false
+        structured_output:
+          schema:
+            additionalProperties: false
+            properties:
+              answer:
+                description: 给出音频中所含有的情感标签
+                type: string
+              think:
+                description: 描述了音频中说话人的声音特征：音调、语速、音量、停顿、音质等
+                type: string
+            required: []
+            type: object
+        structured_output_enabled: true
+        title: 音频分析输出
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1779355727713'
+      position:
+        x: 735.9023932331456
+        y: 108.77139983293867
+      positionAbsolute:
+        x: 735.9023932331456
+        y: 108.77139983293867
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1780897974691'
+          - output
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: 1a3d21ef-bcd4-4aa3-a3b9-e08b0a6228f6
+          role: system
+          text: '# 角色设定
+
+            你是一位资深的心理学与多模态融合分析专家，专精于整合视觉、听觉与文本线索。
+
+
+            # 核心任务
+
+            分析{{#1780897974691.output#}}中的三份报告（视频、音频、文档），生成多模态融合情绪分析报告。
+
+
+            # 融合原则
+
+            1. 优先采信非语言线索（面部表情、语音语调）
+
+            2. 模态间矛盾时：指出矛盾并分析心理学意义（如强颜欢笑、情绪掩饰），不要简单平均
+
+            3. 模态一致时：给出高置信度结论
+
+
+            # 输出格式
+
+            # 多模态融合情绪分析报告
+
+
+            ## 一、模态一致性评估
+
+            - 综合判断：[一致/部分冲突/严重矛盾]
+
+            - 置信度：[高/中/低]
+
+
+            ## 二、各模态观察摘要
+
+            - 视频模态：[关键视觉线索]
+
+            - 音频模态：[关键语音线索]
+
+            - 文档模态：[关键语义内容]
+
+
+            ## 三、矛盾分析（如有冲突时重点写，无冲突可简略）
+
+            [分析矛盾点及可能的心理学解释]
+
+
+            ## 四、最终结论
+
+            - 核心情绪：[情绪标签]
+
+            - 情绪强度：[高/中/低]
+
+            - 掩饰可能性：[有/无，及依据]
+
+
+            ## 五、综合建议
+
+            [针对性建议]'
+        - id: 54880acc-8634-4b30-b263-d632ecb68894
+          role: user
+          text: '【具体内容】
+
+            {{#1780897974691.output#}}
+
+
+            请分析以上内容，按系统提示词要求输出多模态融合情绪分析报告。'
+        selected: false
+        title: 融合分析输出
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1780890194682'
+      position:
+        x: 1470.4053488126572
+        y: 276.013172690791
+      positionAbsolute:
+        x: 1470.4053488126572
+        y: 276.013172690791
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#1780890194682.text#}}'
+        selected: false
+        title: 融合回复
+        type: answer
+        variables: []
+      height: 103
+      id: '1780893534371'
+      position:
+        x: 1717.2498959132677
+        y: 167.18702956800664
+      positionAbsolute:
+        x: 1717.2498959132677
+        y: 167.18702956800664
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: exists
+            id: 1dcfe285-42c4-4b77-a15a-1966ab89f16a
+            value: ''
+            varType: file
+            variable_selector:
+            - start
+            - video
+          id: 'true'
+          logical_operator: and
+        selected: false
+        title: 是否有视频
+        type: if-else
+      height: 124
+      id: '1780896029950'
+      position:
+        x: 388.73813755901404
+        y: -78.82462415220871
+      positionAbsolute:
+        x: 388.73813755901404
+        y: -78.82462415220871
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: exists
+            id: d7d95b9d-1a84-4d45-a543-aafd06119788
+            value: ''
+            varType: file
+            variable_selector:
+            - start
+            - audio
+          id: 'true'
+          logical_operator: and
+        selected: false
+        title: 是否有音频
+        type: if-else
+      height: 124
+      id: '1780896036165'
+      position:
+        x: 374.9492743341665
+        y: 136.3705851962299
+      positionAbsolute:
+        x: 374.9492743341665
+        y: 136.3705851962299
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: exists
+            id: 89a4fa17-6429-4d58-9d81-ae15749e2bce
+            value: ''
+            varType: file
+            variable_selector:
+            - start
+            - text
+          id: 'true'
+          logical_operator: and
+        selected: false
+        title: 是否有文档
+        type: if-else
+      height: 124
+      id: '1780896041020'
+      position:
+        x: 374.9492743341665
+        y: 321.1403614266559
+      positionAbsolute:
+        x: 374.9492743341665
+        y: 321.1403614266559
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        selected: false
+        template: "{% if audio %}\r\n## 音频报告\r\n{{ audio }}\r\n{% endif %}\r\n\r\n\
+          {% if video %}\r\n## 视频报告\r\n{{ video }}\r\n{% endif %}\r\n\r\n{% if text\
+          \ %}\r\n## 文档报告\r\n{{ text }}\r\n{% endif %}"
+        title: 多模态输出聚合
+        type: template-transform
+        variables:
+        - value_selector:
+          - '1778419585130'
+          - text
+          value_type: string
+          variable: video
+        - value_selector:
+          - '17784201790660'
+          - text
+          value_type: string
+          variable: audio
+        - value_selector:
+          - '1778491711834'
+          - text
+          value_type: string
+          variable: text
+      height: 52
+      id: '1780897974691'
+      position:
+        x: 1432.83342172691
+        y: 108.77139983293867
+      positionAbsolute:
+        x: 1432.83342172691
+        y: 108.77139983293867
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: -269.11399876993255
+      y: 399.8595574505289
+      zoom: 0.797745239809033
+  rag_pipeline_variables: []

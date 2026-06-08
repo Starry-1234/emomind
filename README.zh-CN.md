@@ -105,7 +105,7 @@ docker compose up -d
 
 | 文件 | 用途 |
 |------|------|
-| `dify_workflow/智能心理医生_v0.1.yml` | AI 心理医生聊天工作流 |
+| `dify_workflow/智能心理医生_v0.2.yml` | AI 心理医生聊天工作流 |
 | `dify_workflow/智能心理测评_v0.1.yml` | 心理测评工作流 |
 
 **导入步骤**：

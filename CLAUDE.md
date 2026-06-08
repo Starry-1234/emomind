@@ -114,7 +114,7 @@ docker compose up -d
 ### 2. 导入 Dify 工作流并获取 API Key
 
 1. 打开 Dify Studio → **Create Application** → **Import DSL**
-2. 导入 `dify_workflow/智能心理医生_v0.1.yml` 和 `dify_workflow/智能心理测评_v0.1.yml`
+2. 导入 `dify_workflow/智能心理医生_v0.2.yml` 和 `dify_workflow/智能心理测评_v0.1.yml`
 3. 进入每个应用 → **API Access** → **Generate API Key**
 4. 将 Key 填入 EmoMind 的 `.env`：
    - `智能心理医生` → `DIFY_AI_DOCTOR_API_KEY`

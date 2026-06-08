@@ -105,7 +105,7 @@ Two pre-built workflows are included in the `dify_workflow/` directory:
 
 | File | Purpose |
 |------|---------|
-| `dify_workflow/智能心理医生_v0.1.yml` | AI Doctor chat workflow |
+| `dify_workflow/智能心理医生_v0.2.yml` | AI Doctor chat workflow |
 | `dify_workflow/智能心理测评_v0.1.yml` | Psychological test workflow |
 
 **Import steps**:
