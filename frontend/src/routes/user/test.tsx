@@ -340,8 +340,10 @@ export function PsychologicalTestInner({
                     <div className="text-[10px] text-muted-foreground pt-2">测评师曰</div>
                   )}
                   <div
-                    className={`max-w-[80%] space-y-1.5 ${
-                      msg.role === "user" ? "items-end" : "items-start"
+                    className={`space-y-1.5 ${
+                      msg.role === "user"
+                        ? "max-w-[80%] items-end"
+                        : "flex-1 items-start"
                     }`}
                   >
                     {/* 消息内容 */}
@@ -350,7 +352,7 @@ export function PsychologicalTestInner({
                         {msg.content}
                       </div>
                     ) : (
-                      <div className="relative rounded-lg rounded-tl-sm border border-border bg-card px-5 py-4 text-sm text-card-foreground shadow-sm">
+                      <div className="relative w-full rounded-lg rounded-tl-sm border border-border bg-card px-5 py-4 text-sm text-card-foreground shadow-sm">
                         <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary/30 rounded-full" />
                         {(() => {
                           const cleaned = (msg.content || "")
