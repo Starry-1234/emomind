@@ -179,7 +179,6 @@ export function PsychologicalTestInner({
     testAnswers,
     setTestAnswers,
     submissionStatus,
-    workflowRunning,
     messagesEndRef,
     inputRef,
     handleSend,
@@ -416,41 +415,6 @@ export function PsychologicalTestInner({
                 </motion.div>
               ))}
             </AnimatePresence>
-
-            {/* 研墨中 */}
-            {isStreaming &&
-              !messages.some(
-                (m) => m.role === "assistant" && m.isStreaming && m.content,
-              ) &&
-              !activeTest &&
-              !workflowRunning && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex items-start gap-3"
-                >
-                  <div className="flex size-8 items-center justify-center rounded border border-primary/30 bg-primary/5">
-                    <span className="font-serif-zh text-xs font-bold text-primary">
-                      测
-                    </span>
-                  </div>
-                  <div className="rounded-lg border-l-[3px] border-primary bg-background px-5 py-3 shadow-sm">
-                    <InkGrinding />
-                  </div>
-                </motion.div>
-              )}
-
-            {/* workflow 运行中 */}
-            {workflowRunning && isStreaming && (
-              <div className="flex justify-center">
-                <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm">
-                  <Loader2 className="size-4 animate-spin text-primary" />
-                  <span className="font-medium text-primary">
-                    测评师正在推演，请稍候…
-                  </span>
-                </div>
-              </div>
-            )}
 
             {/* 提交状态流转提示 */}
             {submissionStatus !== "idle" && (

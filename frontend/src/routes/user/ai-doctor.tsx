@@ -395,25 +395,6 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
               </AnimatePresence>
 
               {/* 研墨中指示器 */}
-              {isStreaming &&
-                !messages.some(
-                  (m) => m.role === "assistant" && m.isStreaming && m.content,
-                ) && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex items-start gap-3"
-                  >
-                    <div className="flex size-8 items-center justify-center rounded border border-primary/30 bg-primary/5">
-                      <span className="font-serif-zh text-xs font-bold text-primary">
-                        医
-                      </span>
-                    </div>
-                    <div className="rounded-lg border-l-[3px] border-primary bg-background px-5 py-3 shadow-sm">
-                      <InkGrinding />
-                    </div>
-                  </motion.div>
-                )}
               <div ref={messagesEndRef} />
             </div>
           )}
