@@ -184,19 +184,21 @@ Production mode builds everything into Docker images and runs them behind Traefi
 # Step 1 — Build the backend JAR (required by the Dockerfile)
 cd backend-sb && mvn clean package -DskipTests && cd ..
 
-# Step 2 — Start all services (includes Traefik proxy)
-docker compose -f compose.yml up -d --build
+# Step 2 — Start all services
+# compose.yml provides core services + Traefik; compose.override.yml exposes local ports
+docker compose up -d --build
 ```
 
-| Service | URL | Note |
-|---------|-----|------|
-| Frontend | http://dashboard.localhost:8081 | Via Traefik router (add `127.0.0.1 dashboard.localhost` to hosts) |
-| Backend API | http://api.localhost:8081 | Via Traefik router (add `127.0.0.1 api.localhost` to hosts) |
-| Swagger UI | http://api.localhost:8081/swagger-ui.html | Via Traefik router |
-| Traefik Dashboard | http://localhost:8091 | Direct port |
-| Adminer (DB) | http://adminer.localhost:8081 | Via Traefik router (add `127.0.0.1 adminer.localhost` to hosts) |
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5174 |
+| Backend API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| Traefik Dashboard | http://localhost:8091 |
+| Adminer (DB) | http://localhost:8082 |
+| Mailcatcher | http://localhost:10801 |
 
-> Traefik listens on `8085` (HTTP) and `8443` (HTTPS) instead of standard `80/443` to avoid conflicts with other local services (e.g. Dify). On a real server, change these to `80:80` and `443:443` in `compose.yml`.
+> On a real server with a public domain, use `docker compose -f compose.yml up -d --build` (without override) to route via Traefik on standard ports.
 
 To stop:
 

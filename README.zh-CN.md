@@ -184,19 +184,21 @@ bun run dev
 # 步骤 1 — 编译后端 JAR（Dockerfile 需要）
 cd backend-sb && mvn clean package -DskipTests && cd ..
 
-# 步骤 2 — 启动所有服务（含 Traefik 代理）
-docker compose -f compose.yml up -d --build
+# 步骤 2 — 启动所有服务
+# compose.yml 提供核心服务 + Traefik；compose.override.yml 暴露本地端口
+docker compose up -d --build
 ```
 
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| 前端 | http://dashboard.localhost:8081 | 通过 Traefik 路由（hosts 加 `127.0.0.1 dashboard.localhost`）|
-| 后端 API | http://api.localhost:8081 | 通过 Traefik 路由（hosts 加 `127.0.0.1 api.localhost`）|
-| Swagger UI | http://api.localhost:8081/swagger-ui.html | 通过 Traefik 路由 |
-| Traefik Dashboard | http://localhost:8091 | 直接端口访问 |
-| Adminer（数据库管理）| http://adminer.localhost:8081 | 通过 Traefik 路由（hosts 加 `127.0.0.1 adminer.localhost`）|
+| 服务 | 地址 |
+|------|------|
+| 前端 | http://localhost:5174 |
+| 后端 API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| Traefik Dashboard | http://localhost:8091 |
+| Adminer（数据库管理）| http://localhost:8082 |
+| Mailcatcher | http://localhost:10801 |
 
-> Traefik 使用 `8085`（HTTP）和 `8443`（HTTPS）而非标准 `80/443`，避免与本地其他服务（如 Dify）冲突。在真实服务器上部署时，可将 `compose.yml` 中的端口改回 `80:80` 和 `443:443`。
+> 在真实服务器上使用公网域名时，可用 `docker compose -f compose.yml up -d --build`（不加 override），通过 Traefik 在标准端口上路由。
 
 停止服务：
 

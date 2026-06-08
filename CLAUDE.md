@@ -171,19 +171,20 @@ bun run dev
 # 1. 编译后端 JAR（Dockerfile 依赖）
 cd backend-sb && mvn clean package -DskipTests && cd ..
 
-# 2. 启动所有服务（含 Traefik）
-docker compose -f compose.yml up -d --build
+# 2. 启动所有服务（本地部署验证）
+docker compose up -d --build
 ```
 
-> | 服务 | URL | 说明 |
-> |------|-----|------|
-> | 前端 | http://dashboard.localhost:8081 | Traefik 路由（hosts 加 `127.0.0.1 dashboard.localhost`）|
-> | 后端 API | http://api.localhost:8081 | Traefik 路由（hosts 加 `127.0.0.1 api.localhost`）|
-> | Swagger UI | http://api.localhost:8081/swagger-ui.html | Traefik 路由 |
-> | Traefik Dashboard | http://localhost:8091 | 直接端口 |
-> | Adminer | http://adminer.localhost:8081 | Traefik 路由（hosts 加 `127.0.0.1 adminer.localhost`）|
->
-> Traefik 使用非标准端口 `8085/8443` 避免本地冲突，真实服务器可改回 `80/443`。
+| 服务 | URL |
+|------|-----|
+| 前端 | http://localhost:5174 |
+| 后端 API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| Traefik Dashboard | http://localhost:8091 |
+| Adminer | http://localhost:8082 |
+| Mailcatcher | http://localhost:10801 |
+
+> 真实服务器（公网域名）只用 `compose.yml`：`docker compose -f compose.yml up -d --build`，通过 Traefik 标准端口路由。
 
 ### 常用开发命令
 
