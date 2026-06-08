@@ -422,25 +422,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
               {/* 工具栏区域 */}
               <div className="flex items-center justify-between border-t border-border/60 px-4 py-2">
                 <div className="flex items-center gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.md"
-                    multiple
-                    onChange={handleFileSelect}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="rounded-lg hover:bg-primary/10"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isStreaming}
-                  >
-                    <Paperclip className="size-4 text-muted-foreground" />
-                  </Button>
-
+                  {/* 默认文件上传已禁用，请使用「心理状况分析」上传文件 */}
                   <Button
                     type="button"
                     variant="ghost"
