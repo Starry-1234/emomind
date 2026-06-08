@@ -151,7 +151,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
 
   // 分析模态框状态
   const [showAnalysisUpload, setShowAnalysisUpload] = useState(false)
-  const [analysisFile, setAnalysisFile] = useState<File | null>(null)
+  const [analysisFiles, setAnalysisFiles] = useState<File[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
   // 文件图标
@@ -510,7 +510,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
               analysisAbortControllerRef.current?.abort()
               analysisAbortControllerRef.current = null
               setShowAnalysisUpload(false)
-              setAnalysisFile(null)
+              setAnalysisFiles([])
               setIsAnalyzing(false)
             }}
           />
@@ -525,7 +525,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   analysisAbortControllerRef.current?.abort()
                   analysisAbortControllerRef.current = null
                   setShowAnalysisUpload(false)
-                  setAnalysisFile(null)
+                  setAnalysisFiles([])
                   setIsAnalyzing(false)
                 }}
               >
@@ -539,13 +539,16 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                 type="file"
                 className="hidden"
                 accept=".pdf,.doc,.docx,.txt,.md,audio/*,video/*"
+                multiple
                 onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) setAnalysisFile(file)
+                  const files = Array.from(e.target.files || [])
+                  if (files.length > 0) {
+                    setAnalysisFiles((prev) => [...prev, ...files])
+                  }
                 }}
               />
 
-              {!analysisFile ? (
+              {analysisFiles.length === 0 ? (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground mb-3">
                     选择要分析的档案类型：
@@ -614,47 +617,102 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   </div>
                 </div>
               ) : (
-                <div
-                  className={`rounded-lg border p-4 ${
-                    isWarmTheme
-                      ? "bg-primary/10 border-primary/20"
-                      : "bg-muted/30"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`flex size-10 items-center justify-center rounded-lg ${
-                        isWarmTheme ? "bg-primary/20" : "bg-primary/10"
-                      }`}
-                    >
-                      {analysisFile.type.startsWith("audio") ? (
-                        <Mic
-                          className={`size-5 ${isWarmTheme ? "text-primary" : "text-purple-500"}`}
-                        />
-                      ) : analysisFile.type.startsWith("video") ? (
-                        <Video
-                          className={`size-5 ${isWarmTheme ? "text-primary" : "text-green-500"}`}
-                        />
-                      ) : (
-                        <FileText
-                          className={`size-5 ${isWarmTheme ? "text-primary" : "text-blue-500"}`}
-                        />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
-                        {analysisFile.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {(analysisFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    已选择的文件（可继续添加）：
+                  </p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {analysisFiles.map((file, idx) => (
+                      <div
+                        key={`${file.name}-${idx}`}
+                        className={`rounded-lg border p-3 ${
+                          isWarmTheme
+                            ? "bg-primary/10 border-primary/20"
+                            : "bg-muted/30"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex size-8 items-center justify-center rounded-lg ${
+                              isWarmTheme ? "bg-primary/20" : "bg-primary/10"
+                            }`}
+                          >
+                            {file.type.startsWith("audio") ? (
+                              <Mic className={`size-4 ${isWarmTheme ? "text-primary" : "text-purple-500"}`} />
+                            ) : file.type.startsWith("video") ? (
+                              <Video className={`size-4 ${isWarmTheme ? "text-primary" : "text-green-500"}`} />
+                            ) : (
+                              <FileText className={`size-4 ${isWarmTheme ? "text-primary" : "text-blue-500"}`} />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setAnalysisFiles((prev) => prev.filter((_, i) => i !== idx))}
+                            className="rounded-full p-1 hover:bg-destructive/10"
+                          >
+                            <X className="size-4 text-muted-foreground" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
                     <button
                       type="button"
-                      onClick={() => setAnalysisFile(null)}
-                      className="rounded-full p-1 hover:bg-destructive/10"
+                      onClick={() => {
+                        if (analysisFileRef.current) {
+                          analysisFileRef.current.accept = ".pdf,.doc,.docx,.txt,.md"
+                          analysisFileRef.current.click()
+                        }
+                      }}
+                      className={`flex flex-col items-center gap-1 rounded-xl border-2 border-dashed p-2 transition-all ${
+                        isWarmTheme
+                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
+                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
+                      }`}
                     >
-                      <X className="size-4 text-muted-foreground" />
+                      <FileText className={`size-5 ${isWarmTheme ? "text-primary" : "text-blue-500"}`} />
+                      <span className="text-xs font-medium">+ 文档</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (analysisFileRef.current) {
+                          analysisFileRef.current.accept = "audio/*"
+                          analysisFileRef.current.click()
+                        }
+                      }}
+                      className={`flex flex-col items-center gap-1 rounded-xl border-2 border-dashed p-2 transition-all ${
+                        isWarmTheme
+                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
+                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
+                      }`}
+                    >
+                      <Mic className={`size-5 ${isWarmTheme ? "text-primary" : "text-purple-500"}`} />
+                      <span className="text-xs font-medium">+ 音频</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (analysisFileRef.current) {
+                          analysisFileRef.current.accept = "video/*"
+                          analysisFileRef.current.click()
+                        }
+                      }}
+                      className={`flex flex-col items-center gap-1 rounded-xl border-2 border-dashed p-2 transition-all ${
+                        isWarmTheme
+                          ? "border-primary/30 hover:border-primary hover:bg-primary/10 warm-transition"
+                          : "border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
+                      }`}
+                    >
+                      <Video className={`size-5 ${isWarmTheme ? "text-primary" : "text-green-500"}`} />
+                      <span className="text-xs font-medium">+ 视频</span>
                     </button>
                   </div>
                 </div>
@@ -663,9 +721,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
 
             <Button
               className="w-full"
-              disabled={!analysisFile || isAnalyzing}
+              disabled={analysisFiles.length === 0 || isAnalyzing}
               onClick={async () => {
-                if (!analysisFile) return
+                if (analysisFiles.length === 0) return
                 setIsAnalyzing(true)
                 setShowAnalysisUpload(false)
 
@@ -676,17 +734,20 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   const abortController = new AbortController()
                   analysisAbortControllerRef.current = abortController
 
-                  const uploadResult = await uploadFile(
-                    analysisFile,
-                    userId,
-                    "ai-doctor",
+                  // 并行上传所有文件
+                  const uploadResults = await Promise.all(
+                    analysisFiles.map((file) => uploadFile(file, userId, "ai-doctor")),
                   )
 
-                  const fileCategory = categorizeFile(analysisFile)
+                  const fileCategories = analysisFiles.map((f) => categorizeFile(f))
+                  const fileNames = analysisFiles.map((f) => f.name).join("、")
+                  const categoryLabels = fileCategories.map((c) =>
+                    c === "audio" ? "音频" : c === "video" ? "视频" : "文档",
+                  )
 
                   const userMsg = {
                     role: "user" as const,
-                    content: `【心理状况分析】上传${fileCategory === "audio" ? "音频" : fileCategory === "video" ? "视频" : "文档"}文件：${analysisFile.name}`,
+                    content: `【心理状况分析】上传了 ${analysisFiles.length} 个文件（${categoryLabels.join("、")}）：${fileNames}`,
                   }
                   setMessages((prev) => [...prev, userMsg])
 
@@ -697,25 +758,23 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   }
                   setMessages((prev) => [...prev, assistantMsg])
 
-                  const fileData = {
+                  // 构建所有文件的 fileData
+                  const allFileData = uploadResults.map((result, idx) => ({
                     type:
-                      fileCategory === "audio"
+                      fileCategories[idx] === "audio"
                         ? "audio"
-                        : fileCategory === "video"
+                        : fileCategories[idx] === "video"
                           ? "video"
                           : "document",
-                    transfer_method: "local_file",
-                    url: uploadResult.id,
-                    upload_file_id: uploadResult.id,
-                  }
+                    transfer_method: "local_file" as const,
+                    url: result.id,
+                    upload_file_id: result.id,
+                  }))
 
                   const inputs: Record<string, unknown> = {
-                    video: fileCategory === "video" ? fileData : undefined,
-                    audio: fileCategory === "audio" ? fileData : undefined,
-                    text:
-                      fileCategory === "text" || fileCategory === "document"
-                        ? fileData
-                        : undefined,
+                    video: allFileData.find((f) => f.type === "video"),
+                    audio: allFileData.find((f) => f.type === "audio"),
+                    text: allFileData.find((f) => f.type === "document"),
                     userinput: {
                       query:
                         "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
@@ -723,19 +782,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                     },
                   }
 
-                  const filesToSend = [
-                    {
-                      type:
-                        fileCategory === "audio"
-                          ? "audio"
-                          : fileCategory === "video"
-                            ? "video"
-                            : "document",
-                      transfer_method: "local_file",
-                      url: uploadResult.id,
-                      upload_file_id: uploadResult.id,
-                    },
-                  ]
+                  const filesToSend = allFileData
 
                   await sendMessageStream(
                     "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
@@ -802,9 +849,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           .replace(/^正在分析中，请稍候...\n?/, "")
                           .trim()
                         const reportData = {
-                          file_name: analysisFile.name,
-                          file_type: fileCategory,
-                          file_size: analysisFile.size,
+                          file_name: analysisFiles.map((f) => f.name).join(", "),
+                          file_type: "multi",
+                          file_size: analysisFiles.reduce((sum, f) => sum + f.size, 0),
                           analysis_result: actualAnalysisResult,
                           conversation_id:
                             conversationId || activeConvId || undefined,
@@ -880,7 +927,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   }
                 }
 
-                setAnalysisFile(null)
+                setAnalysisFiles([])
               }}
             >
               {isAnalyzing ? (
