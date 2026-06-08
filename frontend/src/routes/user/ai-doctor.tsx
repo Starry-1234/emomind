@@ -12,7 +12,6 @@ import {
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
-import { SealIcon } from "@/components/Common/SealIcon"
 import { AnalysisReportsService } from "@/client"
 import { MessageActions } from "@/components/chat/MessageActions"
 import { StreamingMessage } from "@/components/chat/StreamingMessage"
@@ -288,12 +287,15 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                         ? userMessageTransition
                         : assistantMessageTransition
                     }
-                    className={`flex ${
+                    className={`flex items-end gap-2 ${
                       msg.role === "user" ? "justify-end" : "justify-start"
                     }`}
                   >
+                    {msg.role === "assistant" && (
+                      <div className="text-[10px] text-muted-foreground pb-1">医者曰</div>
+                    )}
                     <div
-                      className={`max-w-[85%] space-y-1.5 ${
+                      className={`max-w-[80%] space-y-1.5 ${
                         msg.role === "user" ? "items-end" : "items-start"
                       }`}
                     >
@@ -322,19 +324,6 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                         </div>
                       )}
 
-                      {/* 发送者小字 */}
-                      {msg.role === "user" ? (
-                        <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
-                          <SealIcon char="问" size="sm" />
-                          <span>我问</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                          <SealIcon char="医" size="sm" />
-                          <span>医者曰</span>
-                        </div>
-                      )}
-
                       {/* 消息内容 */}
                       {msg.role === "user" ? (
                         <div className="rounded-2xl rounded-tr-sm bg-primary px-4 py-3 text-sm text-primary-foreground leading-relaxed shadow-sm">
@@ -356,9 +345,6 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                               </ReactMarkdown>
                             </div>
                           )}
-                          <div className="mt-3 flex justify-end">
-                            <SealIcon char="医" size="sm" />
-                          </div>
                         </div>
                       )}
 
@@ -387,16 +373,10 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           />
                         </>
                       )}
-
-                      {/* 用户小印章 */}
-                      {msg.role === "user" && (
-                        <div className="flex justify-end px-1">
-                          <span className="text-[10px] text-muted-foreground/60">
-                            我
-                          </span>
-                        </div>
-                      )}
                     </div>
+                    {msg.role === "user" && (
+                      <div className="text-[10px] text-muted-foreground pb-1">我问</div>
+                    )}
                   </motion.div>
                 ))}
               </AnimatePresence>
