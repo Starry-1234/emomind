@@ -385,29 +385,43 @@ function MessageList({
   const sorted = [...messages].sort((a, b) => a.created_at - b.created_at)
 
   return (
-    <ScrollArea className="flex-1 px-4 py-3">
-      <div className="flex flex-col gap-3">
+    <ScrollArea className="flex-1 px-5 py-4">
+      <div className="flex flex-col gap-5">
         {sorted.map((msg) => (
-          <div key={msg.id} className="flex flex-col gap-3">
+          <div key={msg.id} className="flex flex-col gap-4">
             {msg.query && (
               <div className="flex justify-end">
-                <div className="max-w-[70%]">
-                  <div className="rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-sm text-primary-foreground">
+                <div className="max-w-[75%] space-y-1">
+                  <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
+                    <SealIcon char="问" size="sm" />
+                    <span>我问</span>
+                  </div>
+                  <div className="rounded-2xl rounded-br-md bg-primary px-4 py-3 text-sm text-primary-foreground leading-relaxed shadow-sm">
                     {msg.query}
                   </div>
-                  <div className="mt-1 text-right text-[10px] text-muted-foreground">
-                    用户 · {formatTime(msg.created_at)}
+                  <div className="text-right text-[10px] text-muted-foreground">
+                    {formatTime(msg.created_at)}
                   </div>
                 </div>
               </div>
             )}
             {msg.answer && (
               <div className="flex justify-start">
-                <div className="max-w-[70%]">
-                  <div className="rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm text-foreground prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
-                    <ReactMarkdown>{msg.answer}</ReactMarkdown>
+                <div className="max-w-[85%] space-y-1">
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <SealIcon char="医" size="sm" />
+                    <span>医者曰</span>
                   </div>
-                  <div className="mt-1 text-[10px] text-muted-foreground">
+                  <div className="relative rounded-lg rounded-tl-none border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
+                    <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary/30 rounded-full" />
+                    <div className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-a:text-primary">
+                      <ReactMarkdown>{msg.answer}</ReactMarkdown>
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <SealIcon char="医" size="sm" />
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
                     AI · {formatTime(msg.created_at)}
                   </div>
                 </div>
