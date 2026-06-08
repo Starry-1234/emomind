@@ -332,27 +332,32 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                       ) : (
                         <div className="relative rounded-lg rounded-tl-sm border border-border bg-card px-5 py-4 text-sm text-card-foreground shadow-sm">
                           <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary/30 rounded-full" />
-                          {msg.isStreaming ? (
-                            <StreamingMessage
-                              content={
-                                (msg.content || "")
-                                  .replace(/^正在分析中，请稍候...\n?/, "")
-                                  .replace(/^思考中...\n?/, "")
-                              }
-                              isStreaming={msg.isStreaming}
-                              className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-a:text-primary"
-                            />
-                          ) : (
-                            <div className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-a:text-primary">
-                              <ReactMarkdown>
-                                {
-                                  (msg.content || "")
-                                    .replace(/^正在分析中，请稍候...\n?/, "")
-                                    .replace(/^思考中...\n?/, "")
-                                }
-                              </ReactMarkdown>
-                            </div>
-                          )}
+                          {(() => {
+                            const cleaned = (msg.content || "")
+                              .replace(/^正在分析中，请稍候...\n?/, "")
+                              .replace(/^思考中...\n?/, "")
+                            if (msg.isStreaming && !cleaned) {
+                              return (
+                                <div className="pl-3">
+                                  <InkGrinding />
+                                </div>
+                              )
+                            }
+                            if (msg.isStreaming) {
+                              return (
+                                <StreamingMessage
+                                  content={cleaned}
+                                  isStreaming={msg.isStreaming}
+                                  className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-a:text-primary"
+                                />
+                              )
+                            }
+                            return (
+                              <div className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-a:text-primary">
+                                <ReactMarkdown>{cleaned}</ReactMarkdown>
+                              </div>
+                            )
+                          })()}
                         </div>
                       )}
 
