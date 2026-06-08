@@ -14,6 +14,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -71,7 +72,12 @@ public class DifyService {
                         .build())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .retrieve()
+                .onStatus(status -> status.value() == 404, response -> {
+                    log.warn("Dify conversations not found for user {}, key {}", user, apiKeyName);
+                    return Mono.empty();
+                })
                 .bodyToMono(Map.class)
+                .switchIfEmpty(Mono.just(Map.of("data", List.of(), "has_more", false, "limit", 20)))
                 .block();
     }
 
@@ -85,7 +91,12 @@ public class DifyService {
                         .build())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .retrieve()
+                .onStatus(status -> status.value() == 404, response -> {
+                    log.warn("Dify conversation {} not found for key {}", conversationId, apiKeyName);
+                    return Mono.empty();
+                })
                 .bodyToMono(Map.class)
+                .switchIfEmpty(Mono.just(Map.of("data", List.of(), "has_more", false, "limit", 20)))
                 .block();
     }
 
