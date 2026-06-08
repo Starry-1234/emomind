@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import ReactMarkdown from "react-markdown"
 import { type UserResponse, UsersService } from "@/client"
 import {
   AlertDialog,
@@ -404,8 +405,8 @@ function MessageList({
             )}
             {msg.answer && (
               <div className="max-w-[70%]">
-                <div className="rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm text-foreground">
-                  {msg.answer}
+                <div className="rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm text-foreground prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
+                  <ReactMarkdown>{msg.answer}</ReactMarkdown>
                 </div>
                 <div className="mt-1 text-[10px] text-muted-foreground">
                   AI · {formatTime(msg.created_at)}
