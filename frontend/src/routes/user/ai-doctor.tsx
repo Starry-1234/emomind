@@ -62,7 +62,7 @@ function InkGrinding() {
           />
         ))}
       </div>
-      <span className="text-sm text-muted-foreground">研墨中</span>
+      <span className="text-sm text-muted-foreground">医者研墨中…</span>
     </div>
   )
 }
@@ -959,7 +959,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
               {isAnalyzing ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  分析中...
+                  斟酌中…
                 </>
               ) : (
                 "开始分析"
@@ -968,7 +968,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
 
             {isAnalyzing && (
               <div className="mt-3 text-center text-sm text-muted-foreground">
-                AI 正在分析您的档案，请稍候...
+                医者正在品读档案，请稍候…
               </div>
             )}
           </motion.div>

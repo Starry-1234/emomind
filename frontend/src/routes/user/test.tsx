@@ -103,7 +103,7 @@ function InkGrinding() {
           />
         ))}
       </div>
-      <span className="text-sm text-muted-foreground">研墨中</span>
+      <span className="text-sm text-muted-foreground">测评师研墨中…</span>
     </div>
   )
 }
@@ -431,7 +431,7 @@ export function PsychologicalTestInner({
                 <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm">
                   <Loader2 className="size-4 animate-spin text-primary" />
                   <span className="font-medium text-primary">
-                    AI 正在分析中，请稍候...
+                    测评师正在推演，请稍候…
                   </span>
                 </div>
               </div>
