@@ -115,7 +115,7 @@ function InkTrendChart({ data }: { data: { day: string; score: number }[] }) {
   const innerH = chartH - padY * 2
 
   const validData = data.filter((d) => d.score > 0)
-  if (validData.length < 2) {
+  if (validData.length === 0) {
     return (
       <div className="flex h-[180px] items-center justify-center text-sm text-muted-foreground">
         近七日暂无测评数据
@@ -357,17 +357,22 @@ function UserHome() {
     fetchCounts()
   }, [userId, records.length])
 
+  function formatLocalDate(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  }
+
   const trendData = useMemo(() => {
     const now = new Date()
     const days: { day: string; score: number }[] = []
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now)
       d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().slice(0, 10)
+      const dateStr = formatLocalDate(d)
       const dayLabel = d.toLocaleDateString("zh-CN", { weekday: "short" })
       const dayRecords = records.filter((r) => {
         if (!r.created_at || r.total_score === null) return false
-        return r.created_at.slice(0, 10) === dateStr
+        const rDate = new Date(r.created_at)
+        return formatLocalDate(rDate) === dateStr
       })
       const score =
         dayRecords.length > 0
