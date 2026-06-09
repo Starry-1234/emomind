@@ -492,14 +492,14 @@ function UserHome() {
         {[
           {
             key: "ai-doctor",
-            icon: () => <SealIcon char="医" size="lg" />,
-            title: "智能心理医生",
+            char: "医",
+            title: "心理医生",
             desc: "倾听你的心声，提供专业心理支持",
             cta: "开始对话",
           },
           {
             key: "test",
-            icon: () => <SealIcon char="录" size="lg" />,
+            char: "录",
             title: "心理测评",
             desc: "专业量表评估，了解你的心理健康状态",
             cta: "开始测评",
@@ -511,7 +511,11 @@ function UserHome() {
           >
             <div className="flex items-start gap-4">
               <div className="flex size-11 shrink-0 items-center justify-center rounded-md bg-[#2d4a3e]/8 text-[#2d4a3e] transition-colors group-hover:bg-[#2d4a3e] group-hover:text-[#f7f4ef]">
-                <item.icon />
+                <SealIcon
+                  char={item.char}
+                  size="lg"
+                  className="transition-colors group-hover:text-[#f7f4ef]"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-serif-zh text-base font-semibold">
