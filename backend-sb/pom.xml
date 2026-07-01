@@ -207,7 +207,6 @@
                         <exclude>com/emomind/dto/**/*</exclude>
                         <exclude>com/emomind/entity/**/*</exclude>
                         <exclude>com/emomind/security/UserDetailsImpl.class</exclude>
-                        <exclude>com/emomind/config/DifyProperties.class</exclude>
                         <exclude>com/emomind/EmoMindApplication.class</exclude>
                     </excludes>
                 </configuration>
