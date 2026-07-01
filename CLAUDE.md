@@ -94,7 +94,7 @@ emomind-lg/
 | Traefik Dashboard | http://localhost:8091 |
 | Mailcatcher | http://localhost:10801 |
 | PostgreSQL | localhost:5433（启 pgvector 扩展后用作向量库） |
-| Redis | localhost:6379 |
+| Redis | localhost:6390（容器内 6379） |
 
 > ai-runtime 生产不暴露；Traefik 不配置它的路由规则。详见 [`12-deployment.md`](doc/langgraph-migration/12-deployment.md)。
 

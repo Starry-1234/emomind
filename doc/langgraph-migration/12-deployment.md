@@ -8,7 +8,7 @@
 | Backend API (Spring Boot) | 8080 | 8080 | eclipse-temurin:17-jre-alpine | 1GB |
 | ai-runtime (Python) | 8000（仅内网）| 不暴露外网 | python:3.11-slim（自定义） | 1GB |
 | PostgreSQL | 5433 | 5433 | pgvector/pgvector:pg17 | 1GB |
-| Redis | 6379 | 6379 | redis:7-alpine | 256MB |
+| Redis | 6390（容器 6379）| 不暴露 | redis:7-alpine | 256MB |
 | Adminer | 8082 | 不暴露 | adminer:latest | 64MB |
 | Traefik | 8091 | 80/443 | traefik:v3.0 | 256MB |
 | Mailcatcher | 10801 | 不暴露 | schickling/mailcatcher | 64MB |
@@ -168,7 +168,7 @@ services:
 
   redis:
     ports:
-      - "6379:6379"
+      - "6390:6379"
 
   backend:
     ports:
@@ -237,7 +237,7 @@ POSTGRES_PASSWORD=your-db-password
 POSTGRES_DB=emomind
 
 # ============ Redis ============
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6390
 
 # ============ Security ============
 SECRET_KEY=your-random-secret-at-least-32-chars
@@ -354,7 +354,7 @@ mvn spring-boot:run
 cd ai-runtime
 uv sync
 LANGGRAPH_DATABASE_URL=postgresql://postgres:your-db-password@localhost:5433/emomind \
-LANGGRAPH_REDIS_URL=redis://localhost:6379 \
+LANGGRAPH_REDIS_URL=redis://localhost:6390 \
 LANGGRAPH_INTERNAL_TOKEN=your-internal-token \
 LANGGRAPH_MINIMAX_API_KEY=your-key \
 LANGGRAPH_QWEN_OMNI_API_KEY=your-key \

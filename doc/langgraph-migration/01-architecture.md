@@ -153,7 +153,7 @@ emomind-lg/                                  ← 新仓库根
 | Backend API | 8080 | 8080 |
 | ai-runtime | 8000（仅内网）| 不暴露 |
 | PostgreSQL | 5433 | 5433 |
-| Redis | 6379 | 6379 |
+| Redis | 6390（容器 6379）| 不暴露 |
 
 ai-runtime 在生产环境**不直接对外**，只通过 Spring Boot 转发。Traefik 不配置 ai-runtime 的路由规则。
 
