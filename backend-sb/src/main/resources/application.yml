@@ -55,6 +55,11 @@ app:
   first-superuser:
     email: ${FIRST_SUPERUSER:}
     password: ${FIRST_SUPERUSER_PASSWORD:}
+  langgraph:
+    runtime-url: ${LANGGRAPH_RUNTIME_URL:http://localhost:8000}
+    internal-token: ${LANGGRAPH_INTERNAL_TOKEN:changeme-changeme-changeme-changeme}
+    request-timeout-ms: 120000
+    connect-timeout-ms: 5000
 
 management:
   endpoints:
