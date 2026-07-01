@@ -13,6 +13,13 @@ frontend/.env
 .idea/
 .playwright-mcp/
 
+# Python (ai-runtime)
+ai-runtime/.venv/
+ai-runtime/__pycache__/
+ai-runtime/**/__pycache__/
+ai-runtime/.pytest_cache/
+ai-runtime/.env
+
 # Untracked 2026-07-01: pre-M0 cleanup
 backend.log
 
