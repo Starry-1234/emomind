@@ -41,9 +41,11 @@ class SecurityIntegrationTest {
 
     @Test
     void shouldPermitLoginWithoutAuth() throws Exception {
+        // LoginController binds a JSON @RequestBody (LoginRequest). Sending form params
+        // causes HttpMessageNotReadableException → 500. Send a proper JSON body.
         mockMvc.perform(post("/api/v1/login/access-token")
-                        .param("username", "test@test.com")
-                        .param("password", "pass"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"test@test.com\",\"password\":\"pass\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -63,8 +65,10 @@ class SecurityIntegrationTest {
 
     @Test
     void shouldRejectUnauthenticatedRequest() throws Exception {
+        // Per M0 spec (doc/langgraph-migration/02-components.md § 1.1),
+        // unauthenticated requests return 401 (not Spring's default 403).
         mockMvc.perform(get("/api/v1/users/me"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -126,14 +130,16 @@ class SecurityIntegrationTest {
 
     @Test
     void shouldRejectInvalidToken() throws Exception {
+        // Invalid token → user not authenticated → 401 (M0 spec).
         mockMvc.perform(get("/api/v1/users/me")
                         .header("Authorization", "Bearer invalid-token"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
     void shouldRejectMissingToken() throws Exception {
+        // Missing token → user not authenticated → 401 (M0 spec).
         mockMvc.perform(get("/api/v1/users/me"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -17,6 +18,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -58,10 +60,36 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/info", "/actuator/metrics", "/actuator/prometheus").permitAll()
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(unauthorizedEntryPoint())
+                        .accessDeniedHandler((req, res, e) -> {
+                            // Method-level @PreAuthorize denials keep the historical 403 contract.
+                            res.setStatus(403);
+                            res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            res.getWriter().write("{\"detail\":\"Not enough permissions\"}");
+                        })
+                )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(streakUpdateFilter, JwtAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Returns HTTP 401 (instead of Spring's default 403) when an unauthenticated
+     * request hits a protected endpoint.
+     *
+     * <p>Spec intent (see `doc/langgraph-migration/02-components.md` § 1.1 and
+     * M0 Task 16): unauthenticated = 401. Method-level {@code @PreAuthorize}
+     * denials still surface as 403 (handled above).
+     */
+    @Bean
+    public AuthenticationEntryPoint unauthorizedEntryPoint() {
+        return (request, response, authException) -> {
+            response.setStatus(401);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write("{\"detail\":\"Unauthorized\"}");
+        };
     }
 
     @Bean
