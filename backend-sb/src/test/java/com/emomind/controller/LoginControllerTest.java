@@ -50,9 +50,11 @@ class LoginControllerTest {
         when(userService.login(anyString(), anyString()))
                 .thenReturn(new TokenResponse("token", "bearer"));
 
+        // LoginController binds a JSON @RequestBody (LoginRequest) — not form params.
+        // The upstream test was passing form params which caused a 400. Fixed in M0 wave 5.
         mockMvc.perform(post("/api/v1/login/access-token")
-                        .param("username", "test@test.com")
-                        .param("password", "password"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"test@test.com\",\"password\":\"password\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.access_token").value("token"));
     }
