@@ -1,29 +1,9 @@
 package com.emomind.config;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.netty.http.client.HttpClient;
+// Note: WebClient bean for ai-runtime is now created in AiProxyService
+// (it needs LangGraphProperties which depends on Spring config loading).
+// This file is kept as a placeholder for future WebClient beans (e.g., OAuth,
+// external APIs). It currently provides no beans.
 
-import java.time.Duration;
-
-@Configuration
-@RequiredArgsConstructor
 public class WebClientConfig {
-
-    private final DifyProperties difyProperties;
-
-    @Bean
-    public WebClient difyWebClient() {
-        HttpClient httpClient = HttpClient.create()
-                .responseTimeout(Duration.ofSeconds(120))
-                .followRedirect(true);
-
-        return WebClient.builder()
-                .baseUrl(difyProperties.getApiUrl())
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
-                .build();
-    }
 }
