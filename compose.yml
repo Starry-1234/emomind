@@ -19,6 +19,20 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "traefik.enable=false"
+
   adminer:
     image: adminer
     restart: always
@@ -126,6 +140,26 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend.rule=Host(`api.${DOMAIN?Variable not set}`)
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend.entrypoints=http
 
+  ai-runtime:
+    build:
+      context: .
+      dockerfile: ai-runtime/Dockerfile
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      LANGGRAPH_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      LANGGRAPH_REDIS_URL: redis://redis:6379
+      LANGGRAPH_INTERNAL_TOKEN: ${LANGGRAPH_INTERNAL_TOKEN}
+      LANGGRAPH_STORAGE_PATH: /var/lib/emomind/files
+    volumes:
+      - ai-runtime-files:/var/lib/emomind/files
+    labels:
+      - "traefik.enable=false"
+
   frontend:
     image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
     restart: always
@@ -181,6 +215,8 @@ services:
 
 volumes:
   app-db-data:
+  redisdata:
+  ai-runtime-files:
 
 networks:
   traefik-public:

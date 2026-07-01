@@ -5,6 +5,11 @@ services:
     ports:
       - "5433:5432"
 
+  redis:
+    restart: "no"
+    ports:
+      - "6390:6379"
+
   adminer:
     restart: "no"
     ports:
@@ -34,6 +39,13 @@ services:
     #   SMTP_PORT: "1025"
     #   SMTP_TLS: "false"
     #   EMAILS_FROM_EMAIL: "noreply@example.com"
+
+  ai-runtime:
+    restart: "no"
+    ports:
+      - "8000:8000"
+    environment:
+      LANGGRAPH_LOG_LEVEL: DEBUG
 
   mailcatcher:
     image: schickling/mailcatcher
