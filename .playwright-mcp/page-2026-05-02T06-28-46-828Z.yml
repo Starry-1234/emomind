@@ -1,0 +1,42 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - img "FastAPI" [ref=e5]
+    - generic [ref=e6]:
+      - button "切换主题" [ref=e9] [cursor=pointer]:
+        - img
+        - generic [ref=e10]: 切换主题
+      - generic [ref=e13]:
+        - heading "登录您的账户" [level=1] [ref=e15]
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - generic [ref=e18]: 邮箱
+            - textbox "邮箱" [ref=e19]:
+              - /placeholder: user@example.com
+          - generic [ref=e20]:
+            - generic [ref=e21]:
+              - generic [ref=e22]: 密码
+              - link "忘记密码？" [ref=e23] [cursor=pointer]:
+                - /url: /recover-password
+            - generic [ref=e24]:
+              - textbox "密码" [ref=e25]
+              - button "Show password" [ref=e26] [cursor=pointer]:
+                - img
+          - button "登录" [ref=e27] [cursor=pointer]
+        - generic [ref=e28]:
+          - text: 还没有账户？
+          - link "注册" [ref=e29] [cursor=pointer]:
+            - /url: /signup
+      - contentinfo [ref=e30]:
+        - generic [ref=e31]:
+          - paragraph [ref=e32]: Full Stack FastAPI Template - 2026
+          - generic [ref=e33]:
+            - link "GitHub" [ref=e34] [cursor=pointer]:
+              - /url: https://github.com/fastapi/fastapi
+              - img [ref=e35]
+            - link "X" [ref=e37] [cursor=pointer]:
+              - /url: https://x.com/fastapi
+              - img [ref=e38]
+            - link "LinkedIn" [ref=e40] [cursor=pointer]:
+              - /url: https://linkedin.com/company/fastapi
+              - img [ref=e41]
+  - region "Notifications alt+T"
