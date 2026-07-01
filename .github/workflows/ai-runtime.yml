@@ -1,0 +1,56 @@
+name: ai-runtime CI
+
+on:
+  push:
+    branches: [main, emomind-lg]
+    paths:
+      - "ai-runtime/**"
+      - "frontend/src/client/**"
+      - ".github/workflows/ai-runtime.yml"
+  pull_request:
+    branches: [main, emomind-lg]
+    paths:
+      - "ai-runtime/**"
+      - "frontend/src/client/**"
+      - ".github/workflows/ai-runtime.yml"
+
+jobs:
+  ai-runtime:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: emomind_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        working-directory: ai-runtime
+        run: uv sync --extra dev
+      - name: Run ai-runtime tests
+        working-directory: ai-runtime
+        run: uv run pytest -v
+        env:
+          LANGGRAPH_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/emomind_test
+          LANGGRAPH_REDIS_URL: redis://localhost:6379
