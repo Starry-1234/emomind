@@ -1,5 +1,18 @@
 # Dify AI 代理模块任务文档
 
+> ⚠️ **OBSOLETE — 已被 LangGraph 迁移替代** (2026-07-01)
+>
+> 本文描述的 Dify 代理实现将在 M0 / M6 阶段从 `backend-sb/` 完全删除。9 个勾选项 (全部 `[x]`) 代表的是 **`emomind-sb` 分支的历史状态**，不是新分支的工作项。
+>
+> 等价功能已迁移到：
+>
+> - 入口规格：[`doc/langgraph-migration/README.md`](../langgraph-migration/README.md)
+> - 新 Spring 组件 (`AiController` / `AiProxyService` / `LangGraphProperties`)：[`doc/langgraph-migration/02-components.md`](../langgraph-migration/02-components.md)
+> - Python 边车（替代 Dify API）：[`doc/langgraph-migration/09-ai-runtime.md`](../langgraph-migration/09-ai-runtime.md)
+> - SSE 流式迁移方案：[`doc/langgraph-migration/03-data-flow.md`](../langgraph-migration/03-data-flow.md)
+>
+> ⚠️ 不要为本文档的任何步骤设置 `[x]`，除非你在为 `emomind-sb` 老分支修 bug。本分支（`emomind-lg`）继续推进文档勾选 = 在文档里留下误导信号。
+
 ## 任务概述
 - **功能描述**: 代理前端请求到 Dify AI 平台，包括 SSE 流式聊天、文件上传、对话管理
 - **涉及模块**: controller, service, config

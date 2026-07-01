@@ -49,18 +49,18 @@ doc/
 3. `doc/langgraph-migration/01-architecture.md` — 顶层架构
 
 ### 实施期间（按 milestone）
-- **M0**: [01-architecture.md](langgraph-migration/01-architecture.md) + [12-deployment.md](langgraph-migration/12-deployment.md)
-- **M1**: [09-ai-runtime.md](langgraph-migration/09-ai-runtime.md) + [02-components.md](langgraph-migration/02-components.md)
-- **M2**: [06-dify-node-mapping.md](langgraph-migration/06-dify-node-mapping.md)（看多模态部分）
-- **M3**: [06-dify-node-mapping.md](langgraph-migration/06-dify-node-mapping.md) + [07-prompts.md](langgraph-migration/07-prompts.md)
-- **M4**: [10-memory.md](langgraph-migration/10-memory.md) + [11-conversation-meta.md](langgraph-migration/11-conversation-meta.md)
-- **M5**: [08-frontend-migration.md](langgraph-migration/08-frontend-migration.md) + [03-data-flow.md](langgraph-migration/03-data-flow.md)
-- **M6**: [12-deployment.md](langgraph-migration/12-deployment.md)（灰度切流量章节）
+- **M0**: [01-architecture.md](01-architecture.md) + [12-deployment.md](12-deployment.md)
+- **M1**: [09-ai-runtime.md](09-ai-runtime.md) + [02-components.md](02-components.md)
+- **M2**: [06-dify-node-mapping.md](06-dify-node-mapping.md)（看多模态部分）
+- **M3**: [06-dify-node-mapping.md](06-dify-node-mapping.md) + [07-prompts.md](07-prompts.md)
+- **M4**: [10-memory.md](10-memory.md) + [11-conversation-meta.md](11-conversation-meta.md)
+- **M5**: [08-frontend-migration.md](08-frontend-migration.md) + [03-data-flow.md](03-data-flow.md)
+- **M6**: [12-deployment.md](12-deployment.md)（灰度切流量章节）
 
 ### 排错时
-- 数据流问题 → [03-data-flow.md](langgraph-migration/03-data-flow.md)
-- 错误处理 → [04-error-handling.md](langgraph-migration/04-error-handling.md)
-- 部署问题 → [12-deployment.md](langgraph-migration/12-deployment.md)
+- 数据流问题 → [03-data-flow.md](03-data-flow.md)
+- 错误处理 → [04-error-handling.md](04-error-handling.md)
+- 部署问题 → [12-deployment.md](12-deployment.md)
 
 ## 文档维护
 

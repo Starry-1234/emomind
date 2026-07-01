@@ -13,3 +13,6 @@ frontend/.env
 .idea/
 .playwright-mcp/
 
+# Untracked 2026-07-01: pre-M0 cleanup
+backend.log
+

@@ -18,6 +18,24 @@
 
 ---
 
+## Pre-Flight Status
+
+This plan was created before `emomind-lg/` was scaffolded in git. **Task 1 is already complete** as of the initial commit `b00ee80`:
+
+- **Step 1-3** ✅ done via `git worktree add ../emomind-lg -b emomind-lg origin/emomind-sb` (cleaner than `cp -r` — no nested `.git` in `backend-sb/`, `frontend/`)
+- **Step 4** ⏳ **TODO** — run `cd backend-sb && mvn -q test -Dtest=UserServiceTest` to verify the worktree's backend-sb builds. If it passes, the worktree is healthy and Task 2+ can begin.
+- **Step 5** ❌ **N/A** — worktree handles branching; no `git init` needed.
+
+**When picking up this plan in a new session:**
+
+1. Skip Task 1 entirely (do NOT re-run `cp -r` — directory exists).
+2. Run Step 4 above as a sanity check.
+3. Start at Task 2.
+
+The remaining 15 tasks (Task 2-16) are unchanged.
+
+---
+
 ## File Structure
 
 ### Files to create (this milestone)
