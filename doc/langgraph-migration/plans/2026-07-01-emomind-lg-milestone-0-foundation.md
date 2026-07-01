@@ -1194,7 +1194,9 @@ class Settings(BaseSettings):
     # Will be enforced in M1 — for M0 only "placeholder" is needed for config to load.
     internal_token: str = "m0-placeholder-token"
     database_url: str = "postgresql://localhost:5432/emomind"
-    redis_url: str = "redis://localhost:6379"
+    # Host-side default — points at the port mapped by compose.override.yml
+    # (6390 -> container 6379). Inside compose override via env var.
+    redis_url: str = "redis://localhost:6390"
 
 
 settings = Settings()
@@ -1315,7 +1317,7 @@ Create file `ai-runtime/.env.example`:
 # M0: only the bare minimum. Real provider keys land in M1.
 LANGGRAPH_INTERNAL_TOKEN=m0-placeholder-token
 LANGGRAPH_DATABASE_URL=postgresql://postgres:postgres@localhost:5433/emomind
-LANGGRAPH_REDIS_URL=redis://localhost:6379
+LANGGRAPH_REDIS_URL=redis://localhost:6390
 ```
 
 - [ ] **Step 11: Create `ai-runtime/README.md`**
@@ -1641,7 +1643,7 @@ In a separate terminal:
 ```bash
 cd "F:/dev/AI_Tools/workspace/psychoanalysis/psychoanalytic-version-update/emomind-lg/ai-runtime"
 LANGGRAPH_DATABASE_URL=postgresql://postgres:postgres@localhost:5433/emomind \
-LANGGRAPH_REDIS_URL=redis://localhost:6379 \
+LANGGRAPH_REDIS_URL=redis://localhost:6390 \
 uv run uvicorn app.main:app --reload --port 8000
 ```
 Expected: server starts on port 8000.
