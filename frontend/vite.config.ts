@@ -13,9 +13,34 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5174,
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        // SSE 流式响应需要禁用缓冲，防止 chunked encoding 不完整
+        configure: (proxy) => {
+          proxy.on("proxyRes", (proxyRes, req, res) => {
+            const contentType = proxyRes.headers["content-type"] || ""
+            if (
+              typeof contentType === "string" &&
+              contentType.includes("text/event-stream")
+            ) {
+              // 禁用 Nginx 类缓冲（如果前面有 Nginx）
+              proxyRes.headers["X-Accel-Buffering"] = "no"
+              // 确保不缓存
+              proxyRes.headers["Cache-Control"] = "no-cache"
+              proxyRes.headers["Connection"] = "keep-alive"
+            }
+          })
+        },
+      },
+      "/swagger-ui": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      "/v3/api-docs": {
+        target: "http://localhost:8080",
         changeOrigin: true,
       },
     },

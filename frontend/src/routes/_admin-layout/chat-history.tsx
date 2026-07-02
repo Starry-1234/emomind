@@ -2,14 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import {
   Clock,
-  Inbox,
-  MessageSquare,
   Search,
-  User as UserIcon,
   X,
 } from "lucide-react"
+import { SealIcon } from "@/components/Common/SealIcon"
 import { useEffect, useRef, useState } from "react"
-import { type UserPublic, UsersService } from "@/client"
+import ReactMarkdown from "react-markdown"
+import { type UserResponse, UsersService } from "@/client"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +30,7 @@ import {
   getConversations,
   getMessages,
 } from "@/services/difyApi"
+
 
 export const Route = createFileRoute("/_admin-layout/chat-history")({
   component: ChatHistory,
@@ -64,13 +64,13 @@ function ChatHistory() {
   // 1) 用户列表
   const { data: usersRes, isLoading: usersLoading } = useQuery({
     queryKey: ["admin-users"],
-    queryFn: () => UsersService.readUsers({ skip: 0, limit: 100 }),
+    queryFn: () => UsersService.getAllUsers({ pageable: { page: 0, size: 100 } }),
   })
 
   const allUsers = (usersRes?.data || []).filter(
-    (u: UserPublic) => !u.is_superuser,
+    (u: UserResponse) => !u.is_superuser,
   )
-  const filteredUsers = allUsers.filter((u: UserPublic) => {
+  const filteredUsers = allUsers.filter((u: UserResponse) => {
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -80,13 +80,14 @@ function ChatHistory() {
   })
 
   const selectedUser = allUsers.find(
-    (u: UserPublic) => u.id === selectedUserId,
-  ) as UserPublic | undefined
+    (u: UserResponse) => u.id === selectedUserId,
+  ) as UserResponse | undefined
 
-  // 2) 会话列表
+  // 2) 会话列表（固定为 ai-doctor，心理测评记录请去「用户测评记录」页面）
   const { data: convsRes, isLoading: convsLoading } = useQuery({
     queryKey: ["admin-conversations", selectedUserId],
-    queryFn: () => getConversations(selectedUserId!, { limit: 50 }),
+    queryFn: () =>
+      getConversations(selectedUserId!, { limit: 50, apiKeyName: "ai-doctor" }),
     enabled: !!selectedUserId,
   })
 
@@ -107,7 +108,8 @@ function ChatHistory() {
 
   // 4) 删除会话
   const deleteMutation = useMutation({
-    mutationFn: (convId: string) => deleteConversation(convId, selectedUserId!),
+    mutationFn: (convId: string) =>
+      deleteConversation(convId, selectedUserId!, "ai-doctor"),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["admin-conversations", selectedUserId],
@@ -139,7 +141,7 @@ function ChatHistory() {
         <div className="flex w-56 flex-shrink-0 flex-col border-r">
           <div className="flex items-center justify-between border-b px-3 py-3">
             <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-muted-foreground" />
+              <SealIcon char="户" size="sm" />
               <span className="text-sm font-semibold">用户列表</span>
             </div>
             {filteredUsers.length > 0 && (
@@ -162,19 +164,20 @@ function ChatHistory() {
           <ScrollArea className="flex-1 px-1">
             {usersLoading ? (
               <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
-                加载中...
+                正在调取案卷…
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-xs text-muted-foreground">
-                <Inbox className="h-8 w-8" />
+                <SealIcon char="空" size="lg" className="opacity-50" />
                 <span>暂无用户</span>
               </div>
             ) : (
               <div className="flex flex-col gap-0.5">
-                {filteredUsers.map((user: UserPublic) => (
+                {filteredUsers.map((user: UserResponse) => (
                   <button
+                    type="button"
                     key={user.id}
-                    onClick={() => handleSelectUser(user.id)}
+                    onClick={() => handleSelectUser(user.id!)}
                     className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors cursor-pointer ${
                       selectedUserId === user.id
                         ? "bg-primary/10 text-primary"
@@ -205,7 +208,7 @@ function ChatHistory() {
         <div className="flex w-64 flex-shrink-0 flex-col border-r">
           <div className="flex items-center justify-between border-b px-3 py-3">
             <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <SealIcon char="话" />
               <span className="text-sm font-semibold">会话记录</span>
             </div>
             {conversations.length > 0 && (
@@ -216,7 +219,7 @@ function ChatHistory() {
           </div>
           {!selectedUserId ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-xs text-muted-foreground">
-              <UserIcon className="h-10 w-10" />
+              <SealIcon char="户" size="lg" className="opacity-50" />
               <span>请先选择一个用户</span>
             </div>
           ) : (
@@ -234,11 +237,11 @@ function ChatHistory() {
               <ScrollArea className="flex-1 px-1">
                 {convsLoading ? (
                   <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
-                    加载中...
+                    正在整理会话…
                   </div>
                 ) : conversations.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-8 text-xs text-muted-foreground">
-                    <Inbox className="h-8 w-8" />
+                    <SealIcon char="空" size="lg" className="opacity-50" />
                     <span>该用户暂无会话</span>
                   </div>
                 ) : (
@@ -246,16 +249,20 @@ function ChatHistory() {
                     {conversations.map((conv: DifyConversation) => (
                       <div
                         key={conv.id}
-                        className={`group relative rounded-md px-2.5 py-2.5 cursor-pointer ${
+                        className={`group relative rounded-md transition-colors ${
                           selectedConvId === conv.id
                             ? "bg-primary/10 text-primary"
                             : "hover:bg-muted"
                         }`}
-                        onClick={() => setSelectedConvId(conv.id)}
                       >
-                        <div className="flex items-start justify-between gap-1">
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-xs font-medium">
+                        <button
+                          type="button"
+                          className="w-full px-2.5 py-2.5 text-left cursor-pointer"
+                          aria-label={`选择会话: ${conv.name || "未命名会话"}`}
+                          onClick={() => setSelectedConvId(conv.id)}
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate text-xs font-medium pr-6">
                               {conv.name || "未命名会话"}
                             </div>
                             <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -263,16 +270,14 @@ function ChatHistory() {
                               {formatTime(conv.updated_at || conv.created_at)}
                             </div>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setDeleteConvId(conv.id)
-                            }}
-                            className="opacity-0 group-hover:opacity-100 shrink-0 size-6 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
-                          >
-                            <X className="size-3.5" />
-                          </button>
-                        </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConvId(conv.id)}
+                          className="opacity-0 group-hover:opacity-100 absolute right-1.5 top-1.5 size-6 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                        >
+                          <X className="size-3.5" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -286,8 +291,7 @@ function ChatHistory() {
         <div className="flex min-w-0 flex-1 flex-col">
           {!selectedConvId ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
-              <MessageSquare className="h-12 w-12" />
-              <span className="text-sm">
+              <span className="font-serif-zh text-sm">
                 {!selectedUserId
                   ? "请先选择用户，再查看会话"
                   : "请选择一个会话查看详情"}
@@ -363,7 +367,7 @@ function MessageList({
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-        加载消息中...
+        正在整理信笺…
       </div>
     )
   }
@@ -371,7 +375,7 @@ function MessageList({
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-        暂无消息记录
+        暂无信笺往来
       </div>
     )
   }
@@ -379,31 +383,41 @@ function MessageList({
   const sorted = [...messages].sort((a, b) => a.created_at - b.created_at)
 
   return (
-    <ScrollArea className="flex-1 px-4 py-3">
-      <div className="flex flex-col gap-3">
+    <ScrollArea className="flex-1 px-5 py-4">
+      <div className="flex flex-col gap-5">
         {sorted.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.query ? "justify-end" : "justify-start"}`}
-          >
+          <div key={msg.id} className="flex flex-col gap-4">
             {msg.query && (
-              <div className="max-w-[70%]">
-                <div className="rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-sm text-primary-foreground">
-                  {msg.query}
-                </div>
-                <div className="mt-1 text-right text-[10px] text-muted-foreground">
-                  用户 · {formatTime(msg.created_at)}
+              <div className="flex justify-end items-start gap-2">
+                <div className="text-[10px] text-muted-foreground pt-2">我问</div>
+                <div className="max-w-[75%]">
+                  <div className="rounded-2xl rounded-br-md bg-primary px-4 py-3 text-sm text-primary-foreground leading-relaxed shadow-sm">
+                    {msg.query}
+                  </div>
+                  <div className="text-right text-[10px] text-muted-foreground mt-1">
+                    {formatTime(msg.created_at)}
+                  </div>
                 </div>
               </div>
             )}
             {msg.answer && (
-              <div className="max-w-[70%]">
-                <div className="rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm text-foreground">
-                  {msg.answer}
+              <div className="flex justify-start items-start gap-2">
+                <div className="flex-1">
+                  <div className="relative w-full rounded-lg rounded-tl-none border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
+                    <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary/30 rounded-full" />
+                    <div className="pl-3 prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-card-foreground prose-headings:text-card-foreground prose-a:text-primary">
+                      <ReactMarkdown>
+                        {msg.answer
+                          .replace(/^正在分析中，请稍候...\n?/, "")
+                          .replace(/^思考中...\n?/, "")}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    医者 · {formatTime(msg.created_at)}
+                  </div>
                 </div>
-                <div className="mt-1 text-[10px] text-muted-foreground">
-                  AI · {formatTime(msg.created_at)}
-                </div>
+                <div className="text-[10px] text-muted-foreground pt-2">医者曰</div>
               </div>
             )}
           </div>

@@ -1,86 +1,37 @@
 services:
 
-  # Local services are available on their ports, but also available on:
-  # http://api.localhost.tiangolo.com: backend
-  # http://dashboard.localhost.tiangolo.com: frontend
-  # etc. To enable it, update .env, set:
-  # DOMAIN=localhost.tiangolo.com
-  proxy:
-    image: traefik:3.6
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "8081:80"
-      - "8090:8080"
-    # Duplicate the command from compose.yml to add --api.insecure=true
-    command:
-      # Enable Docker in Traefik, so that it reads labels from Docker services
-      - --providers.docker
-      # Add a constraint to only use services with the label for this stack
-      - --providers.docker.constraints=Label(`traefik.constraint-label`, `traefik-public`)
-      # Do not expose all Docker services, only the ones explicitly exposed
-      - --providers.docker.exposedbydefault=false
-      # Create an entrypoint "http" listening on port 80
-      - --entrypoints.http.address=:80
-      # Create an entrypoint "https" listening on port 443
-      - --entrypoints.https.address=:443
-      # Enable the access log, with HTTP requests
-      - --accesslog
-      # Enable the Traefik log, for configurations and errors
-      - --log
-      # Enable debug logging for local development
-      - --log.level=DEBUG
-      # Enable the Dashboard and API
-      - --api
-      # Enable the Dashboard and API in insecure mode for local development
-      - --api.insecure=true
-    labels:
-      # Enable Traefik for this service, to make it available in the public network
-      - traefik.enable=true
-      - traefik.constraint-label=traefik-public
-      # Dummy https-redirect middleware that doesn't really redirect, only to
-      # allow running it locally
-      - traefik.http.middlewares.https-redirect.contenttype.autodetect=false
-    networks:
-      - traefik-public
-      - default
-
   db:
     restart: "no"
     ports:
-      - "5432:5432"
+      - "5433:5432"
+
+  redis:
+    restart: "no"
+    ports:
+      - "6390:6379"
 
   adminer:
     restart: "no"
     ports:
-      - "8080:8080"
+      - "8082:8080"
 
   backend:
     restart: "no"
     ports:
-      - "8000:8000"
+      - "8080:8080"
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend-sb/Dockerfile
+    # For Spring Boot dev mode with hot reload, use:
+    # command: ./mvnw spring-boot:run -Dspring-boot.run.jvmArguments="-Dspring.devtools.restart.enabled=true"
     # command: sleep infinity  # Infinite loop to keep container alive doing nothing
-    command:
-      - fastapi
-      - run
-      - --reload
-      - "app/main.py"
     develop:
       watch:
-        - path: ./backend
+        - path: ./backend-sb/src
           action: sync
-          target: /app/backend
-          ignore:
-            - ./backend/.venv
-            - .venv
-        - path: ./backend/pyproject.toml
+          target: /app/src
+        - path: ./backend-sb/pom.xml
           action: rebuild
-    # TODO: remove once coverage is done locally
-    volumes:
-      - ./backend/htmlcov:/app/backend/htmlcov
     env_file:
       - .env
     # environment:
@@ -89,16 +40,23 @@ services:
     #   SMTP_TLS: "false"
     #   EMAILS_FROM_EMAIL: "noreply@example.com"
 
+  ai-runtime:
+    restart: "no"
+    ports:
+      - "8000:8000"
+    environment:
+      LANGGRAPH_LOG_LEVEL: DEBUG
+
   mailcatcher:
     image: schickling/mailcatcher
     ports:
-      - "10800:1080"
-      - "1025:1025"
+      - "10801:1080"
+      - "1026:1025"
 
   frontend:
     restart: "no"
     ports:
-      - "5173:80"
+      - "5174:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -106,7 +64,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        - VITE_API_URL=http://localhost:8000
+        - VITE_API_URL=http://localhost:5174
         - NODE_ENV=development
     volumes:
       - ./frontend/nginx-dev.conf:/etc/nginx/conf.d/default.conf
@@ -117,7 +75,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile.playwright
       args:
-        - VITE_API_URL=http://backend:8000
+        - VITE_API_URL=http://backend:8080
         - NODE_ENV=production
     ipc: host
     depends_on:
@@ -126,7 +84,7 @@ services:
     env_file:
       - .env
     environment:
-      - VITE_API_URL=http://backend:8000
+      - VITE_API_URL=http://backend:8080
       - MAILCATCHER_HOST=http://mailcatcher:1080
       # For the reports when run locally
       - PLAYWRIGHT_HTML_HOST=0.0.0.0
@@ -136,8 +94,3 @@ services:
       - ./frontend/test-results:/app/frontend/test-results
     ports:
       - 9323:9323
-
-networks:
-  traefik-public:
-    # For local dev, don't expect an external Traefik network
-    external: false

@@ -72,7 +72,6 @@ export default function SignUp() {
   const onSubmit = (data: FormData) => {
     if (signUpMutation.isPending) return
 
-    // exclude confirm_password from submission data
     const { confirm_password: _confirm_password, ...submitData } = data
     signUpMutation.mutate(submitData)
   }
@@ -82,28 +81,27 @@ export default function SignUp() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-6"
+          className="flex flex-col gap-5"
         >
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">创建账户</h1>
-          </div>
-
           <div className="grid gap-4">
             <FormField
               control={form.control}
               name="full_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>姓名</FormLabel>
+                  <FormLabel className="text-xs font-medium text-foreground">
+                    姓名
+                  </FormLabel>
                   <FormControl>
                     <Input
                       data-testid="full-name-input"
                       placeholder="请输入姓名"
                       type="text"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -113,16 +111,19 @@ export default function SignUp() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>邮箱</FormLabel>
+                  <FormLabel className="text-xs font-medium text-foreground">
+                    邮箱
+                  </FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
                       placeholder="user@example.com"
                       type="email"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -132,15 +133,18 @@ export default function SignUp() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>密码</FormLabel>
+                  <FormLabel className="text-xs font-medium text-foreground">
+                    密码
+                  </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="password-input"
-                      placeholder="Password"
+                      placeholder="密码"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -150,31 +154,37 @@ export default function SignUp() {
               name="confirm_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>确认密码</FormLabel>
+                  <FormLabel className="text-xs font-medium text-foreground">
+                    确认密码
+                  </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="confirm-password-input"
                       placeholder="请再次输入密码"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
 
             <LoadingButton
               type="submit"
-              className="w-full"
               loading={signUpMutation.isPending}
+              className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-md"
             >
               注册
             </LoadingButton>
           </div>
 
-          <div className="text-center text-sm">
+          <div className="text-center text-xs text-muted-foreground">
             已有账户？{" "}
-            <RouterLink to="/login" className="underline underline-offset-4">
+            <RouterLink
+              to="/login"
+              className="font-medium text-primary underline underline-offset-4 hover:text-accent"
+            >
               登录
             </RouterLink>
           </div>

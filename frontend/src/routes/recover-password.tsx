@@ -8,7 +8,7 @@ import {
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { LoginService } from "@/client"
+import { AuthenticationService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
   Form,
@@ -58,7 +58,7 @@ function RecoverPassword() {
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const recoverPassword = async (data: FormData) => {
-    await LoginService.recoverPassword({
+    await AuthenticationService.recoverPassword({
       email: data.email,
     })
   }
@@ -82,44 +82,46 @@ function RecoverPassword() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-6"
+          className="flex flex-col gap-5"
         >
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">找回密码</h1>
-          </div>
-
           <div className="grid gap-4">
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>邮箱</FormLabel>
+                  <FormLabel className="text-xs font-medium text-foreground">
+                    邮箱
+                  </FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
                       placeholder="user@example.com"
                       type="email"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
 
             <LoadingButton
               type="submit"
-              className="w-full"
               loading={mutation.isPending}
+              className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-md"
             >
               继续
             </LoadingButton>
           </div>
 
-          <div className="text-center text-sm">
+          <div className="text-center text-xs text-muted-foreground">
             记得密码？{" "}
-            <RouterLink to="/login" className="underline underline-offset-4">
+            <RouterLink
+              to="/login"
+              className="font-medium text-primary underline underline-offset-4 hover:text-accent"
+            >
               登录
             </RouterLink>
           </div>

@@ -12,8 +12,6 @@ const {
   BorderStyle,
   ShadingType,
   HeadingLevel,
-  Column,
-  SectionType,
 } = require("docx")
 
 const border = { style: BorderStyle.SINGLE, size: 6, color: "AAAAAA" }

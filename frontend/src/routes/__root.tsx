@@ -6,7 +6,7 @@ import NotFound from "@/components/Common/NotFound"
 
 export const Route = createRootRoute({
   component: () => (
-    <>
+    <div className="h-full">
       <HeadContent />
       <Outlet />
       {import.meta.env.DEV && (
@@ -15,7 +15,7 @@ export const Route = createRootRoute({
           <ReactQueryDevtools initialIsOpen={false} />
         </>
       )}
-    </>
+    </div>
   ),
   notFoundComponent: () => <NotFound />,
   errorComponent: () => <ErrorComponent />,

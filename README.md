@@ -1,146 +1,50 @@
-# emomind
+# EmoMind LangGraph 版本
 
-A psychological assessment platform with AI chat integration, online testing, file analysis, and multi-theme support.
+> 分支：`emomind-lg` · 基于 `emomind-sb` 平迁 · 完全脱离 Dify
 
-## Features
+EmoMind 心理测评平台的下一代后端实现。本分支将 `emomind-sb` 中基于 Dify 的 AI 能力（心理咨询聊天 + 心理测评 + 多模态评估）整体替换为 **LangGraph + 自建 Python 边车服务**架构。
 
-- **User Authentication**
-  - JWT-based login/register with role-based access control (admin / regular user)
-  - Password recovery and reset
+## 与 `emomind-sb` 的关系
 
-- **AI Psychological Doctor**
-  - Dify AI-powered chat for psychological Q&A
-  - Streaming response with pause/continue support
-  - Message copy and regenerate with multi-version switching
-  - Conversation history management
+| | `emomind-sb` | `emomind-lg`（本分支）|
+|--|--------------|----------------------|
+| 后端核心 | Spring Boot 3.2 + Java 17 | Spring Boot 3.2 + Java 17（保留）|
+| AI 编排 | Dify（外部服务，REST/SSE 代理）| LangGraph（Python 边车，原生事件）|
+| 多模态 | Dify 插件（Tongyi + MinMax）| 自建 Qwen3-Omni + MinMax 调用 |
+| 会话存储 | Dify 内部 DB | PostgresSaver + pgvector + Redis |
+| 前端交互 | Dify SSE 事件协议 | LangGraph 原生事件（SSE），前端 useChat 重写 |
+| 部署 | Docker Compose（含 Dify 容器）| Docker Compose（含 ai-runtime 容器，**不再依赖 Dify**）|
 
-- **Online Psychological Tests**
-  - Interactive psychological assessment scales
-  - Real-time scoring and progress tracking
-  - AI-generated analysis reports
-  - Test record history
+两个分支**互不依赖**：本分支不再需要部署 Dify。所有 Dify 相关代码、配置、Dockerfile 在本分支中删除。
 
-- **File Analysis**
-  - Upload psychological assessment files for AI analysis
-  - Generated analysis reports with downloadable results
+## 快速入口
 
-- **Admin Dashboard**
-  - User management
-  - Chat history overview
-  - Test records management
-  - System settings
+- 📋 [迁移总览](doc/langgraph-migration/00-overview.md) — 从哪里开始读
+- 🏗️ [架构设计](doc/langgraph-migration/01-architecture.md) — 顶层架构
+- 🧩 [组件契约](doc/langgraph-migration/02-components.md) — 每个服务的接口
+- 🔄 [数据流](doc/langgraph-migration/03-data-flow.md) — 关键请求链路
+- ⚠️ [错误处理](doc/langgraph-migration/04-error-handling.md) — 重试 / 取消 / 降级
+- 🧪 [测试与里程碑](doc/langgraph-migration/05-testing-milestones.md) — 验证策略
+- 🗺️ [Dify 节点映射](doc/langgraph-migration/06-dify-node-mapping.md) — 老节点 → 新节点对照
+- 💬 [Prompt 抽取指南](doc/langgraph-migration/07-prompts.md) — 从 YAML 抽取到 Python
 
-- **Themes**
-  - Dark / light / warm theme support
+## 子模块规格（每个子模块一个文档）
 
-## Tech Stack
+- [ai-runtime（Python 边车）](doc/langgraph-migration/09-ai-runtime.md)
+- [记忆子系统（PostgresSaver + pgvector + Redis）](doc/langgraph-migration/10-memory.md)
+- [ConversationMeta（Spring 端元数据）](doc/langgraph-migration/11-conversation-meta.md)
+- [前端迁移](doc/langgraph-migration/08-frontend-migration.md)
+- [部署（compose / Dockerfile / 环境变量）](doc/langgraph-migration/12-deployment.md)
 
-**Backend**: FastAPI + SQLModel + PostgreSQL + JWT + Alembic
-
-**Frontend**: React 19 + TypeScript + Vite + TanStack Router + TanStack Query + Tailwind CSS + shadcn/ui
-
-**AI Integration**: Dify AI Platform (streaming chat, workflow, conversation management)
-
-**Infra**: Docker Compose + Traefik + Mailcatcher
-
-## Quick Start
+## 本地开发（占位 — 实施阶段补充）
 
 ```bash
-# Start the full stack with hot reload
-docker compose watch
-
-# Or start normally
-docker compose up -d
+# 待 M0 完成
+# cp .env.example .env
+# docker compose up -d db redis
+# cd backend-sb && set -a && source ../.env && set +a && mvn spring-boot:run
+# cd ai-runtime && uv run fastapi dev app/main.py
+# cd frontend && bun install && bun run dev
 ```
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
-| API Docs | http://localhost:8000/docs |
-| Adminer (DB) | http://localhost:8080 |
-| Traefik | http://localhost:8090 |
-| Mailcatcher | http://localhost:1080 |
-
-## First Login
-
-Create a superuser in the backend container:
-
-```bash
-docker compose exec backend bash
-```
-
-Inside the container:
-
-```bash
-alembic upgrade head
-python app/initial_data.py
-```
-
-Default superuser credentials (change after first login):
-
-- Email: `admin@example.com`
-- Password: `changethis`
-
-## Environment Setup
-
-All configuration is in a single `.env` file at the project root (shared by both backend and frontend):
-
-```bash
-cp .env.example .env
-```
-
-Key variables to configure:
-
-- `SECRET_KEY` — JWT signing key, change to a random string
-- `POSTGRES_PASSWORD` — Database password
-- `FIRST_SUPERUSER_PASSWORD` — Initial admin password
-- `DIFY_API_URL` — Dify API endpoint (use `http://192.168.x.x/v1` for Docker on Windows)
-- `DIFY_AI_DOCTOR_API_KEY` — Dify API key for AI doctor
-- `DIFY_TEST_API_KEY` — Dify API key for psychological tests
-- `VITE_API_URL` — Frontend-to-backend address (`http://localhost:8000` for local dev)
-
-> **Note**: On Windows with Docker Desktop, use your host LAN IP (e.g., `192.168.1.x`) for `DIFY_API_URL` instead of `localhost` or `host.docker.internal`.
-
-## Dev Commands
-
-```bash
-# Frontend (from frontend/ directory)
-cd frontend && bun install && bun run dev
-
-# Backend (from backend/ directory)
-cd backend && uv sync && fastapi dev app/main.py
-
-# Run tests
-bash ./scripts/test.sh
-
-# Generate API client after backend changes
-bash ./scripts/generate-client.sh
-```
-
-## Project Structure
-
-```
-backend/app/
-  main.py               # FastAPI app factory
-  models/               # SQLModel models (User, Item, TestRecord, FileAnalysisReport, etc.)
-  repositories/         # Repository pattern (CRUD operations)
-  services/             # Business logic layer (Dify, Admin, User, Analysis)
-  api/routes/           # API endpoints
-
-frontend/src/
-  routes/          # Page components by route
-  components/      # UI components
-  hooks/           # Custom React hooks
-  services/        # API service modules (difyApi.ts, analysisApi.ts)
-  client/          # Auto-generated OpenAPI client
-```
-
-## API Overview
-
-- `/api/v1/login` — Authentication
-- `/api/v1/users` — User management
-- `/api/v1/test-records` — Psychological test records
-- `/api/v1/analysis` — File analysis reports
-- `/api/v1/dify/*` — Dify AI integration (chat, conversations, messages)
-- `/api/v1/utils` — Health check and utilities
+完整命令将在 M0 里程碑完成后补全。

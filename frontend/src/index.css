@@ -1,6 +1,7 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap");
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -40,473 +41,505 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Custom font families */
+  --font-serif: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
+
+/* ========================================
+   东方疗愈期刊 —— 主题系统
+   ======================================== */
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.5982 0.10687 182.4689);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.5982 0.10687 182.4689);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.5rem;
+
+  /* 宣纸白 —— 默认 light */
+  --background: #f7f4ef;
+  --foreground: #1a1a1a;
+  --card: #fdfcfa;
+  --card-foreground: #1a1a1a;
+  --popover: #fdfcfa;
+  --popover-foreground: #1a1a1a;
+
+  /* 黛青 —— 主色 */
+  --primary: #2d4a3e;
+  --primary-foreground: #f7f4ef;
+
+  /* 淡墨底色 */
+  --secondary: #ede8e0;
+  --secondary-foreground: #3d3d3d;
+  --muted: #ede8e0;
+  --muted-foreground: #6b6b6b;
+
+  /* 朱砂 —— 强调色 */
+  --accent: #c45a43;
+  --accent-foreground: #ffffff;
+
+  --destructive: #a83f2e;
+  --border: #d9d3c9;
+  --input: #d9d3c9;
+  --ring: #2d4a3e;
+
+  /* 图表色 —— 东方矿物颜料 */
+  --chart-1: #2d4a3e;
+  --chart-2: #c45a43;
+  --chart-3: #8b7355;
+  --chart-4: #5a7a6a;
+  --chart-5: #d4a574;
+
+  /* 侧边栏 */
+  --sidebar: #f0ece5;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #2d4a3e;
+  --sidebar-primary-foreground: #f7f4ef;
+  --sidebar-accent: #e4ddd2;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #d9d3c9;
+  --sidebar-ring: #2d4a3e;
+
+  /* 登录页水波动画 */
+  --ripple-color: rgba(45, 74, 62, 0.15);
+  --ripple-center: rgba(45, 74, 62, 0.06);
+  --card-shadow: rgba(45, 74, 62, 0.08);
 }
 
-/* 缤纷主题变量 */
-.colorful {
-  /* 基础背景色 - 彩虹渐变 */
-  --background: oklch(0.95 0.05 285);
-  --foreground: oklch(0.2 0.05 285);
-
-  /* 为整个页面添加动态背景 */
-  background: linear-gradient(
-    45deg,
-    oklch(0.8 0.15 0 / 0.3) 0% /* 红色 - 30%透明度 */,
-    oklch(0.8 0.15 60 / 0.3) 20% /* 橙色 - 30%透明度 */,
-    oklch(0.8 0.15 120 / 0.3) 40% /* 黄色 - 30%透明度 */,
-    oklch(0.8 0.15 180 / 0.3) 60% /* 绿色 - 30%透明度 */,
-    oklch(0.8 0.15 240 / 0.3) 80% /* 蓝色 - 30%透明度 */,
-    oklch(0.8 0.15 300 / 0.3) 100% /* 紫色 - 30%透明度 */
-  );
-  background-size: 400% 400%;
-  animation: colorfulGradientShift 12s ease infinite;
-
-  /* 卡片和组件背景 - 半透明白色 */
-  --card: oklch(1 0 0 / 0.9);
-  --card-foreground: oklch(0.2 0.05 285);
-  --popover: oklch(1 0 0 / 0.95);
-  --popover-foreground: oklch(0.2 0.05 285);
-
-  /* 主色调 - 柔和的彩虹色 */
-  --primary: oklch(0.7 0.15 285);
-  --primary-foreground: oklch(0.98 0.02 285);
-
-  /* 次要颜色 */
-  --secondary: oklch(0.97 0.03 285);
-  --secondary-foreground: oklch(0.3 0.05 285);
-
-  /* 其他组件颜色 */
-  --muted: oklch(0.98 0.02 285);
-  --muted-foreground: oklch(0.4 0.05 285);
-  --accent: oklch(0.96 0.03 285);
-  --accent-foreground: oklch(0.3 0.05 285);
-  --destructive: oklch(0.65 0.25 25);
-
-  /* 边框和输入框 - 去除粉红色，使用柔和的颜色 */
-  --border: oklch(0.9 0.02 240);
-  --input: oklch(0.98 0.01 285);
-  --ring: oklch(0.7 0.15 285);
-
-  /* 侧边栏特殊颜色 */
-  --sidebar: oklch(1 0 0 / 0.95);
-  --sidebar-foreground: oklch(0.2 0.05 285);
-  --sidebar-primary: oklch(0.7 0.15 285);
-  --sidebar-primary-foreground: oklch(0.98 0.02 285);
-  --sidebar-accent: oklch(0.97 0.03 285);
-  --sidebar-accent-foreground: oklch(0.3 0.05 285);
-  --sidebar-border: oklch(0.9 0.02 240);
-  --sidebar-ring: oklch(0.7 0.15 285);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.65 0.10687 182.4689);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.65 0.10687 182.4689);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
-/* 温馨主题变量 */
+/* 温馨主题 —— 烛黄 */
 .warm {
-  /* 基础背景色 - 温柔的紫色渐变 */
-  --background: oklch(0.95 0.03 285);
-  --foreground: oklch(0.3 0.05 285);
+  --background: #f5f0e6;
+  --foreground: #3d3229;
+  --card: #fdfbf7;
+  --card-foreground: #3d3229;
+  --popover: #fdfbf7;
+  --popover-foreground: #3d3229;
 
-  /* 卡片和组件背景 */
-  --card: oklch(0.97 0.02 285);
-  --card-foreground: oklch(0.3 0.05 285);
-  --popover: oklch(0.97 0.02 285);
-  --popover-foreground: oklch(0.3 0.05 285);
+  --primary: #8b5e4a;
+  --primary-foreground: #f5f0e6;
 
-  /* 主色调 - 温柔的紫色 */
-  --primary: oklch(0.65 0.15 285); /* 紫蓝色 */
-  --primary-foreground: oklch(0.98 0.02 285);
+  --secondary: #ebe4d8;
+  --secondary-foreground: #3d3229;
+  --muted: #ebe4d8;
+  --muted-foreground: #7a6b5a;
 
-  /* 次要颜色 - 淡紫色辅助色 */
-  --secondary: oklch(0.92 0.05 285);
-  --secondary-foreground: oklch(0.35 0.08 285);
+  --accent: #b85c48;
+  --accent-foreground: #ffffff;
 
-  /* 其他组件颜色 */
-  --muted: oklch(0.94 0.03 285);
-  --muted-foreground: oklch(0.5 0.08 285);
-  --accent: oklch(0.9 0.06 285);
-  --accent-foreground: oklch(0.35 0.08 285);
-  --destructive: oklch(0.65 0.25 25);
+  --destructive: #9c3d2e;
+  --border: #d9d0c1;
+  --input: #d9d0c1;
+  --ring: #8b5e4a;
 
-  /* 边框和输入框 */
-  --border: oklch(0.85 0.04 285);
-  --input: oklch(0.85 0.04 285);
-  --ring: oklch(0.65 0.15 285);
+  --chart-1: #8b5e4a;
+  --chart-2: #b85c48;
+  --chart-3: #a68b6a;
+  --chart-4: #6a8a7a;
+  --chart-5: #c9a86c;
 
-  /* 侧边栏特殊颜色 */
-  --sidebar: oklch(0.96 0.02 285);
-  --sidebar-foreground: oklch(0.3 0.05 285);
-  --sidebar-primary: oklch(0.65 0.15 285);
-  --sidebar-primary-foreground: oklch(0.98 0.02 285);
-  --sidebar-accent: oklch(0.92 0.05 285);
-  --sidebar-accent-foreground: oklch(0.35 0.08 285);
-  --sidebar-border: oklch(0.85 0.04 285);
-  --sidebar-ring: oklch(0.65 0.15 285);
+  --sidebar: #ebe4d8;
+  --sidebar-foreground: #3d3229;
+  --sidebar-primary: #8b5e4a;
+  --sidebar-primary-foreground: #f5f0e6;
+  --sidebar-accent: #d5c9b5;
+  --sidebar-accent-foreground: #3d3229;
+  --sidebar-border: #d9d0c1;
+  --sidebar-ring: #8b5e4a;
+
+  /* 登录页水波动画 */
+  --ripple-color: rgba(139, 94, 74, 0.15);
+  --ripple-center: rgba(139, 94, 74, 0.06);
+  --card-shadow: rgba(139, 94, 74, 0.08);
 }
 
-/* 温馨主题渐变效果 */
-.warm-gradient-bg {
-  background: linear-gradient(
-    135deg,
-    oklch(0.8 0.12 285) 0% /* 浅紫色 */,
-    oklch(0.7 0.15 300) 50% /* 粉紫色 */,
-    oklch(0.65 0.18 270) 100% /* 深紫色 */
-  );
+/* 深色主题 —— 夜读墨 */
+.dark {
+  --background: #1c1c1a;
+  --foreground: #e8e2d9;
+  --card: #242421;
+  --card-foreground: #e8e2d9;
+  --popover: #242421;
+  --popover-foreground: #e8e2d9;
+
+  --primary: #7ba392;
+  --primary-foreground: #1c1c1a;
+
+  --secondary: #2f2f2c;
+  --secondary-foreground: #c8c2b9;
+  --muted: #2f2f2c;
+  --muted-foreground: #99948d;
+
+  --accent: #d97b65;
+  --accent-foreground: #1c1c1a;
+
+  --destructive: #e07060;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #7ba392;
+
+  --chart-1: #7ba392;
+  --chart-2: #d97b65;
+  --chart-3: #a89f8f;
+  --chart-4: #5a8a7a;
+  --chart-5: #c9a86c;
+
+  --sidebar: #1f1f1c;
+  --sidebar-foreground: #e8e2d9;
+  --sidebar-primary: #7ba392;
+  --sidebar-primary-foreground: #1c1c1a;
+  --sidebar-accent: #3a3a36;
+  --sidebar-accent-foreground: #e8e2d9;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #7ba392;
+
+  /* 登录页水波动画 */
+  --ripple-color: rgba(123, 163, 146, 0.15);
+  --ripple-center: rgba(123, 163, 146, 0.06);
+  --card-shadow: rgba(0, 0, 0, 0.3);
 }
 
-.warm-gradient-text {
-  background: linear-gradient(
-    135deg,
-    oklch(0.8 0.12 285) 0%,
-    oklch(0.7 0.15 300) 50%,
-    oklch(0.65 0.18 270) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* ========================================
+   纸张纹理与水墨背景
+   ======================================== */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
-/* 温馨主题下的特殊组件样式 */
-.warm .warm-card {
-  background: linear-gradient(
-    135deg,
-    oklch(0.97 0.02 285) 0%,
-    oklch(0.95 0.03 285) 100%
-  );
-  border: 1px solid oklch(0.85 0.04 285);
-  box-shadow: 0 4px 20px oklch(0.65 0.15 285 / 0.1);
-}
-
-/* 温馨主题下的按钮效果 */
-.warm .btn-warm-primary {
-  background: linear-gradient(
-    135deg,
-    oklch(0.7 0.15 285) 0%,
-    oklch(0.6 0.18 300) 100%
-  );
-  color: oklch(0.98 0.02 285);
-  border: none;
-  transition: all 0.3s ease;
-}
-
-.warm .btn-warm-primary:hover {
-  background: linear-gradient(
-    135deg,
-    oklch(0.75 0.15 285) 0%,
-    oklch(0.65 0.18 300) 100%
-  );
-  transform: translateY(-1px);
-  box-shadow: 0 6px 25px oklch(0.65 0.15 285 / 0.3);
-}
-
-/* 温馨主题动画效果 */
-.warm .warm-transition {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.warm .warm-shadow {
-  box-shadow: 0 4px 20px oklch(0.7 0.15 285 / 0.1);
-}
-
-.warm .warm-shadow-lg {
-  box-shadow: 0 8px 32px oklch(0.7 0.15 285 / 0.15);
-}
-
-/* 缤纷主题动画效果 */
-.colorful-gradient-bg {
-  background: linear-gradient(
-    45deg,
-    oklch(0.85 0.08 0) 0% /* 淡红色 */,
-    oklch(0.85 0.08 60) 20% /* 淡橙色 */,
-    oklch(0.85 0.08 120) 40% /* 淡黄色 */,
-    oklch(0.85 0.08 180) 60% /* 淡绿色 */,
-    oklch(0.85 0.08 240) 80% /* 淡蓝色 */,
-    oklch(0.85 0.08 300) 100% /* 淡紫色 */
-  );
-  background-size: 400% 400%;
-  animation: colorfulGradientShift 12s ease infinite;
-}
-
-@keyframes colorfulGradientShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  25% {
-    background-position: 100% 0%;
-  }
-  50% {
-    background-position: 100% 100%;
-  }
-  75% {
-    background-position: 0% 100%;
-  }
-}
-
-/* 缤纷主题的浮动粒子效果 */
-.colorful-particles {
+.ink-wash-bg {
   position: relative;
   overflow: hidden;
 }
 
-.colorful-particles::before {
+.ink-wash-bg::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image:
-    radial-gradient(
-      circle at 20% 80%,
-      oklch(0.85 0.08 0 / 0.3) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 80% 20%,
-      oklch(0.85 0.08 240 / 0.3) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 40% 40%,
-      oklch(0.85 0.08 120 / 0.3) 0%,
-      transparent 50%
-    );
-  background-size: 200% 200%;
-  animation: colorfulParticles 20s linear infinite;
-  opacity: 0.08; /* 降低到8%透明度 */
+  inset: -50%;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 30%, oklch(0.7 0.05 160 / 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 80% 70%, oklch(0.7 0.04 30 / 0.1) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, oklch(0.75 0.03 120 / 0.08) 0%, transparent 50%);
+  animation: inkBreathe 12s ease-in-out infinite;
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
 }
 
-@keyframes colorfulParticles {
-  0% {
-    background-position:
-      0% 0%,
-      100% 100%,
-      50% 50%;
-    transform: rotate(0deg);
+@keyframes inkBreathe {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.8;
   }
-  100% {
-    background-position:
-      100% 100%,
-      0% 0%,
-      150% 150%;
-    transform: rotate(360deg);
+  33% {
+    transform: translate(3%, -2%) scale(1.05);
+    opacity: 1;
+  }
+  66% {
+    transform: translate(-2%, 3%) scale(0.98);
+    opacity: 0.7;
   }
 }
 
-/* 缤纷主题下的特殊组件样式 */
-.colorful .colorful-card {
-  background: linear-gradient(
-    135deg,
-    oklch(1 0 0 / 0.95) 0%,
-    oklch(0.99 0.02 60 / 0.95) 100%
-  );
-  border: 1px solid oklch(0.92 0.03 285 / 0.5);
-  box-shadow: 0 8px 32px oklch(0.8 0.1 300 / 0.1);
-  backdrop-filter: blur(10px);
+/* ========================================
+   字体工具类
+   ======================================== */
+
+.font-serif-zh {
+  font-family: var(--font-serif);
 }
 
-/* 缤纷主题下的按钮效果 */
-.colorful .btn-colorful-primary {
-  background: linear-gradient(
-    135deg,
-    oklch(0.8 0.12 0) 0%,
-    oklch(0.8 0.12 60) 25%,
-    oklch(0.8 0.12 120) 50%,
-    oklch(0.8 0.12 240) 75%,
-    oklch(0.8 0.12 300) 100%
-  );
-  color: oklch(0.98 0.02 285);
-  border: none;
-  transition: all 0.3s ease;
-  background-size: 200% 200%;
-  animation: colorfulButtonShift 4s ease infinite;
+.font-sans-zh {
+  font-family: var(--font-sans);
 }
 
-@keyframes colorfulButtonShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
+/* ========================================
+   动画工具类
+   ======================================== */
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+  transform: translateY(20px);
 }
 
-.colorful .btn-colorful-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px oklch(0.65 0.25 300 / 0.4);
-  animation-play-state: paused;
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+  opacity: 0;
 }
 
-/* 缤纷主题动画效果 */
-.colorful .colorful-shadow {
-  box-shadow: 0 8px 32px oklch(0.65 0.25 300 / 0.3);
+.animate-seal-pulse {
+  animation: sealPulse 3s ease-in-out infinite;
 }
 
-.colorful .colorful-shadow-lg {
-  box-shadow: 0 16px 64px oklch(0.65 0.25 300 / 0.4);
-}
-
-/* 缤纷主题过渡效果 */
-.colorful .colorful-transition {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 缤纷主题文字渐变 */
-.colorful-gradient-text {
-  background: linear-gradient(
-    45deg,
-    oklch(0.8 0.12 0) 0%,
-    oklch(0.8 0.12 60) 20%,
-    oklch(0.8 0.12 120) 40%,
-    oklch(0.8 0.12 180) 60%,
-    oklch(0.8 0.12 240) 80%,
-    oklch(0.8 0.12 300) 100%
-  );
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: colorfulTextShift 6s ease infinite;
-}
-
-@keyframes colorfulTextShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-/* 缤纷主题的全局背景容器 */
-.colorful body {
-  background: linear-gradient(
-    45deg,
-    oklch(0.8 0.15 0 / 0.2) 0% /* 红色 - 20%透明度 */,
-    oklch(0.8 0.15 60 / 0.2) 20% /* 橙色 - 20%透明度 */,
-    oklch(0.8 0.15 120 / 0.2) 40% /* 黄色 - 20%透明度 */,
-    oklch(0.8 0.15 180 / 0.2) 60% /* 绿色 - 20%透明度 */,
-    oklch(0.8 0.15 240 / 0.2) 80% /* 蓝色 - 20%透明度 */,
-    oklch(0.8 0.15 300 / 0.2) 100% /* 紫色 - 20%透明度 */
-  );
-  background-size: 400% 400%;
-  animation: colorfulGradientShift 12s ease infinite;
+.animate-brush-underline {
   position: relative;
 }
 
-/* 缤纷主题的粒子背景覆盖层 */
-.colorful body::before {
+.animate-brush-underline::after {
   content: "";
-  position: fixed;
-  top: 0;
+  position: absolute;
+  bottom: -2px;
   left: 0;
   width: 100%;
-  height: 100%;
-  background-image:
-    radial-gradient(
-      circle at 20% 80%,
-      oklch(0.85 0.08 0 / 0.3) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 80% 20%,
-      oklch(0.85 0.08 240 / 0.3) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 40% 40%,
-      oklch(0.85 0.08 120 / 0.3) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 60% 60%,
-      oklch(0.85 0.08 300 / 0.3) 0%,
-      transparent 50%
-    );
-  background-size: 200% 200%;
-  animation: colorfulParticles 20s linear infinite;
-  opacity: 0.05; /* 降低整体透明度到5% */
-  pointer-events: none;
-  z-index: -1;
+  height: 3px;
+  background: var(--accent);
+  opacity: 0.6;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: brushDraw 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
 }
+
+.animate-paper-float {
+  animation: paperFloat 8s ease-in-out infinite;
+}
+
+.animate-ink-spread {
+  animation: inkSpread 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* 交错延迟 */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-600 { animation-delay: 0.6s; }
+.delay-700 { animation-delay: 0.7s; }
+.delay-800 { animation-delay: 0.8s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sealPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 oklch(0.6 0.15 25 / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px oklch(0.6 0.15 25 / 0);
+  }
+}
+
+@keyframes brushDraw {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes paperFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(0.5deg); }
+}
+
+@keyframes inkSpread {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* 趋势图水墨动画 */
+@keyframes inkStrokeDraw {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes inkFillFade {
+  from { opacity: 0; }
+  to { opacity: 0.3; }
+}
+
+.ink-stroke {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: inkStrokeDraw 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ink-fill {
+  opacity: 0;
+  animation: inkFillFade 1.2s ease-out 0.8s forwards;
+}
+
+/* ========================================
+   组件风格增强
+   ======================================== */
+
+/* 便签卡片 */
+.memo-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 1px 2px oklch(0.2 0 0 / 0.04),
+    0 4px 12px oklch(0.2 0 0 / 0.04);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.memo-card:hover {
+  transform: translateY(-2px) rotate(0.2deg);
+  box-shadow:
+    0 4px 8px oklch(0.2 0 0 / 0.05),
+    0 12px 24px oklch(0.2 0 0 / 0.06);
+}
+
+/* 毛笔按钮效果 */
+.brush-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.brush-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.brush-btn:hover::before {
+  opacity: 0.08;
+  transform: scaleX(1);
+}
+
+.brush-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px oklch(0.2 0 0 / 0.1);
+}
+
+/* 印章 */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  border-radius: 4px;
+  position: relative;
+}
+
+.seal::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 1px solid var(--accent);
+  opacity: 0.4;
+  border-radius: 2px;
+}
+
+/* 竖排标题 */
+.writing-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* 水墨分割线 */
+.ink-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border) 20%, var(--border) 80%, transparent);
+  border: none;
+}
+
+/* ========================================
+   涟漪动画
+   ======================================== */
+
+@keyframes rippleExpand {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+  }
+}
+
+.ripple-ring {
+  box-shadow: 0 0 0 3px rgba(45, 74, 62, 0.2);
+  animation: rippleExpand 8s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+/* ========================================
+   兼容旧主题类名（将在聊天页重设计后精简）
+   ======================================== */
+
+.warm-gradient-bg {
+  background: linear-gradient(135deg, #8b5e4a 0%, #b85c48 100%);
+}
+
+.warm-gradient-text {
+  background: linear-gradient(135deg, #8b5e4a 0%, #b85c48 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.warm-shadow {
+  box-shadow: 0 4px 20px oklch(0.55 0.12 25 / 0.2);
+}
+
+.warm-shadow-lg {
+  box-shadow: 0 8px 32px oklch(0.55 0.12 25 / 0.25);
+}
+
+.btn-warm-primary {
+  background: linear-gradient(135deg, #8b5e4a 0%, #b85c48 100%);
+  color: #f5f0e6;
+}
+
+.text-warm-primary {
+  color: #8b5e4a;
+}
+
+/* ========================================
+   基础层
+   ======================================== */
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
   }
   button,
   [role="button"] {

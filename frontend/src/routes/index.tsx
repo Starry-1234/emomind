@@ -13,7 +13,7 @@ export const Route = createFileRoute("/")({
     }
     try {
       // 已登录用户根据角色重定向
-      const user = await UsersService.readUserMe()
+      const user = await UsersService.getCurrentUser()
       if (user.is_superuser) {
         throw redirect({ to: "/admin" })
       }

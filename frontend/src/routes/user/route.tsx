@@ -1,13 +1,13 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
-import { ApiError, type UserPublic, UsersService } from "@/client"
+import { ApiError, type UserResponse, UsersService } from "@/client"
 import { Footer } from "@/components/Common/Footer"
-import { ConversationProvider } from "@/components/contexts/ConversationContext"
 import UserSidebar from "@/components/Sidebar/UserSidebar"
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { ConversationProvider } from "@/contexts/ConversationContext"
 import { isLoggedIn } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/user")({
@@ -18,9 +18,9 @@ export const Route = createFileRoute("/user")({
         to: "/login",
       })
     }
-    let user: UserPublic | undefined
+    let user: UserResponse | undefined
     try {
-      user = await UsersService.readUserMe()
+      user = await UsersService.getCurrentUser()
     } catch (error) {
       if (
         error instanceof ApiError &&
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/user")({
 export default function UserLayout() {
   return (
     <ConversationProvider>
-      <SidebarProvider>
+      <SidebarProvider className="h-full flex">
         <UserSidebar />
         <SidebarInset className="flex flex-col">
           <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4">

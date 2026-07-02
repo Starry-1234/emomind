@@ -7,6 +7,7 @@ import {
   useState,
 } from "react"
 import { TestRecordsService } from "@/client"
+import { createThrottledMessagesUpdater as createThrottledMessagesUpdaterImpl, type ThrottledMessagesUpdater } from "@/lib/throttledMessagesUpdater"
 import { getMessages, sendMessageStream } from "@/services/difyApi"
 
 export interface ChatMessage {
@@ -116,6 +117,13 @@ function setStreamNotStreaming(userId: string, sessionId: string) {
   }
 }
 
+function createThrottledMessagesUpdater(
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
+  delay = 50,
+): ThrottledMessagesUpdater<ChatMessage> {
+  return createThrottledMessagesUpdaterImpl<ChatMessage>(setMessages, delay)
+}
+
 export interface TestQuestion {
   id: string
   text: string
@@ -190,6 +198,17 @@ export function usePsychologicalTest(
   const isStreamingRef = useRef(isStreaming)
   isStreamingRef.current = isStreaming
 
+  // 持有当前活跃流的 throttled updater，handleStop / 启动新流时可调用 cancel()
+  // 来丢弃挂起的 setMessages 写入。
+  const throttledRef = useRef<ThrottledMessagesUpdater<ChatMessage> | null | undefined>(undefined)
+  const cancelThrottled = (): void => {
+    const t: ThrottledMessagesUpdater<ChatMessage> | null | undefined = throttledRef.current
+    if (t) t.cancel()
+  }
+  const setThrottled = (t: ThrottledMessagesUpdater<ChatMessage> | null): void => {
+    throttledRef.current = t
+  }
+
   // ── 会话切换同步处理 ──────────────────────────────────────────────────────
   const prevSessionIdRef = useRef<string | null>(null)
 
@@ -255,20 +274,105 @@ export function usePsychologicalTest(
         )
         for (const msg of sorted) {
           if (msg.query && typeof msg.query === "string") {
-            if (!msg.query.startsWith("RESULT_JSON::")) {
-              chatMsgs.push({ role: "user", content: msg.query })
+            if (msg.query.startsWith("RESULT_JSON::")) continue
+
+            // 检查是否重复 query（regenerate/continue）
+            let lastUserIdx = -1
+            for (let k = chatMsgs.length - 1; k >= 0; k--) {
+              if (chatMsgs[k].role === "user") {
+                lastUserIdx = k
+                break
+              }
             }
+            const lastUser = lastUserIdx >= 0 ? chatMsgs[lastUserIdx] : null
+            const isDuplicateQuery =
+              lastUser?.role === "user" &&
+              lastUser.content.trim() === (msg.query || "").trim()
+            if (isDuplicateQuery) {
+              if (msg.answer && typeof msg.answer === "string") {
+                const testJsonIdx = msg.answer.indexOf("TEST_JSON::")
+                let content: string | null = null
+                if (testJsonIdx !== -1) {
+                  const prefixText = msg.answer.slice(0, testJsonIdx).trim()
+                  if (prefixText) content = prefixText
+                } else if (!msg.answer.startsWith("RESULT_JSON::")) {
+                  content = msg.answer
+                }
+
+                if (content) {
+                  let lastAssistantIdx = -1
+                  for (let k = chatMsgs.length - 1; k > lastUserIdx; k--) {
+                    if (chatMsgs[k].role === "assistant") {
+                      lastAssistantIdx = k
+                      break
+                    }
+                  }
+                  if (lastAssistantIdx !== -1) {
+                    const lastAssistant = chatMsgs[lastAssistantIdx]
+                    const existingVersions = lastAssistant.versions || [
+                      lastAssistant.content,
+                    ]
+                    chatMsgs[lastAssistantIdx] = {
+                      ...lastAssistant,
+                      versions: [...existingVersions, content],
+                      currentVersion: existingVersions.length,
+                      content,
+                    }
+                  }
+                }
+              }
+              continue
+            }
+
+            chatMsgs.push({ role: "user", content: msg.query })
           }
+
           if (msg.answer && typeof msg.answer === "string") {
             const testJsonIdx = msg.answer.indexOf("TEST_JSON::")
+            let content: string | null = null
             if (testJsonIdx !== -1) {
               const prefixText = msg.answer.slice(0, testJsonIdx).trim()
-              if (prefixText) {
-                chatMsgs.push({ role: "assistant", content: prefixText })
-              }
+              if (prefixText) content = prefixText
             } else if (!msg.answer.startsWith("RESULT_JSON::")) {
-              chatMsgs.push({ role: "assistant", content: msg.answer })
+              content = msg.answer
             }
+
+            if (content) {
+              let lastUserIdx = -1
+              for (let k = chatMsgs.length - 1; k >= 0; k--) {
+                if (chatMsgs[k].role === "user") {
+                  lastUserIdx = k
+                  break
+                }
+              }
+              const lastUser = lastUserIdx >= 0 ? chatMsgs[lastUserIdx] : null
+              const isNewPair =
+                lastUser?.role === "user" &&
+                lastUser.content.trim() === (msg.query || "").trim()
+              const isOrphanAnswer = !msg.query
+
+              if (isNewPair || isOrphanAnswer) {
+                chatMsgs.push({ role: "assistant", content })
+              }
+            }
+          }
+        }
+        // 保留现有 assistant 消息的前端元数据（isPaused / userQuery 等）
+        const existingAssistants = messagesRef.current.filter(
+          (m) => m.role === "assistant",
+        )
+        let assistantIdx = 0
+        for (let i = 0; i < chatMsgs.length; i++) {
+          if (chatMsgs[i].role === "assistant") {
+            const existing = existingAssistants[assistantIdx]
+            if (existing) {
+              chatMsgs[i] = {
+                ...chatMsgs[i],
+                isPaused: existing.isPaused,
+                userQuery: existing.userQuery,
+              }
+            }
+            assistantIdx++
           }
         }
         setMessages(chatMsgs)
@@ -318,13 +422,16 @@ export function usePsychologicalTest(
               if (entry && entry.messages.length > 0) {
                 setMessages(entry.messages)
               }
-              unregisterStream(userId, sessionId)
-              // 关键修复：检查是否为用户主动暂停，若是则不调用 loadMessages
-              const lastAssistant = entry?.messages
+              // 在 unregister 之前取快照，避免 entry 为 undefined 时
+              // `!lastAssistant?.isPaused` 退化为 `!undefined` = true，
+              // 错误地调用 loadMessages 覆盖用户的暂停状态。
+              const wasPaused = entry?.messages
                 ?.slice()
                 .reverse()
-                .find((m) => m.role === "assistant")
-              if (!lastAssistant?.isPaused) {
+                .find((m) => m.role === "assistant")?.isPaused === true
+              unregisterStream(userId, sessionId)
+              // 关键修复：检查是否为用户主动暂停，若是则不调用 loadMessages
+              if (!wasPaused) {
                 loadMessages(sessionId)
               }
             } else {
@@ -481,11 +588,6 @@ export function usePsychologicalTest(
     }
   }, [sessionId, loadMessages, userId, isStreaming])
 
-  // 自动滚动
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [])
-
   // ── 解析 TEST_JSON ──────────────────────────────────────────────────────────
   const tryParseTestJson = (
     content: string | undefined | null,
@@ -574,6 +676,10 @@ export function usePsychologicalTest(
       messages: nextMessages,
     })
 
+    cancelThrottled()
+    const throttled = createThrottledMessagesUpdater(setMessages, 50)
+    setThrottled(throttled)
+
     let accumulated = ""
     let streamHandledEnd = false
     let detectedTest: TestData | null = null
@@ -595,18 +701,8 @@ export function usePsychologicalTest(
                   { ...lastMsg, content: "正在生成测评题目..." },
                 ]
                 updateMessagesAndCache(updatedMessages, true)
+                throttled.schedule(updatedMessages)
               }
-              setMessages((prev) => {
-                const newMsgs = [...prev]
-                const last = newMsgs[newMsgs.length - 1]
-                if (last?.isStreaming) {
-                  newMsgs[newMsgs.length - 1] = {
-                    ...last,
-                    content: "正在生成测评题目...",
-                  }
-                }
-                return newMsgs
-              })
             } else if (!accumulated.includes("TEST_JSON::")) {
               const lastMsg =
                 messagesRef.current[messagesRef.current.length - 1]
@@ -616,21 +712,12 @@ export function usePsychologicalTest(
                   { ...lastMsg, content: accumulated },
                 ]
                 updateMessagesAndCache(updatedMessages, true)
+                throttled.schedule(updatedMessages)
               }
-              setMessages((prev) => {
-                const newMsgs = [...prev]
-                const last = newMsgs[newMsgs.length - 1]
-                if (last?.isStreaming) {
-                  newMsgs[newMsgs.length - 1] = {
-                    ...last,
-                    content: accumulated,
-                  }
-                }
-                return newMsgs
-              })
             }
           },
           onMessageEnd: (_messageId, conversationId) => {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -736,6 +823,7 @@ export function usePsychologicalTest(
             setWorkflowRunning(false)
           },
           onError: (message) => {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -883,6 +971,12 @@ export function usePsychologicalTest(
     let accumulated = ""
     let streamHandledEnd = false
 
+    // 创建 throttled updater，让分析结果在 React state 中实时可见，
+    // 否则用户在整个流期间看到的都是空 assistant 气泡。
+    cancelThrottled()
+    const throttled = createThrottledMessagesUpdater(setMessages, 50)
+    setThrottled(throttled)
+
     try {
       await sendMessageStream(
         resultText,
@@ -899,11 +993,13 @@ export function usePsychologicalTest(
                   ...messagesRef.current.slice(i + 1),
                 ]
                 updateMessagesAndCache(updatedMessages, true)
+                throttled.schedule(updatedMessages)
                 break
               }
             }
           },
           onMessageEnd: (_messageId, conversationId) => {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -1061,16 +1157,22 @@ export function usePsychologicalTest(
                 )?.content || null
             }
 
-            TestRecordsService.createTestRecord({
+            TestRecordsService.createRecord1({
               requestBody: {
                 test_name: testName,
-                user_topic: userTopic,
+                user_topic: userTopic || undefined,
                 total_score: capturedTotalScore,
-                total_max: capturedTest?.scoring?.total_max || null,
+                total_max: capturedTest?.scoring?.total_max || undefined,
                 result_description: accumulated,
-                questions: questions,
-                answers: answers,
-                scoring_ranges: capturedTest?.scoring?.ranges || [],
+                questions: questions as unknown as Array<{
+                  [key: string]: { [key: string]: unknown }
+                }>,
+                answers: answers as unknown as Array<{
+                  [key: string]: { [key: string]: unknown }
+                }>,
+                scoring_ranges: (capturedTest?.scoring?.ranges || []) as unknown as Array<{
+                  [key: string]: { [key: string]: unknown }
+                }>,
                 conversation_id: sessionIdRef.current || undefined,
               },
             })
@@ -1089,6 +1191,7 @@ export function usePsychologicalTest(
             setWorkflowRunning(false)
           },
           onError: (message) => {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -1170,6 +1273,11 @@ export function usePsychologicalTest(
   // 停止输出
   const handleStop = () => {
     stoppedRef.current = true
+
+    // 取消挂起的 throttled 写入，避免 50ms 待定定时器在 stop 之后用
+    // 旧的 isStreaming:true 快照覆盖刚刚设置的 isPaused:true 状态。
+    cancelThrottled()
+    setThrottled(null)
 
     const currentSessionId = sessionIdRef.current || ""
     const registryEntry = getStreamEntry(userId, currentSessionId)
@@ -1326,6 +1434,10 @@ export function usePsychologicalTest(
       messages: messagesRef.current,
     })
 
+    cancelThrottled()
+    const throttled = createThrottledMessagesUpdater(setMessages, 50)
+    setThrottled(throttled)
+
     let accumulated = continueContent
     let streamHandledEnd = false
 
@@ -1350,9 +1462,10 @@ export function usePsychologicalTest(
               isStreaming: true,
               timestamp: Date.now(),
             })
-            setMessages(updatedMessages)
+            throttled.schedule(updatedMessages)
           },
           onMessageEnd(_messageId, conversationId) {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -1401,6 +1514,7 @@ export function usePsychologicalTest(
             loadConversationsRef.current()
           },
           onError(message) {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -1522,6 +1636,10 @@ export function usePsychologicalTest(
       messages: messagesRef.current,
     })
 
+    cancelThrottled()
+    const throttled = createThrottledMessagesUpdater(setMessages, 50)
+    setThrottled(throttled)
+
     let accumulated = ""
     let streamHandledEnd = false
 
@@ -1546,9 +1664,10 @@ export function usePsychologicalTest(
               isStreaming: true,
               timestamp: Date.now(),
             })
-            setMessages(updatedMessages)
+            throttled.schedule(updatedMessages)
           },
           onMessageEnd(_messageId, conversationId) {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -1600,6 +1719,7 @@ export function usePsychologicalTest(
             loadConversationsRef.current()
           },
           onError(message) {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)

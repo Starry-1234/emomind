@@ -2,10 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 
 import {
-  type Body_login_login_access_token as AccessToken,
-  LoginService,
-  type UserPublic,
-  type UserRegister,
+  type LoginRequest,
+  AuthenticationService,
+  type UserResponse,
+  type UserRegisterRequest,
   UsersService,
 } from "@/client"
 import { handleError } from "@/utils"
@@ -20,15 +20,15 @@ const useAuth = () => {
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
-  const { data: user } = useQuery<UserPublic | null, Error>({
+  const { data: user } = useQuery<UserResponse | null, Error>({
     queryKey: ["currentUser"],
-    queryFn: UsersService.readUserMe,
+    queryFn: UsersService.getCurrentUser,
     enabled: isLoggedIn(),
   })
 
   const signUpMutation = useMutation({
-    mutationFn: (data: UserRegister) =>
-      UsersService.registerUser({ requestBody: data }),
+    mutationFn: (data: UserRegisterRequest) =>
+      UsersService.signup({ requestBody: data }),
     onSuccess: () => {
       navigate({ to: "/login" })
     },
@@ -38,18 +38,18 @@ const useAuth = () => {
     },
   })
 
-  const login = async (data: AccessToken) => {
-    const response = await LoginService.loginAccessToken({
-      formData: data,
+  const login = async (data: LoginRequest) => {
+    const response = await AuthenticationService.login({
+      request: data,
     })
-    localStorage.setItem("access_token", response.access_token)
+    localStorage.setItem("access_token", response.access_token || "")
   }
 
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: async () => {
       // 登录成功后获取用户信息，根据角色重定向
-      const user = await UsersService.readUserMe()
+      const user = await UsersService.getCurrentUser()
       if (user.is_superuser) {
         navigate({ to: "/admin" })
       } else {

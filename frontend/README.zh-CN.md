@@ -1,5 +1,11 @@
 # 前端
 
+> **注意（emomind-lg / M0）**：本 README 从 `emomind-sb` 复制。前端的
+> AI 集成正在从 `difyApi.ts` 迁移到 `langgraphApi.ts`（M5 阶段）。
+> 在此之前，6 个 import 了 `difyApi` 的文件已被 neutralise，
+> dev server 可能不能完整跑通。详见
+> `doc/langgraph-migration/08-frontend-migration.md`。
+
 ## 技术栈
 
 React 19 + TypeScript + Vite + TanStack Router + TanStack Query + Tailwind CSS + shadcn/ui
@@ -42,7 +48,7 @@ src/
   routes/            # 页面组件
   components/        # UI 组件
   hooks/             # 自定义 hooks
-  services/          # API 模块（difyApi、analysisApi）
+  services/          # API 模块（langgraphApi [M5+]、analysisApi；difyApi 已 neutralise）
   client/            # 自动生成的 OpenAPI 客户端
 ```
 

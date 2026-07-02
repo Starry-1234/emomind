@@ -9,7 +9,7 @@ import {
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { LoginService } from "@/client"
+import { AuthenticationService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
   Form,
@@ -81,7 +81,9 @@ function ResetPassword() {
 
   const mutation = useMutation({
     mutationFn: (data: { new_password: string; token: string }) =>
-      LoginService.resetPassword({ requestBody: data }),
+      AuthenticationService.resetPassword({
+        requestBody: { newPassword: data.new_password, token: data.token },
+      }),
     onSuccess: () => {
       showSuccessToast("密码更新成功")
       form.reset()
@@ -99,27 +101,26 @@ function ResetPassword() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-6"
+          className="flex flex-col gap-5"
         >
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">重置密码</h1>
-          </div>
-
           <div className="grid gap-4">
             <FormField
               control={form.control}
               name="new_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>新密码</FormLabel>
+                  <FormLabel className="text-xs font-medium text-foreground">
+                    新密码
+                  </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="new-password-input"
                       placeholder="请输入新密码"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -129,31 +130,37 @@ function ResetPassword() {
               name="confirm_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>确认密码</FormLabel>
+                  <FormLabel className="text-xs font-medium text-foreground">
+                    确认密码
+                  </FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="confirm-password-input"
                       placeholder="请再次输入新密码"
+                      className="border-input bg-secondary transition-colors focus-visible:border-primary focus-visible:ring-primary/20"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
 
             <LoadingButton
               type="submit"
-              className="w-full"
               loading={mutation.isPending}
+              className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-md"
             >
               重置密码
             </LoadingButton>
           </div>
 
-          <div className="text-center text-sm">
+          <div className="text-center text-xs text-muted-foreground">
             记得密码？{" "}
-            <RouterLink to="/login" className="underline underline-offset-4">
+            <RouterLink
+              to="/login"
+              className="font-medium text-primary underline underline-offset-4 hover:text-accent"
+            >
               登录
             </RouterLink>
           </div>

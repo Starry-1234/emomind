@@ -1,118 +1,216 @@
 # CLAUDE.md
 
-本文件为 Claude Code (claude.ai/code) 提供在此代码仓库中工作的指导。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 项目概述
+# EmoMind LangGraph 版本 — 开发者指引
 
-**emomind** 是一个基于 FastAPI 全栈模板构建的心理测评平台，提供用户认证（管理员/普通用户）、心理测评文件分析报告、Dify AI 聊天集成（心理问答咨询）、在线测评以及音视频录制功能。
+## 项目定位
+
+EmoMind 心理测评平台。`emomind-sb`（同级目录，使用 Spring Boot 3.2 + FastAPI/Dify）的 AI 能力整体迁移到 **LangGraph + Python 边车** 的版本。
+本仓库与 `emomind-sb` **互不依赖**：本分支不再需要部署 Dify，所有 Dify 相关代码在本仓库中已经被删除/在 M0 阶段删除。
+
+| 维度 | `emomind-sb` | `emomind-lg`（本分支） |
+|---|---|---|
+| 后端核心 | Spring Boot 3.2 + Java 17 | Spring Boot 3.2 + Java 17（沿用） |
+| AI 编排 | Dify（外部服务，REST/SSE 代理） | LangGraph（Python 边车，原生事件） |
+| 多模态 | Dify 插件 | 自建 Qwen3-Omni + MinMax 调用 |
+| 会话存储 | Dify 内部 DB | PostgresSaver + pgvector + Redis |
+| SSE 协议 | Dify 私有事件 | LangGraph 原生事件 |
+
+> ⚠️ **不要参考 `emomind-sb/` 的 Dify 相关代码**。Dify 调用代码会在 M0 阶段从本仓库删除；如需了解历史实现，看 `doc/langgraph-migration/06-dify-node-mapping.md`。
+
+## 📌 文档入口（这是新会话的第一站）
+
+完整设计文档与规格在 [`doc/langgraph-migration/`](doc/langgraph-migration/)。新会话开始前 **先读 `doc/langgraph-migration/README.md`** 的"未来会话使用指南"一节，按当前任务定位到对应子模块文档。
+
+| 你接下来要做的事 | 先读哪个文档 |
+|---|---|
+| 接手 ai-runtime（Python 边车） | [`09-ai-runtime.md`](doc/langgraph-migration/09-ai-runtime.md) |
+| 接手 Spring `ConversationMeta` / `AiController` | [`11-conversation-meta.md`](doc/langgraph-migration/11-conversation-meta.md) + [`02-components.md`](doc/langgraph-migration/02-components.md) |
+| 接手前端 `useChat.ts` / `langgraphApi.ts` 重写 | [`08-frontend-migration.md`](doc/langgraph-migration/08-frontend-migration.md) |
+| 接手部署 / Compose / Dockerfile | [`12-deployment.md`](doc/langgraph-migration/12-deployment.md) |
+| 接手 Prompt 工程 | [`07-prompts.md`](doc/langgraph-migration/07-prompts.md) |
+| 接手记忆（pgvector / PostgresSaver / Redis） | [`10-memory.md`](doc/langgraph-migration/10-memory.md) |
+| 把 Dify YAML 节点映射到 LangGraph 节点 | [`06-dify-node-mapping.md`](doc/langgraph-migration/06-dify-node-mapping.md) |
+| 调试 SSE 流 / 暂停续传 / 重新生成 | [`03-data-flow.md`](doc/langgraph-migration/03-data-flow.md) + [`04-error-handling.md`](doc/langgraph-migration/04-error-handling.md) |
+
+> 📋 当前里程碑实施计划在 `doc/langgraph-migration/plans/`。M0 计划已写好：`plans/2026-07-01-emomind-lg-milestone-0-foundation.md`。
 
 ## 技术栈
 
-- **后端**: FastAPI (Python 3.10+) + SQLModel (ORM) + PostgreSQL + Alembic 迁移 + JWT 认证
-- **前端**: React 19 + TypeScript + Vite + TanStack Router + TanStack Query + Tailwind CSS 4.x + shadcn/ui
-- **基础设施**: Docker Compose + Traefik（反向代理）+ Mailcatcher（邮件测试）
-- **包管理**: `uv`（后端 Python）、`bun`（前端 Node.js）
+- **后端**：Spring Boot 3.2.5 + Java 17 + Maven + Spring Data JPA + Spring Security + Flyway + PostgreSQL 17 + pgvector
+- **Python 边车（新增）**：FastAPI 0.115 + LangGraph 0.2.x + LangChain 0.3.x + Pydantic 2.x + asyncpg + redis-py + tenacity（包管理用 `uv`）
+- **前端**：React 19 + TypeScript + Vite + TanStack Router/Query + Tailwind CSS 4 + shadcn/ui + Biome
+- **基础设施**：Docker Compose + Traefik + Redis 7 + Mailcatcher + 移除的 Dify
+- **AI 提供商**：MinMax（文本）/ Qwen3-Omni（多模态）；可加 LangSmith 做可观测（可选）
+- **测试**：JUnit 5 + Mockito + Testcontainers（pgvector 后端）/ pytest + httpx（ai-runtime）/ Playwright（前端 E2E）
 
-## 常用命令
+## 顶层架构（一图速记）
 
-### 全栈开发（Docker）
-```bash
-docker compose watch          # 启动完整栈，支持热重载
-docker compose logs           # 查看日志
-docker compose logs backend   # 查看后端日志
-docker compose down -v        # 停止并清理数据
+```
+React Frontend
+    │  HTTPS + SSE
+    ▼
+Spring Boot Gateway (backend-sb/)          ← 鉴权 + 聚合（JwtAuthenticationFilter 沿用）
+    │  WebClient + X-Internal-Token
+    ▼
+ai-runtime (Python FastAPI + LangGraph)    ← 仅内网
+    │              │              │
+    ▼              ▼              ▼
+PostgreSQL 17 + pgvector     Redis 7
+ (langgraph_checkpoints,     (cancel flags,
+  user_memory,               热数据缓存)
+  conversation_meta)
 ```
 
-### 前端开发
-```bash
-bun run dev                   # 启动前端开发服务器 (http://localhost:5173)
-bun run lint                  # 使用 Biome 检查代码
-bunx playwright test         # E2E 测试
-bunx playwright test --ui    # UI 模式下运行 E2E 测试
+详细架构、约束、目录结构：[`01-architecture.md`](doc/langgraph-migration/01-architecture.md)。
+
+## 仓库当前状态（截至 2026-07-01）
+
+`emomind-lg/` **还没有代码**，只有文档：
+
+```
+emomind-lg/
+├── README.md                              项目根说明（指向 doc/）
+├── CLAUDE.md                              ← 本文件
+├── doc/
+│   ├── README.md                          文档总入口
+│   ├── requirements.md / outline-design.md / detailed-design.md / tasks/  占位（M0 完成后补）
+│   └── langgraph-migration/               13 份规格 + plans/
+└── （M0 已完成 ✅ tag m0-foundation；M1+ 继续填充 LangGraph graphs）
 ```
 
-### 后端开发
-```bash
-cd backend && fastapi dev app/main.py   # 启动后端（从 backend/ 目录）
-cd backend && uv sync                   # 安装依赖
-uv run prek run --all-files             # 代码检查
-bash ./scripts/test.sh                  # 后端测试 (Pytest)
-docker compose exec backend bash scripts/tests-start.sh -x  # 在运行中的栈内运行测试
+实施 M0 时第一步 = `cp -r ../emomind-sb/{backend-sb,frontend,compose.yml,compose.override.yml,.env.example,scripts} ./`。详见 [`plans/2026-07-01-emomind-lg-milestone-0-foundation.md`](doc/langgraph-migration/plans/2026-07-01-emomind-lg-milestone-0-foundation.md) Task 1。
+
+## 端口与开发入口
+
+| 服务 | URL |
+|------|-----|
+| 前端（Vite dev） | http://localhost:5174 |
+| 后端 API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| ai-runtime（开发） | http://localhost:8000（仅内网；不直接暴露给浏览器） |
+| Adminer（DB） | http://localhost:8082 |
+| Traefik Dashboard | http://localhost:8091 |
+| Mailcatcher | http://localhost:10801 |
+| PostgreSQL | localhost:5433（启 pgvector 扩展后用作向量库） |
+| Redis | localhost:6390（容器内 6379） |
+
+> ai-runtime 生产不暴露；Traefik 不配置它的路由规则。详见 [`12-deployment.md`](doc/langgraph-migration/12-deployment.md)。
+
+## 常用命令（占位 — M0 完成后补全）
+
+M0 完成后会在此节补充以下内容。当前可参考 `emomind-sb/CLAUDE.md` 的命令清单，但要做以下替换：
+
+- 启动命令增加 `cd ai-runtime && uv run fastapi dev app/main.py`
+- 测试 ai-runtime：`cd ai-runtime && uv run pytest`
+- 端到端联调：`docker compose up -d db redis ai-runtime` 后再起前后端
+
+完整脚本（`dev-start.sh` / `test.sh`）将在 M0 Task 14 阶段补齐。
+
+## 关键约束（实施时必须遵守）
+
+1. **Spring Boot 仍然是鉴权网关**。前端请求先过现有 `JwtAuthenticationFilter`；转发到 ai-runtime 前注入 `X-User-Id` / `X-User-Roles` / `X-Internal-Token` / `X-Trace-Id`。ai-runtime 永不直接对外。
+2. **会话状态分两层**：业务元数据（Spring `conversation_meta`）+ 图状态（LangGraph `langgraph_checkpoints`），用 `thread_id` 关联。
+3. **SSE 三层透传**：`text/event-stream` + `no-cache` + `X-Accel-Buffering: no`。M0 起 `AiController` 采用与旧 `DifyController` 相同的 Reactor `Flux<DataBuffer>` + `blockLast` + 手动 flush 模式（已删除的 DifyController 不再使用，仅作实现参考）。
+4. **长期记忆异步写入**：extract_facts + write_long_term 由 emit_response 完成后通过 `asyncio.create_task` 触发；不阻塞 SSE 流关闭。
+5. **`extract_facts` / `write_long_term` 不在主 graph 边中** — 否则会因 pgvector 抖动让整个 graph 失败。
+6. **保留全部前端交互能力**：流式、stop、pause/resume、regenerate 多版本、sessionStorage 缓存、polling、文件附件。即使 SSE 协议换了，行为不能变。
+
+## 子模块地图
+
+后端代码（M0 完成后将存在）：
+
+| 后端路径 | 来源 | 用途 |
+|---|---|---|
+| `backend-sb/src/main/java/com/emomind/controller/AiController.java` | 新 | `/api/v1/ai/**` 入口 |
+| `backend-sb/src/main/java/com/emomind/service/AiProxyService.java` | 新 | 转发到 ai-runtime |
+| `backend-sb/src/main/java/com/emomind/service/ConversationMetaService.java` | 新 | 会话元数据 JPA |
+| `backend-sb/src/main/java/com/emomind/config/LangGraphProperties.java` | 新（替代 DifyProperties）| 配置类 |
+| `backend-sb/src/main/java/com/emomind/entity/ConversationMeta.java` | 新 | V5 Flyway 迁移引入 |
+| `backend-sb/src/main/java/com/emomind/entity/UserMemory.java` | 新 | V4 Flyway 迁移引入 |
+| `backend-sb/src/main/resources/db/migration/V4__user_memory.sql` | 新 | pgvector + user_memory 表 |
+| `backend-sb/src/main/resources/db/migration/V5__conversation_meta.sql` | 新 | conversation_meta 表 |
+
+ai-runtime（M1 开始填充）：
+
+```
+ai-runtime/app/
+├── main.py              FastAPI 入口 + lifespan
+├── config.py            pydantic Settings (env LANGGRAPH_*)
+├── auth.py              X-Internal-Token + X-User-Id 校验
+├── streaming.py         LangGraph → SSE 帧
+├── llm_retry.py         tenacity 装饰器
+├── api/                 chat.py / chat_stop.py / conversations.py / messages.py / files.py
+├── graphs/              state.py / ai_doctor.py / psych_test.py / nodes/
+├── models/              factory.py / minimax.py / qwen_omni.py / base.py
+├── memory/              checkpointer.py (PostgresSaver) / long_term.py (UserMemoryStore) / cache.py
+└── prompts/             ai_doctor/ / psych_test/  （Jinja2 模板，从 Dify YAML 抽取）
 ```
 
-### 数据库迁移
-```bash
-docker compose exec backend bash        # 进入后端容器
-alembic revision --autogenerate -m "描述"  # 创建迁移
-alembic upgrade head                    # 应用迁移
-```
+前端（M5 开始填充）：
 
-### 生成 API 客户端
-```bash
-bash ./scripts/generate-client.sh
-```
+| 前端路径 | 用途 |
+|---|---|
+| `frontend/src/services/langgraphApi.ts` | 新，替代 `difyApi.ts` |
+| `frontend/src/hooks/useChat.ts` | 重写，行为保留，内部从 difyApi 切到 langgraphApi |
+| `frontend/src/services/difyApi.ts` | ❌ 删除（M0 Task 5） |
+| `frontend/src/client/` | 自动生成，勿手改（M5 后重新跑 `bun run generate-client`） |
 
-## 架构
+## 测试与里程碑
 
-### 后端结构 (`backend/app/`)
-- `main.py` - FastAPI 应用工厂
-- `models.py` - SQLModel 数据库模型（User, Item, TestRecord, FileAnalysisReport）
-- `crud.py` - 增删改查操作
-- `core/config.py` - Pydantic 配置管理
-- `core/security.py` - JWT 和密码工具
-- `api/routes/` - API 端点（login, users, items, analysis, utils, private）
-- `alembic/versions/` - 数据库迁移文件
+7 个里程碑（详见 [`05-testing-milestones.md`](doc/langgraph-migration/05-testing-milestones.md) + [`00-overview.md`](doc/langgraph-migration/00-overview.md) 里程碑表）：
 
-### 前端结构 (`frontend/src/`)
-- `main.tsx` - React 应用引导，包含 QueryClient 和 Router
-- `routes/` - 按路由组织的页面组件（login, signup, admin/*, user/*）
-- `components/` - UI 组件（ui/, Admin/, Common/, UserSettings/, Sidebar/, contexts/）
-- `hooks/` - 自定义 Hooks（useAuth.ts, useCustomToast.ts, useMobile.ts）
-- `services/` - API 服务（analysisApi.ts, difyApi.ts 用于 Dify AI 集成）
-- `client/` - 自动生成的 OpenAPI 客户端
+| Phase | 交付物 | 计划文件 |
+|---|---|---|
+| **M0** 项目骨架 | ✅ 完成（tag `m0-foundation` @ `97f493d`）：backend-sb 去 Dify；ai-runtime FastAPI 空壳；compose 含 redis + pgvector；V4 Flyway（pgvector + user_memory） | `plans/2026-07-01-emomind-lg-milestone-0-foundation.md` |
+| **M1** ai_doctor 文本路径 | ai_doctor graph 文本路径；`/user/ai-doctor` 切到 langgraphApi | 待写 |
+| **M2** ai_doctor 多模态 | Qwen3-Omni 集成；文件附件全链路 | 待写 |
+| **M3** psych_test | 引导 + Q&A + 评分 + 报告 + TestRecord 回写 | 待写 |
+| **M4** 持久化 + 长期记忆 | PostgresSaver + pgvector + ConversationMeta | 待写 |
+| **M5** 高级交互 | stop / regenerate-versions / 多 tab 同步 | 待写 |
+| **M6** 切流量 + 收尾 | 监控告警；E2E 全绿；archive 旧迁移规格 | 待写 |
 
-### API 路由（后端，`/api/v1/`）
-- `/login` - 认证
-- `/users` - 用户管理（增删改查）
-- `/items` - 项目管理
-- `/analysis` - 文件分析报告管理
-- `/test-records` - 心理测评记录管理
-- `/utils` - 工具端点（健康检查）
-- `/private` - 本地开发专用端点
+每个里程碑结束时：
+1. 跑 `cd backend-sb && mvn test` + `cd ai-runtime && uv run pytest` + `cd frontend && bun run lint`
+2. 跑对应 Playwright E2E（参考 `frontend/tests/`）
+3. 在 commit message 末尾标 `[M<n> complete]`
+4. 写下一里程碑的 plan，再开始
 
-### 前端路由
-- 认证相关: `/login`, `/signup`, `/recover-password`, `/reset-password`
-- 管理员（超级用户）: `/admin/*`
-- 普通用户: `/user/*`（包含 `/user/test` 心理测评和 `/user/test-records` 测评记录）
+## Flyway 迁移
 
-## 服务地址（开发环境）
+| 版本 | 引入时机 | 内容 |
+|---|---|---|
+| V1-V3 | 沿用 emomind-sb | init / superuser / reset tokens |
+| V4 | M0（Task 12） | pgvector 扩展 + `user_memory` 表（HNSW 索引） |
+| V5 | M4 | `conversation_meta` 表 |
 
-| 服务 | 地址 |
-|------|------|
-| 前端 | http://localhost:5173 |
-| 后端 API | http://localhost:8000 |
-| API 文档 (Swagger) | http://localhost:8000/docs |
-| Adminer（数据库管理） | http://localhost:8080 |
-| Traefik | http://localhost:8090 |
-| Mailcatcher | http://localhost:1080 |
+迁移文件路径：`backend-sb/src/main/resources/db/migration/V<n>__<description>.sql`。新增表/字段必须新增 `V<n>__.sql`，不要改已应用的脚本。
 
-## 关键配置
+## 提交与提交信息
 
-- `.env` - 环境变量（SECRET_KEY, FIRST_SUPERUSER_PASSWORD, POSTGRES_PASSWORD, SMTP 配置）
-- `compose.yml` - Docker Compose 主配置
-- `compose.override.yml` - 开发环境覆盖配置（实时代码挂载、热重载）
-- `backend/alembic.ini` - Alembic 迁移配置
-- `frontend/vite.config.ts` - Vite 打包配置
-- `frontend/playwright.config.ts` - Playwright E2E 测试配置
+- 使用 Conventional Commits：`feat:` / `fix:` / `refactor:` / `docs:` / `test:` / `chore:` / `style:`
+- 文档更新：`docs:` 或 `[doc]` 前缀
+- 提交结束前自检：后端 `mvn test` + 前端 `bun run lint` + ai-runtime `uv run pytest`（如已填充）
+- 关键里程碑在 commit message 末尾标 `[M<n> complete]`
 
-## 认证
+## 回退路径
 
-基于 JWT 的角色访问控制：
-- **普通用户** (`is_superuser=false`) → `/user/*` 路由
-- **超级用户** (`is_superuser=true`) → `/admin/*` 路由
+`emomind-sb` 分支与仓库保留作回滚。业务 DB schema 与 `emomind-sb` 兼容（V1-V3 不动），任何里程碑出问题可切回旧分支不影响生产数据。
 
-登录后根据用户角色重定向，未认证访问重定向到 `/login`。
+## 常用 `Superpowers` 入口
 
-## 外部集成
+- 新会话开启功能模块工作：**先读 `doc/langgraph-migration/README.md` 的"未来会话使用指南"** 定位到子模块文档
+- 需要写计划文件 → 用 `superpowers:writing-plans` skill，按 `plans/YYYY-MM-DD-<feature>.md` 命名
+- 需要执行计划 → `superpowers:subagent-driven-development`（推荐）或 `superpowers:executing-plans`
+- 调试 → `superpowers:debugging` / `superpowers:systematic`
 
-**Dify AI 平台**: `frontend/src/services/difyApi.ts` 提供流式聊天、文件上传、对话管理和消息历史功能，用于 AI 驱动的心理问答咨询。
+## 新会话建议流程
+
+1. 先读本文件，确定当前里程碑（看 `plans/` 目录最新文件）
+2. 读 `doc/langgraph-migration/README.md` 的"未来会话使用指南"，按子模块定位
+3. 按"你接下来要做的事"表格读对应子模块文档
+4. 修改前后：跑测试套件，写回归测试
+5. 修改后端接口后 → 重新生成前端 SDK（`bash ./scripts/generate-client.sh`，M0 完成后可用）
+6. 修改设计决策 → 同步更新 `doc/langgraph-migration/` 对应文档
+7. 每完成一个里程碑 → 在 `plans/` 写下一里程碑的计划文件，再开始

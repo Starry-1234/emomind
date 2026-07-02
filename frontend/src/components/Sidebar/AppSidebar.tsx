@@ -1,5 +1,4 @@
-import { ClipboardList, Home, MessageSquare, Users } from "lucide-react"
-
+import { SealIcon } from "@/components/Common/SealIcon"
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
 import {
@@ -13,10 +12,10 @@ import { type Item, Main } from "./Main"
 import { User } from "./User"
 
 const adminItems: Item[] = [
-  { icon: Home, title: "首页", path: "/admin" },
-  { icon: Users, title: "用户管理", path: "/user-manage" },
-  { icon: MessageSquare, title: "用户会话记录", path: "/chat-history" },
-  { icon: ClipboardList, title: "用户测评记录", path: "/admin-test-records" },
+  { icon: () => <SealIcon char="管" />, title: "首页", path: "/admin" },
+  { icon: () => <SealIcon char="户" />, title: "用户管理", path: "/user-manage" },
+  { icon: () => <SealIcon char="话" />, title: "用户会话记录", path: "/chat-history" },
+  { icon: () => <SealIcon char="录" />, title: "用户测评记录", path: "/admin-test-records" },
 ]
 
 export function AppSidebar() {

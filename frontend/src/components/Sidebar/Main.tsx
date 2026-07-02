@@ -1,10 +1,4 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import type { LucideIcon } from "lucide-react"
-
-import {
-  type ConversationModuleType,
-  useConversation,
-} from "@/components/contexts/ConversationContext"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -13,9 +7,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import {
+  type ConversationModuleType,
+  useConversation,
+} from "@/contexts/ConversationContext"
 
 export type Item = {
-  icon: LucideIcon
+  icon: React.ElementType
   title: string
   path: string
 }
@@ -73,7 +71,11 @@ export function Main({ items }: MainProps) {
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
-            const isActive = currentPath.startsWith(item.path)
+            // 首页（/user 或 /admin）使用精确匹配，避免子路径也高亮
+            const isRoot = item.path === "/user" || item.path === "/admin"
+            const isActive = isRoot
+              ? currentPath === item.path
+              : currentPath.startsWith(item.path)
 
             return (
               <SidebarMenuItem key={item.title}>

@@ -5,15 +5,13 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardList,
-  Inbox,
-  Loader2,
   Search,
-  User as UserIcon,
   X,
 } from "lucide-react"
 import { useState } from "react"
 import ReactMarkdown from "react-markdown"
-import { AdminService, type UserPublic, UsersService } from "@/client"
+import { SealIcon } from "@/components/Common/SealIcon"
+import { TestRecordsService, type UserResponse, UsersService } from "@/client"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,17 +89,17 @@ function getScoreColor(
     for (const r of scoringRanges) {
       if (score >= r.min && score <= r.max) {
         if (r.label.includes("正常") || r.label.includes("良好"))
-          return "bg-emerald-100 text-emerald-700"
-        if (r.label.includes("关注")) return "bg-amber-100 text-amber-700"
+          return "bg-[#5a7a6a]/10 text-[#5a7a6a] border-[#5a7a6a]/20"
+        if (r.label.includes("关注")) return "bg-[#8b7355]/10 text-[#8b7355] border-[#8b7355]/20"
         if (r.label.includes("寻求帮助") || r.label.includes("严重"))
-          return "bg-rose-100 text-rose-700"
+          return "bg-[#c45a43]/10 text-[#c45a43] border-[#c45a43]/20"
       }
     }
   }
   // 兼容老数据：无 scoring_ranges 时回退到硬编码
-  if (score >= 80) return "bg-emerald-100 text-emerald-700"
-  if (score >= 60) return "bg-amber-100 text-amber-700"
-  return "bg-rose-100 text-rose-700"
+  if (score >= 80) return "bg-[#5a7a6a]/10 text-[#5a7a6a] border-[#5a7a6a]/20"
+  if (score >= 60) return "bg-[#8b7355]/10 text-[#8b7355] border-[#8b7355]/20"
+  return "bg-[#c45a43]/10 text-[#c45a43] border-[#c45a43]/20"
 }
 
 function getScoreLabel(
@@ -133,8 +131,7 @@ function RecordDetailPanel({ record }: { record: TestRecord | null }) {
   if (!record) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
-        <ClipboardList className="h-12 w-12" />
-        <span className="text-sm">请选择一个测评记录查看详情</span>
+        <span className="font-serif-zh text-sm">请选择一个测评记录查看详情</span>
       </div>
     )
   }
@@ -175,8 +172,8 @@ function RecordDetailPanel({ record }: { record: TestRecord | null }) {
         <div className="space-y-4">
           {/* 用户主题 */}
           {record.user_topic && (
-            <div className="rounded-lg bg-violet-50 border border-violet-100 p-3">
-              <p className="text-xs font-medium text-violet-600 mb-1">
+            <div className="rounded-lg bg-secondary/50 border border-border p-3">
+              <p className="text-xs font-medium text-primary mb-1">
                 测评主题
               </p>
               <p className="text-sm text-foreground">{record.user_topic}</p>
@@ -207,7 +204,7 @@ function RecordDetailPanel({ record }: { record: TestRecord | null }) {
                     return (
                       <div key={q.id} className="text-sm">
                         <p className="font-medium mb-2">
-                          <span className="text-violet-500 mr-1">
+                          <span className="text-primary mr-1">
                             {qIdx + 1}.
                           </span>
                           {q.text}
@@ -220,7 +217,7 @@ function RecordDetailPanel({ record }: { record: TestRecord | null }) {
                                 key={optIdx}
                                 className={`text-xs px-2 py-1 rounded-full border ${
                                   isSelected
-                                    ? "bg-violet-100 border-violet-300 text-violet-700 font-medium"
+                                    ? "bg-primary/10 border-primary/20 text-primary font-medium"
                                     : "bg-muted/50 border-muted text-muted-foreground"
                                 }`}
                               >
@@ -271,13 +268,13 @@ function TestRecordsAdmin() {
   // 1) 用户列表
   const { data: usersRes, isLoading: usersLoading } = useQuery({
     queryKey: ["admin-users"],
-    queryFn: () => UsersService.readUsers({ skip: 0, limit: 100 }),
+    queryFn: () => UsersService.getAllUsers({ pageable: { page: 0, size: 100 } }),
   })
 
   const allUsers = (usersRes?.data || []).filter(
-    (u: UserPublic) => !u.is_superuser,
+    (u: UserResponse) => !u.is_superuser,
   )
-  const filteredUsers = allUsers.filter((u: UserPublic) => {
+  const filteredUsers = allUsers.filter((u: UserResponse) => {
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -290,10 +287,9 @@ function TestRecordsAdmin() {
   const { data: recordsRes, isLoading: recordsLoading } = useQuery({
     queryKey: ["admin-test-records", selectedUserId],
     queryFn: async () => {
-      return AdminService.readAdminTestRecords({
+      return TestRecordsService.getAllRecords({
         userId: selectedUserId || undefined,
-        skip: 0,
-        limit: 100,
+        pageable: { page: 0, size: 100 },
       }) as Promise<TestRecordsResponse>
     },
     enabled: true,
@@ -303,7 +299,7 @@ function TestRecordsAdmin() {
 
   // 3) 删除记录
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => AdminService.deleteAdminTestRecord({ id }),
+    mutationFn: (id: string) => TestRecordsService.deleteAnyRecord({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["admin-test-records", selectedUserId],
@@ -328,7 +324,7 @@ function TestRecordsAdmin() {
         <div className="flex w-56 flex-shrink-0 flex-col border-r">
           <div className="flex items-center justify-between border-b px-3 py-3">
             <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-muted-foreground" />
+              <SealIcon char="户" size="sm" />
               <span className="text-sm font-semibold">用户列表</span>
             </div>
             {filteredUsers.length > 0 && (
@@ -351,20 +347,21 @@ function TestRecordsAdmin() {
           <ScrollArea className="flex-1 px-1">
             {usersLoading ? (
               <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
-                加载中...
+                正在调取案卷…
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-xs text-muted-foreground">
-                <Inbox className="h-8 w-8" />
+                <SealIcon char="空" size="lg" className="opacity-50" />
                 <span>暂无用户</span>
               </div>
             ) : (
               <div className="flex flex-col gap-0.5">
-                {filteredUsers.map((user: UserPublic) => (
+                {filteredUsers.map((user: UserResponse) =>(
                   <button
+                    type="button"
                     key={user.id}
                     onClick={() => {
-                      setSelectedUserId(user.id)
+                      setSelectedUserId(user.id!)
                       setSelectedRecord(null)
                     }}
                     className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors cursor-pointer ${
@@ -409,16 +406,16 @@ function TestRecordsAdmin() {
 
           {!selectedUserId ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-xs text-muted-foreground">
-              <UserIcon className="h-10 w-10" />
+              <SealIcon char="户" size="lg" className="opacity-50" />
               <span>请先选择一个用户</span>
             </div>
           ) : recordsLoading ? (
-            <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
+              正在调取测评记录…
             </div>
           ) : records.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-xs text-muted-foreground">
-              <Inbox className="h-8 w-8" />
+              <SealIcon char="空" size="lg" className="opacity-50" />
               <span>该用户暂无测评记录</span>
             </div>
           ) : (
@@ -427,62 +424,60 @@ function TestRecordsAdmin() {
                 {records.map((record) => (
                   <div
                     key={record.id}
-                    role="button"
-                    tabIndex={0}
-                    className={`group relative rounded-md border p-3 transition-colors cursor-pointer ${
+                    className={`group relative rounded-md border transition-colors ${
                       selectedRecord?.id === record.id
                         ? "bg-primary/5 border-primary/30"
                         : "hover:bg-muted/50"
                     }`}
-                    onClick={() => setSelectedRecord(record)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ")
-                        setSelectedRecord(record)
-                    }}
                   >
-                    <div className="flex items-start justify-between gap-1.5 pr-5">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium truncate">
-                            {record.test_name}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={`text-xs ${getScoreColor(record.total_score, record.scoring_ranges)}`}
-                          >
-                            {getScoreLabel(
-                              record.total_score,
-                              record.scoring_ranges,
-                            )}
-                          </Badge>
+                    <button
+                      type="button"
+                      aria-label={`查看测评记录: ${record.test_name}`}
+                      className="w-full rounded-md p-3 text-left cursor-pointer"
+                      onClick={() => setSelectedRecord(record)}
+                    >
+                      <div className="flex items-start justify-between gap-1.5 pr-5">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium truncate">
+                              {record.test_name}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${getScoreColor(record.total_score, record.scoring_ranges)}`}
+                            >
+                              {getScoreLabel(
+                                record.total_score,
+                                record.scoring_ranges,
+                              )}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="size-3" />
+                              {formatDate(record.created_at)}
+                            </span>
+                            {record.total_score !== null &&
+                              record.total_score !== undefined && (
+                                <span className="font-medium text-foreground">
+                                  {record.total_score}/{record.total_max ?? 100}
+                                </span>
+                              )}
+                          </div>
+                          {record.result_description && (
+                            <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
+                              {record.result_description
+                                .replace(/[#*`]/g, "")
+                                .slice(0, 80)}
+                            </p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="size-3" />
-                            {formatDate(record.created_at)}
-                          </span>
-                          {record.total_score !== null &&
-                            record.total_score !== undefined && (
-                              <span className="font-medium text-foreground">
-                                {record.total_score}/{record.total_max ?? 100}
-                              </span>
-                            )}
-                        </div>
-                        {record.result_description && (
-                          <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
-                            {record.result_description
-                              .replace(/[#*`]/g, "")
-                              .slice(0, 80)}
-                          </p>
-                        )}
                       </div>
-                    </div>
+                    </button>
                     {/* 删除按钮 */}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setDeleteRecordId(record.id)
-                      }}
+                      type="button"
+                      onClick={() => setDeleteRecordId(record.id)}
                       className="absolute right-2 top-2 size-6 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
                     >
                       <X className="size-3.5" />

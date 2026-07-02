@@ -11,6 +11,7 @@ import {
   sendMessageStream,
   uploadFile,
 } from "@/services/difyApi"
+import { createThrottledMessagesUpdater, type ThrottledMessagesUpdater } from "@/lib/throttledMessagesUpdater"
 
 export interface ChatMessage {
   role: "user" | "assistant"
@@ -118,6 +119,9 @@ function setStreamNotStreaming(userId: string, sessionId: string) {
   }
 }
 
+// 直接使用共享模块的 createThrottledMessagesUpdater（泛型版本）。
+type ChatMessagesUpdater = ThrottledMessagesUpdater<ChatMessage>
+
 export function useChat(
   userId: string,
   sessionId: string,
@@ -154,6 +158,19 @@ export function useChat(
   messagesRef.current = messages
   const isStreamingRef = useRef(isStreaming)
   isStreamingRef.current = isStreaming
+
+  // 持有当前活跃流的 throttled updater，handleStop / 卸载 / 切换 session 时可调用 cancel()
+  // 来丢弃挂起的 setMessages 写入（修复：throttled 在终止事件之后用陈旧快照覆盖状态）。
+  // 使用宽类型让 ?. 链在严格模式下也能正确解析。
+  const throttledRef = useRef<ChatMessagesUpdater | null | undefined>(undefined)
+  // 通过方法调用而非直接访问 ref.current 来规避 TypeScript 在某些上下文中的 never 推断。
+  const cancelThrottled = (): void => {
+    const t: ChatMessagesUpdater | null | undefined = throttledRef.current
+    if (t) t.cancel()
+  }
+  const setThrottled = (t: ChatMessagesUpdater | null): void => {
+    throttledRef.current = t
+  }
 
   // ── 会话切换同步处理 ──────────────────────────────────────────────────────
   const prevSessionIdRef = useRef<string | null>(null)
@@ -224,18 +241,90 @@ export function useChat(
         )
         for (const msg of sorted) {
           if (msg.query) {
+            // 检查是否重复 query（regenerate/continue）
+            let lastUserIdx = -1
+            for (let k = chatMsgs.length - 1; k >= 0; k--) {
+              if (chatMsgs[k].role === "user") {
+                lastUserIdx = k
+                break
+              }
+            }
+            const lastUser = lastUserIdx >= 0 ? chatMsgs[lastUserIdx] : null
+            const isDuplicateQuery =
+              lastUser?.role === "user" &&
+              lastUser.content.trim() === (msg.query || "").trim()
+            if (isDuplicateQuery) {
+              if (msg.answer) {
+                let lastAssistantIdx = -1
+                for (let k = chatMsgs.length - 1; k > lastUserIdx; k--) {
+                  if (chatMsgs[k].role === "assistant") {
+                    lastAssistantIdx = k
+                    break
+                  }
+                }
+                if (lastAssistantIdx !== -1) {
+                  const lastAssistant = chatMsgs[lastAssistantIdx]
+                  const existingVersions = lastAssistant.versions || [
+                    lastAssistant.content,
+                  ]
+                  chatMsgs[lastAssistantIdx] = {
+                    ...lastAssistant,
+                    versions: [...existingVersions, msg.answer],
+                    currentVersion: existingVersions.length,
+                    content: msg.answer,
+                    files: msg.message_files,
+                  }
+                }
+              }
+              continue
+            }
+
             chatMsgs.push({
               role: "user",
               content: msg.query,
               files: msg.message_files,
             })
           }
+
           if (msg.answer) {
-            chatMsgs.push({
-              role: "assistant",
-              content: msg.answer,
-              files: msg.message_files,
-            })
+            let lastUserIdx = -1
+            for (let k = chatMsgs.length - 1; k >= 0; k--) {
+              if (chatMsgs[k].role === "user") {
+                lastUserIdx = k
+                break
+              }
+            }
+            const lastUser = lastUserIdx >= 0 ? chatMsgs[lastUserIdx] : null
+            const isNewPair =
+              lastUser?.role === "user" &&
+              lastUser.content.trim() === (msg.query || "").trim()
+            const isOrphanAnswer = !msg.query
+
+            if (isNewPair || isOrphanAnswer) {
+              chatMsgs.push({
+                role: "assistant",
+                content: msg.answer,
+                files: msg.message_files,
+              })
+            }
+          }
+        }
+        // 保留现有 assistant 消息的前端元数据（isPaused / userQuery 等）
+        const existingAssistants = messagesRef.current.filter(
+          (m) => m.role === "assistant",
+        )
+        let assistantIdx = 0
+        for (let i = 0; i < chatMsgs.length; i++) {
+          if (chatMsgs[i].role === "assistant") {
+            const existing = existingAssistants[assistantIdx]
+            if (existing) {
+              chatMsgs[i] = {
+                ...chatMsgs[i],
+                isPaused: existing.isPaused,
+                userQuery: existing.userQuery,
+              }
+            }
+            assistantIdx++
           }
         }
         setMessages(chatMsgs)
@@ -291,13 +380,17 @@ export function useChat(
               if (entry && entry.messages.length > 0) {
                 setMessages(entry.messages)
               }
-              unregisterStream(userId, sessionId)
-              // 关键修复：检查是否为用户主动暂停，若是则不调用 loadMessages
-              const lastAssistant = entry?.messages
+              // 在 unregister 之前取快照，保留 isPaused 判断所需的状态。
+              // 修复：之前在 unregister 之后 entry 为 undefined，
+              //   `!lastAssistant?.isPaused` 退化为 `!undefined` = true，
+              //   会错误地调用 loadMessages 覆盖用户的暂停状态。
+              const wasPaused = entry?.messages
                 ?.slice()
                 .reverse()
-                .find((m) => m.role === "assistant")
-              if (!lastAssistant?.isPaused) {
+                .find((m) => m.role === "assistant")?.isPaused === true
+              unregisterStream(userId, sessionId)
+              // 关键修复：检查是否为用户主动暂停，若是则不调用 loadMessages
+              if (!wasPaused) {
                 loadMessages(sessionId)
               }
             } else {
@@ -457,11 +550,6 @@ export function useChat(
     }
   }, [sessionId, loadMessages, userId, isStreaming])
 
-  // 自动滚动到底部
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [])
-
   // 辅助函数：同时更新 ref、注册表和缓存
   const updateMessagesAndCache = (
     updatedMessages: ChatMessage[],
@@ -554,6 +642,14 @@ export function useChat(
     }
     setAttachedFiles([])
 
+    // 启动新流前先取消旧 throttled，防止 handleContinue / handleRegenerate 在
+    // 旧流尚未结束时被点击导致两个 throttled 并发。
+    cancelThrottled()
+    const throttled: ChatMessagesUpdater =
+      createThrottledMessagesUpdater(setMessages, 50)
+    setThrottled(throttled)
+
+
     let accumulated = ""
     let streamHandledEnd = false
 
@@ -579,17 +675,11 @@ export function useChat(
                 { ...lastMsg, content: accumulated },
               ]
               updateMessagesAndCache(updatedMessages, true)
+              throttled.schedule(updatedMessages)
             }
-            setMessages((prev) => {
-              const newMsgs = [...prev]
-              const last = newMsgs[newMsgs.length - 1]
-              if (last?.isStreaming) {
-                newMsgs[newMsgs.length - 1] = { ...last, content: accumulated }
-              }
-              return newMsgs
-            })
           },
           onMessageEnd(_messageId, conversationId) {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -669,20 +759,11 @@ export function useChat(
                 { ...lastMsg, content: accumulated },
               ]
               updateMessagesAndCache(updatedMessages, true)
+              throttled.schedule(updatedMessages)
             }
-            setMessages((prev) => {
-              const newMsgs = [...prev]
-              const last = newMsgs[newMsgs.length - 1]
-              if (last?.isStreaming) {
-                newMsgs[newMsgs.length - 1] = {
-                  ...last,
-                  content: accumulated,
-                }
-              }
-              return newMsgs
-            })
           },
           onError(message) {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -753,6 +834,11 @@ export function useChat(
   // 停止输出
   const handleStop = () => {
     stoppedRef.current = true
+
+    // 取消挂起的 throttled 写入，避免 50ms 待定定时器在 stop 之后用
+    // 旧的 isStreaming:true 快照覆盖刚刚设置的 isPaused:true 状态。
+    cancelThrottled()
+    setThrottled(null)
 
     const currentSessionId = sessionIdRef.current || ""
     const registryEntry = getStreamEntry(userId, currentSessionId)
@@ -835,6 +921,12 @@ export function useChat(
   const handleContinue = async (messageIndex: number) => {
     const msg = messagesRef.current[messageIndex]
     if (!msg || msg.role !== "assistant" || !msg.isPaused) return
+    // 防止用户在已有流式进行中再次点击继续，导致两个 throttled 闭包并发写 setMessages。
+    if (isStreamingRef.current) return
+    // 终止旧流：旧 sendMessageStream 的 signal 仍指向旧 AbortController，必须显式 abort。
+    abortControllerRef.current?.abort()
+    cancelThrottled()
+    setThrottled(null)
 
     // 如果处于历史版本，切回最新版本
     if (
@@ -908,6 +1000,14 @@ export function useChat(
       messages: messagesRef.current,
     })
 
+    // 启动新流前先取消旧 throttled，防止 handleContinue / handleRegenerate 在
+    // 旧流尚未结束时被点击导致两个 throttled 并发。
+    cancelThrottled()
+    const throttled: ChatMessagesUpdater =
+      createThrottledMessagesUpdater(setMessages, 50)
+    setThrottled(throttled)
+
+
     let accumulated = continueContent
     let streamHandledEnd = false
 
@@ -938,9 +1038,10 @@ export function useChat(
               isStreaming: true,
               timestamp: Date.now(),
             })
-            setMessages(updatedMessages)
+            throttled.schedule(updatedMessages)
           },
           onMessageEnd(_messageId, conversationId) {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -993,6 +1094,7 @@ export function useChat(
             loadConversationsRef.current()
           },
           onError(message) {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -1054,6 +1156,11 @@ export function useChat(
   const handleRegenerate = async (messageIndex: number) => {
     const msg = messagesRef.current[messageIndex]
     if (!msg || msg.role !== "assistant") return
+    // 与 handleContinue 相同的并发守卫。
+    if (isStreamingRef.current) return
+    abortControllerRef.current?.abort()
+    cancelThrottled()
+    setThrottled(null)
 
     // 如果处于历史版本，先切回最新版本
     const versions = msg.versions ? [...msg.versions] : [msg.content]
@@ -1114,6 +1221,14 @@ export function useChat(
       messages: messagesRef.current,
     })
 
+    // 启动新流前先取消旧 throttled，防止 handleContinue / handleRegenerate 在
+    // 旧流尚未结束时被点击导致两个 throttled 并发。
+    cancelThrottled()
+    const throttled: ChatMessagesUpdater =
+      createThrottledMessagesUpdater(setMessages, 50)
+    setThrottled(throttled)
+
+
     let accumulated = ""
     let streamHandledEnd = false
 
@@ -1144,9 +1259,10 @@ export function useChat(
               isStreaming: true,
               timestamp: Date.now(),
             })
-            setMessages(updatedMessages)
+            throttled.schedule(updatedMessages)
           },
           onMessageEnd(_messageId, conversationId) {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
@@ -1202,6 +1318,7 @@ export function useChat(
             loadConversationsRef.current()
           },
           onError(message) {
+            throttled.flush()
             streamHandledEnd = true
             isStreamingRef.current = false
             setIsStreaming(false)
