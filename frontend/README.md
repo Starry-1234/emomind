@@ -1,5 +1,11 @@
 # Frontend
 
+> **Note (emomind-lg / M0)**: This README was copied from `emomind-sb`.
+> The frontend's AI integration is being migrated from `difyApi.ts` to
+> `langgraphApi.ts` in M5. Until then, the 6 files that import
+> `difyApi` have been neutralized and the dev server may not work
+> end-to-end. See `doc/langgraph-migration/08-frontend-migration.md`.
+
 ## Tech Stack
 
 React 19 + TypeScript + Vite + TanStack Router + TanStack Query + Tailwind CSS + shadcn/ui
@@ -42,7 +48,7 @@ src/
   routes/            # Page components
   components/        # UI components
   hooks/             # Custom hooks
-  services/          # API modules (difyApi, analysisApi)
+  services/          # API modules (langgraphApi [M5+], analysisApi; difyApi neutralized)
   client/            # Auto-generated OpenAPI client
 ```
 

@@ -16,7 +16,10 @@ EmoMind 是一个面向个人用户和管理员的心理测评平台。平台提
 |------|------|
 | JWT | JSON Web Token，用于用户认证的令牌机制 |
 | SSE | Server-Sent Events，服务器向客户端推送实时数据的技术 |
-| Dify | 第三方 AI 平台，提供大模型对话能力 |
+| LangGraph | 基于 LangChain 的有状态 AI 工作流编排框架（本项目 AI 核心） |
+| ai-runtime | Python 边车服务，运行 LangGraph 工作流 |
+| AiProxyService | Spring 端 AI 代理，转发请求到 ai-runtime |
+| PostgresSaver | LangGraph 官方 Postgres checkpoint 持久化后端 |
 | Streak | 用户连续活跃天数 |
 | 分析报告 | 对用户上传文件进行心理分析后生成的报告 |
 | 测评记录 | 用户完成心理测评后保存的题目、答案和得分记录 |
@@ -26,7 +29,8 @@ EmoMind 是一个面向个人用户和管理员的心理测评平台。平台提
 - Spring Boot 官方文档
 - Spring Security 参考手册
 - OpenAPI 3.0 规范
-- Dify API 文档
+- LangGraph 官方文档
+- ai-runtime 服务契约（见 doc/langgraph-migration/02-components.md）
 
 ---
 
@@ -37,8 +41,9 @@ EmoMind 是一个面向个人用户和管理员的心理测评平台。平台提
 EmoMind 系统包含以下组成部分：
 - Web 前端应用（React）
 - REST API 后端服务（Spring Boot）
-- PostgreSQL 数据库
-- Dify AI 平台（外部集成）
+- Python AI 边车（ai-runtime，基于 LangGraph）
+- PostgreSQL 数据库（含 pgvector 扩展）
+- Redis（会话状态与缓存，M4+）
 
 ### 2.2 用户角色
 
@@ -65,7 +70,7 @@ EmoMind 系统包含以下组成部分：
 - 数据库存储使用无时区 TIMESTAMP，应用层统一使用 CST (Asia/Shanghai)
 - 密码哈希使用 BCrypt 算法
 - JWT 签名使用 HS256 算法
-- Dify API 密钥由服务端管理，不暴露给前端
+- LLM Provider API Key 由 ai-runtime 服务端管理，不暴露给前端或 Spring 端
 
 ---
 
@@ -269,45 +274,61 @@ EmoMind 系统包含以下组成部分：
 - **权限**: 仅超级用户
 - **输出**: 删除成功提示
 
-### 3.5 Dify AI 代理模块
+### 3.5 AI 集成模块（LangGraph + ai-runtime）
 
-#### 3.5.1 发送聊天消息
+> M0 里程碑：本节由 M1+ 阶段实施；M0 仅提供 `AiController.healthz()` 占位与 AiProxyService 桩。
+> 详见 `doc/langgraph-migration/00-overview.md` 与 `doc/langgraph-migration/02-components.md`。
 
-- **需求编号**: DIFY-001
-- **需求描述**: 代理向 Dify AI 平台发送聊天消息，返回 SSE 流式响应
-- **输入**: 聊天消息内容、api_key_name（指定使用的 Dify 应用）
-- **处理**: 服务端根据 api_key_name 选择对应的 Dify API Key，转发请求到 Dify 平台
-- **输出**: SSE 流式响应（实时返回 AI 回复）
+#### 3.5.1 发送聊天消息（SSE 流式）
+
+- **需求编号**: AI-001
+- **需求描述**: 用户发送聊天消息，前端通过 Spring 端 AiController 进入 AiProxyService，AiProxyService 转发到 ai-runtime（LangGraph 工作流），ai-runtime 以 LangGraph 原生 SSE 事件流回传
+- **输入**: 用户消息内容、conversation_id（可选，新建则为空）、user_id（来自 JWT）
+- **处理**: AiProxyService 调用 ai-runtime 的 chat stream 端点，传递 JWT 解析后的 user_id；ai-runtime 加载对应 thread 的 checkpoint，按图执行节点，回传 token/事件流
+- **输出**: SSE 流（LangGraph 原生事件格式：messages/values/updates/end）
+- **约束**: 需要用户认证；M1 起强制
+
+#### 3.5.2 多模态输入（图像/音频）
+
+- **需求编号**: AI-002
+- **需求描述**: 用户上传图像或音频文件用于多模态心理评估
+- **输入**: 文件（multipart）、conversation_id
+- **处理**: ai-runtime 调用 Qwen3-Omni（默认）或 MinMax 多模态模型（M3+ 实施）
+- **输出**: 多模态回复流
+- **约束**: 需要用户认证；M3 起强制
+
+#### 3.5.3 心理测评工作流入口
+
+- **需求编号**: AI-003
+- **需求描述**: 前端调用测评工作流入口触发 LangGraph 测评图
+- **输入**: user_id、test_type
+- **处理**: ai-runtime 加载对应测试类型的 LangGraph 图，按节点出题/收答/评分
+- **输出**: 测评题目流 + 最终结果
+- **约束**: M2 实施
+
+#### 3.5.4 获取对话列表
+
+- **需求编号**: AI-004
+- **需求描述**: 获取当前用户的对话列表（基于 `conversation_meta` 表）
+- **输入**: user_id（来自 JWT）
+- **输出**: 对话列表（含 title、最后活跃时间、消息计数）
 - **约束**: 需要用户认证
 
-#### 3.5.2 文件上传
+#### 3.5.5 获取消息历史
 
-- **需求编号**: DIFY-002
-- **需求描述**: 代理向 Dify AI 平台上传文件
-- **输入**: Base64 编码的文件内容、api_key_name
-- **处理**: 解码并转发到 Dify 平台
-- **输出**: Dify 返回的文件信息
+- **需求编号**: AI-005
+- **需求描述**: 获取指定对话的历史消息
+- **输入**: conversation_id、user_id（来自 JWT）
+- **输出**: 消息列表（按时间排序）
+- **约束**: 只能查看自己的对话
 
-#### 3.5.3 获取对话列表
+#### 3.5.6 删除对话
 
-- **需求编号**: DIFY-003
-- **需求描述**: 获取用户在 Dify 平台的对话列表
-- **输入**: user（用户标识）、api_key_name
-- **输出**: 对话列表
-
-#### 3.5.4 获取消息历史
-
-- **需求编号**: DIFY-004
-- **需求描述**: 获取指定对话的消息历史
-- **输入**: user、conversation_id、api_key_name
-- **输出**: 消息列表
-
-#### 3.5.5 删除对话
-
-- **需求编号**: DIFY-005
-- **需求描述**: 删除指定的对话
-- **输入**: 对话 ID、user、api_key_name
+- **需求编号**: AI-006
+- **需求描述**: 删除指定对话及其 LangGraph checkpoint
+- **输入**: conversation_id、user_id（来自 JWT）
 - **输出**: 删除结果
+- **约束**: 只能删除自己的对话；同步删除 PostgresSaver 中的 thread state
 
 ### 3.6 管理员统计模块
 
@@ -341,7 +362,7 @@ EmoMind 系统包含以下组成部分：
 
 | 需求编号 | 需求描述 | 指标 |
 |---------|---------|------|
-| PERF-001 | API 响应时间 | P95 < 200ms（不含 Dify 代理请求） |
+| PERF-001 | API 响应时间 | P95 < 200ms（不含 ai-runtime LLM 调用） |
 | PERF-002 | 并发用户数 | 支持 ≥ 100 同时在线用户 |
 | PERF-003 | 数据库连接池 | 最小 5，最大 20 |
 | PERF-004 | 页面加载时间 | 首屏加载 < 3 秒 |
@@ -404,7 +425,9 @@ EmoMind 系统包含以下组成部分：
 
 **AI 咨询流：**
 ```
-用户发送消息 → 后端代理到 Dify → Dify 返回 SSE 流 → 后端透传 SSE → 前端展示
+用户发送消息 → Spring AiController → AiProxyService → ai-runtime (LangGraph)
+     → ai-runtime 调用 LLM Provider（MinMax / Qwen3-Omni）
+     → ai-runtime 回传 LangGraph SSE 事件 → AiProxyService 透传 → 前端 useChat 渲染
 ```
 
 **测评记录流：**
@@ -422,18 +445,31 @@ EmoMind 系统包含以下组成部分：
 - 支持响应式布局，适配桌面和移动端
 - 支持主流浏览器最新两个版本
 
-### 6.2 外部接口（Dify AI）
+### 6.2 外部接口（ai-runtime / LLM Providers）
 
-**Dify 平台接口：**
+> 本分支不再使用 Dify。AI 编排改为内部 ai-runtime Python 边车，对外只暴露 Spring 端 `/api/v1/ai/*`。
+> LLM Provider 由 ai-runtime 内部调用，对 Spring 与前端均不可见。
+
+**Spring 端 AI 接口（对前端）：**
 
 | 接口 | 方法 | 说明 |
 |------|------|------|
-| /chat-messages | POST | 发送聊天消息，SSE 流式返回 |
-| /files/upload | POST | 上传文件 |
-| /conversations | GET | 获取对话列表 |
-| /messages | GET | 获取消息历史 |
-| /conversations/{id} | DELETE | 删除对话 |
+| /api/v1/ai/healthz | GET | ai-runtime 健康检查（公开） |
+| /api/v1/ai/chat | POST | 发送聊天消息，SSE 流式返回 |
+| /api/v1/ai/chat/multimodal | POST | 多模态输入（M3+） |
+| /api/v1/ai/conversations | GET | 获取对话列表 |
+| /api/v1/ai/conversations/{id}/messages | GET | 获取消息历史 |
+| /api/v1/ai/conversations/{id} | DELETE | 删除对话 |
 
-**认证方式**: Bearer Token（Dify API Key）
+**ai-runtime 内部接口（对 Spring）：**
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| /chat/stream | POST | LangGraph 工作流入口，SSE 流式回传 |
+| /healthz | GET | 边车健康检查 |
+| /threads/{id}/state | GET | 读取 PostgresSaver checkpoint |
+
+**认证方式**: Spring 端使用 JWT；Spring → ai-runtime 使用内部共享密钥（`LANGGRAPH_SHARED_SECRET`）
+**LLM Provider 凭据**: 仅 ai-runtime 持有，注入到 `LANGGRAPH_*` / `MINIMAX_*` / `QWEN_OMNI_*` / `EMBEDDING_*` 环境变量
 **数据传输**: JSON
-**流式接口**: text/event-stream
+**流式接口**: text/event-stream（LangGraph 原生事件）

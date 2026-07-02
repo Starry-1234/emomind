@@ -67,8 +67,8 @@
 │  │  Spring Data JPA    ││
 │  │  Repository 数据层   ││
 │  ├─────────────────────┤│
-│  │  WebClient          ││
-│  │  Dify AI 代理        ││
+│  │  AiProxyService      ││
+│  │  → ai-runtime sidecar ││
 │  └─────────────────────┘│
 └────────────┬────────────┘
              │
@@ -79,14 +79,18 @@
 │  │  users               │  │
 │  │  file_analysis_report│  │
 │  │  test_record         │  │
+│  │  user_memory (V4)    │  │
+│  │  conversation_meta   │  │
 │  └──────────────────────┘  │
 │  Flyway 迁移管理            │
+│  pgvector 扩展              │
 └────────────────────────────┘
                               │
                               ▼
 ┌────────────────────────────┐
-│    外部集成 (Dify AI 平台)   │
-│  SSE 流式聊天 │ 文件上传    │
+│  AI 边车 (ai-runtime)       │
+│  LangGraph + PostgresSaver  │
+│  MinMax / Qwen3-Omni       │
 └────────────────────────────┘
 ```
 
@@ -117,14 +121,14 @@
    └────┬─────┘     └──────────┘     └────┬─────┘
         │                                  │
         │         ┌──────────┐            │
-        └────────▶│ WebClient│◀───────────┘
-                  │ (Dify)   │
+        └────────▶│ AiProxy  │◀───────────┘
+                  │ Service  │
                   └────┬─────┘
                        │
                        ▼
                   ┌──────────┐
-                  │  Dify    │
-                  │  AI      │
+                  │ai-runtime│
+                  │ LangGraph│
                   └──────────┘
 ```
 
@@ -153,7 +157,7 @@ backend-sb/
 │   ├── AnalysisController
 │   ├── TestRecordController
 │   ├── AdminController
-│   ├── DifyController
+│   ├── AiController
 │   └── UtilsController
 │
 ├── service/         # 业务层：业务逻辑编排
@@ -161,7 +165,7 @@ backend-sb/
 │   ├── AnalysisService
 │   ├── TestRecordService
 │   ├── AdminStatsService
-│   ├── DifyService
+│   ├── AiProxyService
 │   └── EmailService
 │
 ├── repository/      # 数据层：数据访问抽象
