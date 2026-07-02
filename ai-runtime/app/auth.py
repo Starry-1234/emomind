@@ -28,5 +28,8 @@ async def verify_internal_token(
     ):
         raise HTTPException(status_code=401, detail={"code": "INVALID_INTERNAL_TOKEN"})
     if not x_user_id:
-        raise HTTPException(status_code=400, detail={"code": "MISSING_USER_ID"})
+        # Same trust boundary as the token check: missing/empty X-User-Id is a
+        # credential problem, not a client error. Use 401 + INVALID_INTERNAL_TOKEN
+        # so clients see a single status code for any auth-header problem.
+        raise HTTPException(status_code=401, detail={"code": "INVALID_INTERNAL_TOKEN"})
     return x_user_id

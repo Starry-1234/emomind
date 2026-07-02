@@ -118,7 +118,9 @@ export async function stopChat(threadId: string, runId: string): Promise<void> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ thread_id: threadId, run_id: runId }),
     })
-  } catch {
+  } catch (err) {
     // Best-effort; the actual stream is aborted via AbortSignal at the call site.
+    // Log so M5+ cancel diagnostics are tractable (the route is a no-op in M1).
+    console.warn("[langgraphApi] stopChat failed", { threadId, runId, err })
   }
 }

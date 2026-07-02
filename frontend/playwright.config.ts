@@ -23,8 +23,12 @@ export default defineConfig({
   reporter: process.env.CI ? 'blob' : 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:5173',
+    /* Base URL to use in actions like `await page.goto('/')`.
+     * Default 5173 matches `bun run dev` (Vite default).
+     * For docker stack runs, set PLAYWRIGHT_BASE_URL=http://localhost:5174
+     * (CLAUDE.md documents the docker frontend on 5174) or override
+     * PLAYWRIGHT_WEB_SERVER_URL to point `webServer.url` at the right port. */
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -82,10 +86,13 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* Run your local dev server before starting the tests.
+   * PLAYWRIGHT_WEB_SERVER_URL overrides the default 5173 (e.g. set
+   * PLAYWRIGHT_WEB_SERVER_URL=http://localhost:5174 when running against
+   * the docker stack, which serves on 5174 per CLAUDE.md). */
   webServer: {
     command: 'bun run dev',
-    url: 'http://localhost:5173',
+    url: process.env.PLAYWRIGHT_WEB_SERVER_URL ?? 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
   },
 });

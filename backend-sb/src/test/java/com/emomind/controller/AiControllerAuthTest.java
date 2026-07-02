@@ -50,4 +50,27 @@ class AiControllerAuthTest {
                 org.hamcrest.Matchers.equalTo(200),
                 org.hamcrest.Matchers.equalTo(500))));
     }
+
+    @Test
+    void unauthenticated_stop_returns401() throws Exception {
+        MockMvc mvc = MockMvcBuilders.webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+        mvc.perform(post("/api/v1/ai/chat/stop")
+                .contentType("application/json")
+                .content("{\"thread_id\":\"t1\",\"run_id\":\"r1\"}"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = "USER")
+    void authenticated_stop_returns204() throws Exception {
+        MockMvc mvc = MockMvcBuilders.webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+        mvc.perform(post("/api/v1/ai/chat/stop")
+                .contentType("application/json")
+                .content("{\"thread_id\":\"t1\",\"run_id\":\"r1\"}"))
+            .andExpect(status().isNoContent());
+    }
 }

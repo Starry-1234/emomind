@@ -8,6 +8,14 @@ import { expect, test } from "@playwright/test"
  * (FIRST_SUPERUSER=admin@example.com / FIRST_SUPERUSER_PASSWORD=changethis).
  * This spec uses the auth.setup.ts that generates playwright/.auth/user.json
  * if it isn't already there.
+ *
+ * Port notes (see playwright.config.ts):
+ *   - default baseURL is http://localhost:5173 (Vite dev)
+ *   - docker stack frontend serves on 5174 (per CLAUDE.md)
+ *   - run with `PLAYWRIGHT_BASE_URL=http://localhost:5174 \
+ *               PLAYWRIGHT_WEB_SERVER_URL=http://localhost:5174 \
+ *               npx playwright test` against the docker image
+ *   - or start the local Vite dev server on 5173 first
  */
 
 test("ai-doctor streams a text reply", async ({ page }) => {

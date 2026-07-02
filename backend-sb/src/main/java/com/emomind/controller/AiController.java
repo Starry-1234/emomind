@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -66,5 +68,28 @@ public class AiController {
             .header("Connection", "keep-alive")
             .header("X-Accel-Buffering", "no")
             .body(stream);
+    }
+
+    /**
+     * Cancel a running chat stream. M1: no-op (M5 will wire Redis-backed cancel
+     * via ai-runtime's /v1/chat/stop). Frontend uses AbortSignal at the call site
+     * for actual stream termination; this endpoint exists so the route is wired
+     * end-to-end and M5+ diagnostics can be added without a frontend change.
+     */
+    @PostMapping("/chat/stop")
+    public ResponseEntity<Void> stopChat(@RequestBody Map<String, String> body) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Object principal = auth.getPrincipal();
+        UUID userId = (principal instanceof UserDetailsImpl u) ? u.getId() : UUID.fromString(auth.getName());
+
+        String threadId = body == null ? "" : (body.get("thread_id") == null ? "" : body.get("thread_id"));
+        String runId = body == null ? "" : (body.get("run_id") == null ? "" : body.get("run_id"));
+        log.info("stop request user={} thread={} run={}", userId, threadId, runId);
+
+        aiProxyService.proxyStop(userId, threadId, runId);
+        return ResponseEntity.noContent().build();
     }
 }

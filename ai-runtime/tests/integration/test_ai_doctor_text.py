@@ -39,7 +39,20 @@ async def test_text_only_path_emits_full_sse(mock_minimax_model, monkeypatch):
     state.update(await finalize(state))
     state.update(await emit_response(state))
 
-    assert state["analysis_result"].startswith("我")
+    # Direct-node path: assert analyze_text → finalize produced the canned
+    # reply in analysis_result. This block is a real test of the three nodes
+    # in isolation; the compiled-graph path below re-mutates the same dict.
+    assert state["analyses"]["text"] == "我理解你的感受，能多说说吗？"
+    assert state["analysis_result"] == "我理解你的感受，能多说说吗？"
+
+    # Reset state for the compiled-graph path so its nodes start clean.
+    state = {
+        "messages": [{"role": "user", "content": "我最近很难入睡"}],
+        "modality": "text",
+        "user_id": "u1",
+        "thread_id": "t2",
+        "run_id": "r2",
+    }
 
     # Full graph path — inject the fake model via monkeypatch so the compiled
     # graph calls our FakeListChatModel instead of the real MinMax endpoint.
