@@ -1,26 +1,27 @@
-"""FastAPI application entry point (M0 skeleton)."""
+"""FastAPI entrypoint for ai-runtime."""
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
-from app.api.health import router as health_router
+from app.api.chat import router as chat_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # M0: no resources to initialize. M1 will init PostgresSaver + Redis.
+    # M1: nothing to warm up (no checkpointer, no long-term memory, no file storage).
+    # Future milestones add PostgresSaver / Redis / file storage init here.
     yield
 
 
 app = FastAPI(
     title="EmoMind AI Runtime",
-    version="0.1.0",
-    description="LangGraph-based AI runtime for EmoMind. M0 skeleton.",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
-app.include_router(health_router)
+app.include_router(chat_router, prefix="/v1")
 
 
-@app.get("/")
-async def root() -> dict[str, str]:
-    return {"service": "emomind-ai-runtime", "milestone": "M0", "docs": "/docs"}
+@app.get("/healthz")
+async def healthz():
+    return {"status": "ok", "service": "ai-runtime", "milestone": "M1"}
