@@ -139,8 +139,8 @@ services:
 
   ai-runtime:
     build:
-      context: .
-      dockerfile: ai-runtime/Dockerfile
+      context: ./ai-runtime
+      dockerfile: Dockerfile
     restart: always
     depends_on:
       db:
