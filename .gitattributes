@@ -1,2 +1,26 @@
-* text=auto
-*.sh text eol=lf
+# Enforce LF line endings for all text files (auto-detected).
+#
+# Prevents the Windows autocrlf=true issue where every checkout
+# converted LF -> CRLF and made biome-touched files appear modified.
+# M0/M1 had a working tree of ~80 dirty files as a result.
+#
+# With this attribute, Git will:
+#   - On commit: convert any CRLF in text files to LF
+#   - On checkout: leave LF as LF (no conversion)
+#
+# Local config needed (one-time per repo, NOT committed):
+#   git config core.autocrlf input
+#
+# Binary files are auto-detected by `text=auto`; explicit
+# overrides below are defensive.
+* text=auto eol=lf
+
+# Defensive binary markers (text=auto already handles these)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.gif  binary
+*.jar  binary
+*.war  binary
+*.pdf  binary
