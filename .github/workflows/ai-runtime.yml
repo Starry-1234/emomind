@@ -54,3 +54,5 @@ jobs:
         env:
           LANGGRAPH_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/emomind_test
           LANGGRAPH_REDIS_URL: redis://localhost:6379
+          LANGGRAPH_MINIMAX_API_KEY: test-key
+          LANGGRAPH_INTERNAL_TOKEN: changeme-internal-token-must-be-32-chars-long
