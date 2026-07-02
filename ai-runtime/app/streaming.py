@@ -2,7 +2,7 @@
 
 M1 implements:
   - on_chain_start for known node names -> SSE 'node_start'
-  - on_llm_stream (AIMessageChunk content delta) -> SSE 'token'
+  - on_chat_model_stream (AIMessageChunk content delta) -> SSE 'token'
   - on_chain_end for emit_response -> SSE 'message_end' with full_content
 
 We deliberately do NOT try to handle every astream event type — only
@@ -54,7 +54,7 @@ async def stream_graph(
                 if kind == "on_chain_start" and name in _TRACKED_NODE_NAMES:
                     yield format_sse_event("node_start", {"name": name, "ts": time.time()})
 
-                elif kind == "on_llm_stream":
+                elif kind == "on_chat_model_stream":
                     chunk = data.get("chunk")
                     if isinstance(chunk, AIMessageChunk):
                         delta = chunk.content or ""
