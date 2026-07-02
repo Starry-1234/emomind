@@ -77,7 +77,7 @@ emomind-lg/
 │   ├── README.md                          文档总入口
 │   ├── requirements.md / outline-design.md / detailed-design.md / tasks/  占位（M0 完成后补）
 │   └── langgraph-migration/               13 份规格 + plans/
-└── （M0 阶段将从 emomind-sb 复制 backend-sb / frontend，删除 Dify，新建 ai-runtime/）
+└── （M0 已完成 ✅ tag m0-foundation；M1+ 继续填充 LangGraph graphs）
 ```
 
 实施 M0 时第一步 = `cp -r ../emomind-sb/{backend-sb,frontend,compose.yml,compose.override.yml,.env.example,scripts} ./`。详见 [`plans/2026-07-01-emomind-lg-milestone-0-foundation.md`](doc/langgraph-migration/plans/2026-07-01-emomind-lg-milestone-0-foundation.md) Task 1。
@@ -112,7 +112,7 @@ M0 完成后会在此节补充以下内容。当前可参考 `emomind-sb/CLAUDE.
 
 1. **Spring Boot 仍然是鉴权网关**。前端请求先过现有 `JwtAuthenticationFilter`；转发到 ai-runtime 前注入 `X-User-Id` / `X-User-Roles` / `X-Internal-Token` / `X-Trace-Id`。ai-runtime 永不直接对外。
 2. **会话状态分两层**：业务元数据（Spring `conversation_meta`）+ 图状态（LangGraph `langgraph_checkpoints`），用 `thread_id` 关联。
-3. **SSE 三层透传**：`text/event-stream` + `no-cache` + `X-Accel-Buffering: no`。复用现有 `DifyController` 的 Reactor `Flux<DataBuffer>` + `blockLast` + 手动 flush 模式。
+3. **SSE 三层透传**：`text/event-stream` + `no-cache` + `X-Accel-Buffering: no`。M0 起 `AiController` 采用与旧 `DifyController` 相同的 Reactor `Flux<DataBuffer>` + `blockLast` + 手动 flush 模式（已删除的 DifyController 不再使用，仅作实现参考）。
 4. **长期记忆异步写入**：extract_facts + write_long_term 由 emit_response 完成后通过 `asyncio.create_task` 触发；不阻塞 SSE 流关闭。
 5. **`extract_facts` / `write_long_term` 不在主 graph 边中** — 否则会因 pgvector 抖动让整个 graph 失败。
 6. **保留全部前端交互能力**：流式、stop、pause/resume、regenerate 多版本、sessionStorage 缓存、polling、文件附件。即使 SSE 协议换了，行为不能变。
@@ -163,13 +163,13 @@ ai-runtime/app/
 
 | Phase | 交付物 | 计划文件 |
 |---|---|---|
-| **M0** 项目骨架 | `emomind-lg/` 有代码；backend-sb 去 Dify；ai-runtime 空壳；compose 含 redis | `plans/2026-07-01-emomind-lg-milestone-0-foundation.md` ✅ 已写 |
+| **M0** 项目骨架 | ✅ 完成（tag `m0-foundation` @ `97f493d`）：backend-sb 去 Dify；ai-runtime FastAPI 空壳；compose 含 redis + pgvector；V4 Flyway（pgvector + user_memory） | `plans/2026-07-01-emomind-lg-milestone-0-foundation.md` |
 | **M1** ai_doctor 文本路径 | ai_doctor graph 文本路径；`/user/ai-doctor` 切到 langgraphApi | 待写 |
 | **M2** ai_doctor 多模态 | Qwen3-Omni 集成；文件附件全链路 | 待写 |
 | **M3** psych_test | 引导 + Q&A + 评分 + 报告 + TestRecord 回写 | 待写 |
 | **M4** 持久化 + 长期记忆 | PostgresSaver + pgvector + ConversationMeta | 待写 |
 | **M5** 高级交互 | stop / regenerate-versions / 多 tab 同步 | 待写 |
-| **M6** 切流量 + 收尾 | 移除 Dify 容器；监控告警；E2E 全绿 | 待写 |
+| **M6** 切流量 + 收尾 | 监控告警；E2E 全绿；archive 旧迁移规格 | 待写 |
 
 每个里程碑结束时：
 1. 跑 `cd backend-sb && mvn test` + `cd ai-runtime && uv run pytest` + `cd frontend && bun run lint`

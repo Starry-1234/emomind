@@ -11,7 +11,7 @@
   - 密码找回与重置
 
 - **AI 心理医生**
-  - Dify AI 驱动的聊天式心理咨询
+  - LangGraph + Python 边车驱动的 AI 心理咨询
   - 流式输出，支持暂停/继续
   - 消息复制与重新生成，多版本切换
   - 会话历史管理
@@ -41,7 +41,7 @@
 
 **前端**: React 19 + TypeScript + Vite + TanStack Router + TanStack Query + Tailwind CSS + shadcn/ui
 
-**AI 集成**: Dify AI 平台（流式聊天、工作流、会话管理）
+**AI 集成**: 自建 LangGraph + Python 边车（FastAPI / SSE 流式 / 多 LLM 提供商）
 
 **基础设施**: Docker Compose + Traefik + Nginx + Mailcatcher
 
@@ -66,61 +66,42 @@ git clone https://github.com/Starry-1234/emomind.git
 cd emomind
 ```
 
-### 2. 部署 Dify（必需）
+### 2. 部署 ai-runtime（必需）
 
-EmoMind 依赖 [Dify](https://github.com/langgenius/dify) 提供 AI 聊天及测评工作流。启动 EmoMind 前必须先运行 Dify。
-
-#### 方式 A：Docker Compose（推荐）
+EmoMind 的 AI 能力由 `ai-runtime`（Python FastAPI + LangGraph）提供，与后端 Spring Boot 一起在 docker compose 中启动。前端请求经 Spring 鉴权后转发到 ai-runtime。
 
 ```bash
-# 在单独的目录中
-git clone https://github.com/langgenius/dify.git
-cd dify/docker
-cp .env.example .env
-docker compose up -d
+# 启动基础设施（PostgreSQL + Redis + Mailcatcher）
+docker compose -f compose.yml -f compose.override.yml up -d db redis mailcatcher
+
+# 启动后端与 ai-runtime
+docker compose -f compose.yml -f compose.override.yml up -d backend ai-runtime
 ```
 
-启动后，在浏览器打开 `http://localhost/install` 完成 Dify 初始化（创建管理员账号）。
+启动后验证：
 
-#### 方式 B：源码运行（本地开发）
+```bash
+curl http://localhost:8000/healthz
+# 期望：{"status":"ok","service":"ai-runtime"}
+```
 
-按照 [Dify 官方指南](https://docs.dify.ai/getting-started/install-self-hosted/local-source-code) 分别运行 API 服务（`flask run --host 0.0.0.0 --port 5001`）和 Web 前端。
+### 3. 配置 LLM 提供商 API Key
 
-#### 配置 `DIFY_API_URL`
+ai-runtime 通过环境变量读取 LLM 凭证（从 `.env` 注入）。复制 `.env.example` 为 `.env` 并填写：
 
-该值取决于 Dify 与 EmoMind 后端的部署方式：
+```bash
+# .env（节选）
+MINIMAX_API_KEY=your-minimax-key              # 文本 LLM（MinMax / OpenAI 兼容）
+MINIMAX_BASE_URL=https://api.minimax.chat/v1
+QWEN_OMNI_API_KEY=your-qwen-key              # 多模态 LLM（Qwen3-Omni / DashScope 兼容）
+QWEN_OMNI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+EMBEDDING_API_KEY=your-qwen-key              # 向量嵌入（默认与 Qwen 共用）
+EMBEDDING_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+EMBEDDING_MODEL=text-embedding-v3
+LANGGRAPH_INTERNAL_TOKEN=changeme-32-chars-min-internal-token   # Spring ↔ ai-runtime 内部鉴权
+```
 
-| 场景 | `DIFY_API_URL` 值 |
-|------|-------------------|
-| Dify 和 EmoMind 后端都**不在** Docker 中运行 | `http://localhost:5001/v1` |
-| Dify 在 Docker 中运行，EmoMind 后端**不在** Docker 中 | `http://localhost:5001/v1` |
-| Dify**不在** Docker 中运行，EmoMind 后端在 Docker 中运行 | 使用**宿主机局域网 IP**（如 `http://192.168.1.5:5001/v1`）。Windows 上 `host.docker.internal` 通常不可用。 |
-| Dify 和 EmoMind 后端都在同一宿主机的 Docker 中运行 | 使用**宿主机局域网 IP**（如 `http://192.168.1.5/v1`）。Windows 上 `host.docker.internal` 不可靠，请使用真实 IP。 |
-
-> **Windows 如何查看局域网 IP**：打开 PowerShell 运行 `ipconfig`，在当前活动的网络适配器下查找 "IPv4 地址"（通常以 `192.168.` 开头）。
-
-### 3. 导入 Dify 工作流
-
-`dify_workflow/` 目录下包含两个预置工作流：
-
-| 文件 | 用途 |
-|------|------|
-| `dify_workflow/智能心理医生_v0.2.yml` | AI 心理医生聊天工作流 |
-| `dify_workflow/智能心理测评_v0.1.yml` | 心理测评工作流 |
-
-**导入步骤**：
-1. 打开 Dify Studio（Dify 搭建完成后访问 `http://localhost`）
-2. 点击**创建应用** → **导入 DSL**
-3. 从 `dify_workflow/` 文件夹选择 `.yml` 文件
-4. 两个工作流分别重复上述步骤
-
-**获取 API Key**：
-1. 进入每个导入的应用
-2. 点击左侧边栏的 **API 访问**
-3. 点击 **生成 API Key**
-4. 复制密钥并填入 EmoMind 的 `.env` 文件：
-   - `智能心理医生` 的密钥 → `DIFY_AI_DOCTOR_API_KEY`
-   - `智能心理测评` 的密钥 → `DIFY_TEST_API_KEY`
+完整变量清单见 `compose.yml` 与 `.env.example`。
 
 ### 4. 配置 EmoMind 环境
 
@@ -136,10 +117,21 @@ SECRET_KEY=your-random-secret-string
 POSTGRES_PASSWORD=your-db-password
 FIRST_SUPERUSER_PASSWORD=your-admin-password
 
-# Dify 连接
-DIFY_API_URL=http://your_lan_ip:5001/v1   # 见上表
-DIFY_AI_DOCTOR_API_KEY=your-ai-doctor-key
-DIFY_TEST_API_KEY=your-test-key
+# LangGraph / ai-runtime 连接
+LANGGRAPH_RUNTIME_URL=http://localhost:8000   # Spring → ai-runtime 内网地址
+LANGGRAPH_INTERNAL_TOKEN=changeme-32-chars-min-internal-token
+LANGGRAPH_DATABASE_URL=postgresql://postgres:postgres@localhost:5433/emomind
+LANGGRAPH_REDIS_URL=redis://localhost:6390
+LANGGRAPH_STORAGE_PATH=./ai-runtime-files
+
+# LLM 提供商
+MINIMAX_API_KEY=your-minimax-key
+MINIMAX_BASE_URL=https://api.minimax.chat/v1
+QWEN_OMNI_API_KEY=your-qwen-key
+QWEN_OMNI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+EMBEDDING_API_KEY=your-qwen-key
+EMBEDDING_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+EMBEDDING_MODEL=text-embedding-v3
 
 # 前端
 VITE_API_URL=http://localhost:8080
@@ -255,7 +247,7 @@ emomind-sb/
 │   │   ├── services/     # API 客户端
 │   │   └── client/       # 自动生成的 OpenAPI 客户端
 │   └── dist/             # 生产构建输出
-├── dify_workflow/        # Dify 工作流 DSL 文件
+├── ai-runtime/           # LangGraph Python 边车（FastAPI + SSE）
 ├── doc/                  # 设计文档
 ├── compose.yml           # Docker Compose 生产配置
 ├── compose.override.yml  # Docker Compose 开发配置
@@ -297,6 +289,6 @@ bash ./scripts/generate-client.sh
 - `/api/v1/users` — 用户管理
 - `/api/v1/test-records` — 心理测评记录
 - `/api/v1/analysis` — 文件分析报告
-- `/api/v1/dify/*` — Dify AI 集成（聊天、会话、消息）
+- `/api/v1/ai/*` — LangGraph AI 集成（聊天 SSE、会话、消息）
 - `/api/v1/admin` — 管理员统计和管理
 - `/api/v1/utils/health-check` — 健康检查

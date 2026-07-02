@@ -47,7 +47,7 @@
 | file_type | VARCHAR(50) | NOT NULL | - | 文件类型 |
 | file_size | INTEGER | NULL | - | 文件大小（字节） |
 | analysis_result | TEXT | NOT NULL | - | 分析结果文本 |
-| conversation_id | VARCHAR | NULL | - | Dify 对话 ID |
+| conversation_id | VARCHAR | NULL | - | LangGraph thread_id |
 | created_at | TIMESTAMP | NOT NULL | - | 创建时间 |
 | owner_id | UUID | FK → users.id, ON DELETE CASCADE | - | 所属用户 |
 
@@ -64,7 +64,7 @@
 | questions | JSONB | NOT NULL | - | 题目列表 |
 | answers | JSONB | NOT NULL | - | 答案列表 |
 | scoring_ranges | JSONB | NULL | - | 评分区间 |
-| conversation_id | VARCHAR | NULL | - | Dify 对话 ID |
+| conversation_id | VARCHAR | NULL | - | LangGraph thread_id |
 | created_at | TIMESTAMP | NOT NULL | - | 创建时间 |
 | owner_id | UUID | FK → users.id, ON DELETE CASCADE | - | 所属用户 |
 
@@ -489,71 +489,28 @@ CREATE INDEX idx_test_record_created_at ON test_record(created_at);
 
 **描述**: 删除测评记录
 
-### 3.5 Dify AI 代理模块 API
+### 3.5 LangGraph AI 代理模块 API
 
-#### POST /api/v1/dify/chat-messages
+`AiController`（`backend-sb/src/main/java/com/emomind/controller/AiController.java`）作为 ai-runtime 边车的前置代理，鉴权流程仍由 Spring 现有 JWT 过滤器承担。完整业务端点（`/chat`、`/conversations/*` 等）在 M1+ 阶段实现。
 
-**描述**: 发送聊天消息，SSE 流式响应
-
-**Query 参数**:
-
-| 参数 | 类型 | 必填 | 说明 |
+| 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
-| api_key_name | string | 是 | 使用的 Dify 应用名称 |
+| GET | `/api/v1/ai/healthz` | 公开 | 健康检查（不依赖 ai-runtime） |
+| POST | `/api/v1/ai/chat` | 需登录 | 流式聊天 — **M0 暂未实现，返回 501** |
+| POST | `/api/v1/ai/chat/stop` | 需登录 | 停止运行中的 graph — M5 |
+| GET | `/api/v1/ai/conversations` | 需登录 | 列出用户会话 — M4 |
+| GET | `/api/v1/ai/messages` | 需登录 | 列出消息 — M1 |
+| POST | `/api/v1/ai/files/upload` | 需登录 | 上传文件 — M2 |
 
-**请求体**: Dify 原始请求格式
+#### 错误响应
 
-**响应**: `text/event-stream` (SSE)
+- `401 Unauthorized`：未登录或 token 无效（由 `AuthenticationEntryPoint` 统一返回）
+- `501 Not Implemented`：M0 阶段 ai-runtime 尚未实现对应端点，前端调用将收到此状态码
+- `502 Bad Gateway`：ai-runtime 不可达（M1+ 真实场景）
+- `504 Gateway Timeout`：ai-runtime 调用超时
 
-**响应头**:
-```
-Content-Type: text/event-stream
-Cache-Control: no-cache
-Connection: keep-alive
-```
-
-#### POST /api/v1/dify/files/upload
-
-**描述**: 上传文件到 Dify
-
-**Query 参数**: api_key_name
-
-**请求体**:
-```json
-{
-  "file": "base64-encoded-file-content",
-  "filename": "document.pdf"
-}
-```
-
-#### GET /api/v1/dify/conversations
-
-**描述**: 获取对话列表
-
-**Query 参数**:
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| user | string | 是 | 用户标识 |
-| api_key_name | string | 是 | Dify 应用名称 |
-
-#### GET /api/v1/dify/messages
-
-**描述**: 获取消息历史
-
-**Query 参数**:
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| user | string | 是 | 用户标识 |
-| conversation_id | string | 是 | 对话 ID |
-| api_key_name | string | 是 | Dify 应用名称 |
-
-#### DELETE /api/v1/dify/conversations/{id}
-
-**描述**: 删除对话
-
-**Query 参数**: user, api_key_name
+#### 请求 / 响应示例（M1+ 真实实现后补）
+（M0 阶段 ai-runtime 仅有 `/healthz`，业务端点均为 501 placeholder）
 
 ### 3.6 管理员统计模块 API
 
@@ -878,12 +835,10 @@ public interface AdminStatsService {
     AdminStatsResponse getStats();
 }
 
-public interface DifyService {
-    StreamingResponseBody sendChatMessage(String apiKeyName, Map<String, Object> requestBody);
-    Map<String, Object> uploadFile(String apiKeyName, Map<String, Object> requestBody);
-    Map<String, Object> getConversations(String user, String apiKeyName);
-    Map<String, Object> getMessages(String user, String conversationId, String apiKeyName);
-    void deleteConversation(String conversationId, String user, String apiKeyName);
+public interface AiProxyService {
+    // M0: stub — all methods throw NOT_IMPLEMENTED via AiController catch-all.
+    // M1+ will add: sendChatMessage (SSE), uploadFile, listConversations, etc.
+    void sendChatMessage(Map<String, Object> requestBody);
 }
 ```
 
@@ -1097,19 +1052,19 @@ public class StreakUpdateFilter extends OncePerRequestFilter {
 ### 5.4 SSE 流式代理实现
 
 ```
-客户端请求 ──▶ DifyController
+客户端请求 ──▶ AiController (Spring)
                     │
                     ▼
               StreamingResponseBody
                     │
                     ▼
-              DifyService.streamChatMessage()
+              AiProxyService.proxyStream()
                     │
                     ▼
               WebClient (异步 HTTP)
                     │
                     ▼
-              Dify AI Platform
+              ai-runtime (FastAPI + LangGraph)
                     │
                     ▼
               Flux<String> (响应流)
@@ -1287,10 +1242,9 @@ app:
     host: ${FRONTEND_HOST:http://localhost:5174}
   cors:
     origins: ${BACKEND_CORS_ORIGINS:http://localhost:5174}
-  dify:
-    api-url: ${DIFY_API_URL:http://localhost/v1}
-    ai-doctor-api-key: ${DIFY_AI_DOCTOR_API_KEY:}
-    test-api-key: ${DIFY_TEST_API_KEY:}
+  langgraph:
+    runtime-url: ${LANGGRAPH_RUNTIME_URL:http://localhost:8000}
+    internal-token: ${LANGGRAPH_INTERNAL_TOKEN:}
   first-superuser:
     email: ${FIRST_SUPERUSER:}
     password: ${FIRST_SUPERUSER_PASSWORD:}
@@ -1358,9 +1312,8 @@ logging:
 | EMAILS_FROM_NAME | app.email.from-name | EmoMind | 否 |
 | FIRST_SUPERUSER | app.first-superuser.email | - | 否 |
 | FIRST_SUPERUSER_PASSWORD | app.first-superuser.password | - | 否 |
-| DIFY_API_URL | app.dify.api-url | http://localhost/v1 | 否 |
-| DIFY_AI_DOCTOR_API_KEY | app.dify.ai-doctor-api-key | - | 否 |
-| DIFY_TEST_API_KEY | app.dify.test-api-key | - | 否 |
+| LANGGRAPH_RUNTIME_URL | app.langgraph.runtime-url | http://localhost:8000 | 否 |
+| LANGGRAPH_INTERNAL_TOKEN | app.langgraph.internal-token | - | **是** |
 
 ---
 
@@ -1453,7 +1406,7 @@ logging:
 - 使用 @hey-api/openapi-ts 生成 TypeScript 客户端
 - 包含所有 API 端点的类型安全调用
 
-**自定义 Dify API 客户端:**
+**自定义 LangGraph 边车客户端:**
 - 使用原生 fetch API 处理 SSE 流式响应
 - 手动管理 Authorization Header
 - 支持 AbortController 取消请求
