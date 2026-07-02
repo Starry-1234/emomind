@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from "framer-motion"
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
+import { AnimatePresence, motion } from "framer-motion"
 import {
   Brain,
   FileText,
@@ -20,7 +20,27 @@ import { useConversation } from "@/contexts/ConversationContext"
 import useAuth from "@/hooks/useAuth"
 import { useChat } from "@/hooks/useChat"
 import { useCurrentTheme } from "@/hooks/useCurrentTheme"
-import { sendMessageStream, uploadFile } from "@/services/difyApi"
+import { sendChatStream } from "@/services/langgraphApi"
+import type {
+  LangGraphMessage,
+  StreamCallbacks,
+} from "@/services/langgraphTypes"
+
+// TODO(M5): uploadFile() + the Dify-shaped `inputs`/`files` payload below
+// belong to the deleted difyApi. Replace with a Spring /files upload
+// helper and langgraphApi-shaped input once M5 rewrites this route.
+
+// Local stub so the call site still type-checks. Throws at runtime;
+// the analysis modal is gated behind M2/Qwen3-Omni work anyway.
+async function uploadFile(
+  _file: File,
+  _userId: string,
+  _category: string,
+): Promise<{ id: string }> {
+  throw new Error(
+    "uploadFile() not implemented — awaits M2 (Qwen3-Omni + Spring /api/v1/ai/files)",
+  )
+}
 
 export const Route = createFileRoute("/user/ai-doctor")({
   component: AiDoctorLayout,
@@ -171,7 +191,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
       }
     }
     prevMessagesLength.current = messages.length
-  }, [messages])
+  }, [messages, messagesEndRef.current])
 
   // UI refs
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -250,13 +270,15 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   </div>
 
                   <div className="space-y-4 text-sm leading-relaxed text-foreground">
-                    {openingStatement.split("\n").map((line, i) =>
-                      line ? (
-                        <p key={i}>{line}</p>
-                      ) : (
-                        <div key={i} className="h-2" />
-                      ),
-                    )}
+                    {openingStatement
+                      .split("\n")
+                      .map((line, i) =>
+                        line ? (
+                          <p key={i}>{line}</p>
+                        ) : (
+                          <div key={i} className="h-2" />
+                        ),
+                      )}
                   </div>
 
                   {/* 底部印章 */}
@@ -292,7 +314,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                     }`}
                   >
                     {msg.role === "assistant" && (
-                      <div className="text-[10px] text-muted-foreground pt-2">医者曰</div>
+                      <div className="text-[10px] text-muted-foreground pt-2">
+                        医者曰
+                      </div>
                     )}
                     <div
                       className={`space-y-1.5 ${
@@ -390,7 +414,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                       )}
                     </div>
                     {msg.role === "user" && (
-                      <div className="text-[10px] text-muted-foreground pt-2">我问</div>
+                      <div className="text-[10px] text-muted-foreground pt-2">
+                        我问
+                      </div>
                     )}
                   </motion.div>
                 ))}
@@ -751,6 +777,9 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   const abortController = new AbortController()
                   analysisAbortControllerRef.current = abortController
 
+                  // TODO(M5): uploadFile() came from the deleted difyApi.
+                  // M2/Qwen3-Omni path will replace this with a real
+                  // Spring /api/v1/ai/files upload + multimodal graph call.
                   const uploadResults = await Promise.all(
                     analysisFiles.map((file) =>
                       uploadFile(file, userId, "ai-doctor"),
@@ -765,19 +794,23 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                     c === "audio" ? "音频" : c === "video" ? "视频" : "文档",
                   )
 
-                  const userMsg = {
-                    role: "user" as const,
+                  const userMsg: LangGraphMessage = {
+                    role: "user",
                     content: `【心理状况分析】上传了 ${analysisFiles.length} 个文件（${categoryLabels.join("、")}）：${fileNames}`,
                   }
                   setMessages((prev) => [...prev, userMsg])
 
-                  const assistantMsg = {
-                    role: "assistant" as const,
+                  const assistantMsg: LangGraphMessage = {
+                    role: "assistant",
                     content: "",
                     isStreaming: true,
                   }
                   setMessages((prev) => [...prev, assistantMsg])
 
+                  // TODO(M5): the Dify-shaped `inputs` blob (video/audio/text
+                  // split) was passed to difyApi.sendMessageStream. The new
+                  // langgraphApi takes LangGraphMessage[]; the multimodal
+                  // mapping lands in M2 (Qwen3-Omni path).
                   const allFileData = uploadResults.map((result, idx) => ({
                     type:
                       fileCategories[idx] === "audio"
@@ -803,134 +836,138 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
 
                   const filesToSend = allFileData
 
-                  await sendMessageStream(
-                    "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
-                    userId,
-                    {
-                      onWorkflowStarted() {
-                        setMessages((prev) => {
-                          const newMsgs = [...prev]
-                          const last = newMsgs[newMsgs.length - 1]
-                          if (last?.isStreaming) {
-                            newMsgs[newMsgs.length - 1] = {
-                              ...last,
-                              content: "正在分析中，请稍候...\n",
-                            }
+                  // TODO(M5): below is a thin shim from the old Dify
+                  // callback shape (onWorkflowStarted/onMessage/onMessageEnd)
+                  // to the new StreamCallbacks (onNodeStart/onToken/
+                  // onMessageEnd). M5 will rewrite the analysis modal in full
+                  // once /api/v1/ai/files exists.
+                  const streamCallbacks: StreamCallbacks = {
+                    onNodeStart(_nodeName) {
+                      setMessages((prev) => {
+                        const newMsgs = [...prev]
+                        const last = newMsgs[newMsgs.length - 1]
+                        if (last?.isStreaming) {
+                          newMsgs[newMsgs.length - 1] = {
+                            ...last,
+                            content: "正在分析中，请稍候...\n",
                           }
-                          return newMsgs
-                        })
-                        accumulated = "正在分析中，请稍候...\n"
-                      },
-                      onMessage(answer) {
-                        accumulated += answer
-                        if (
-                          accumulated.startsWith("正在分析中，请稍候...\n") &&
-                          answer.trim().length > 0
-                        ) {
-                          accumulated = accumulated.replace(
+                        }
+                        return newMsgs
+                      })
+                      accumulated = "正在分析中，请稍候...\n"
+                    },
+                    onToken(delta) {
+                      accumulated += delta
+                      if (
+                        accumulated.startsWith("正在分析中，请稍候...\n") &&
+                        delta.trim().length > 0
+                      ) {
+                        accumulated = accumulated.replace(
+                          /^正在分析中，请稍候...\n?/,
+                          "",
+                        )
+                      }
+                      setMessages((prev) => {
+                        const newMsgs = [...prev]
+                        const last = newMsgs[newMsgs.length - 1]
+                        if (last?.isStreaming) {
+                          newMsgs[newMsgs.length - 1] = {
+                            ...last,
+                            content: accumulated,
+                          }
+                        }
+                        return newMsgs
+                      })
+                    },
+                    onMessageEnd(threadId, _runId, _fullContent) {
+                      streamHandledEnd = true
+                      setIsAnalyzing(false)
+                      setMessages((prev) => {
+                        const newMsgs = [...prev]
+                        const last = newMsgs[newMsgs.length - 1]
+                        if (last?.isStreaming) {
+                          const finalContent = last.content.replace(
                             /^正在分析中，请稍候...\n?/,
                             "",
                           )
+                          newMsgs[newMsgs.length - 1] = {
+                            ...last,
+                            content: finalContent,
+                            isStreaming: false,
+                          }
                         }
-                        setMessages((prev) => {
-                          const newMsgs = [...prev]
-                          const last = newMsgs[newMsgs.length - 1]
-                          if (last?.isStreaming) {
-                            newMsgs[newMsgs.length - 1] = {
-                              ...last,
-                              content: accumulated,
-                            }
-                          }
-                          return newMsgs
+                        return newMsgs
+                      })
+
+                      const actualAnalysisResult = accumulated
+                        .replace(/^正在分析中，请稍候...\n?/, "")
+                        .trim()
+                      const reportData = {
+                        file_name: analysisFiles.map((f) => f.name).join(", "),
+                        file_type: "multi",
+                        file_size: analysisFiles.reduce(
+                          (sum, f) => sum + f.size,
+                          0,
+                        ),
+                        analysis_result: actualAnalysisResult,
+                        conversation_id: threadId || activeConvId || undefined,
+                      }
+                      AnalysisReportsService.createReport1({
+                        requestBody: reportData,
+                      })
+                        .then((result) => {
+                          console.log("保存分析报告成功:", result)
                         })
-                      },
-                      onMessageEnd(_messageId, conversationId) {
-                        streamHandledEnd = true
-                        setIsAnalyzing(false)
-                        setMessages((prev) => {
-                          const newMsgs = [...prev]
-                          const last = newMsgs[newMsgs.length - 1]
-                          if (last?.isStreaming) {
-                            const finalContent = last.content.replace(
-                              /^正在分析中，请稍候...\n?/,
-                              "",
-                            )
-                            newMsgs[newMsgs.length - 1] = {
-                              ...last,
-                              content: finalContent,
-                              isStreaming: false,
-                            }
-                          }
-                          return newMsgs
+                        .catch((err) => {
+                          console.error("保存分析报告到数据库失败，错误:", err)
                         })
 
-                        const actualAnalysisResult = accumulated
-                          .replace(/^正在分析中，请稍候...\n?/, "")
-                          .trim()
-                        const reportData = {
-                          file_name: analysisFiles.map((f) => f.name).join(", "),
-                          file_type: "multi",
-                          file_size: analysisFiles.reduce(
-                            (sum, f) => sum + f.size,
-                            0,
-                          ),
-                          analysis_result: actualAnalysisResult,
-                          conversation_id:
-                            conversationId || activeConvId || undefined,
-                        }
-                        AnalysisReportsService.createReport1({
-                          requestBody: reportData,
-                        })
-                          .then((result) => {
-                            console.log("保存分析报告成功:", result)
-                          })
-                          .catch((err) => {
-                            console.error(
-                              "保存分析报告到数据库失败，错误:",
-                              err,
-                            )
-                          })
-
-                        if (conversationId) {
-                          selectConversationById(conversationId, "ai-doctor")
-                          loadConversations()
-                          if (isMountedRef.current) {
-                            navigate({
-                              to: "/user/ai-doctor/chat/$sessionId",
-                              params: { sessionId: conversationId },
-                              replace: true,
-                            })
-                          }
-                        }
+                      if (threadId) {
+                        selectConversationById(threadId, "ai-doctor")
                         loadConversations()
-                      },
-                      onWorkflowFinished() {
-                        console.log("工作流结束")
-                      },
-                      onError(message) {
-                        streamHandledEnd = true
-                        setIsAnalyzing(false)
-                        setMessages((prev) => {
-                          const newMsgs = [...prev]
-                          const last = newMsgs[newMsgs.length - 1]
-                          if (last?.isStreaming) {
-                            newMsgs[newMsgs.length - 1] = {
-                              ...last,
-                              content: `错误: ${message}`,
-                              isStreaming: false,
-                            }
-                          }
-                          return newMsgs
-                        })
-                      },
+                        if (isMountedRef.current) {
+                          navigate({
+                            to: "/user/ai-doctor/chat/$sessionId",
+                            params: { sessionId: threadId },
+                            replace: true,
+                          })
+                        }
+                      }
+                      loadConversations()
                     },
+                    onError(_code, message, _recoverable) {
+                      streamHandledEnd = true
+                      setIsAnalyzing(false)
+                      setMessages((prev) => {
+                        const newMsgs = [...prev]
+                        const last = newMsgs[newMsgs.length - 1]
+                        if (last?.isStreaming) {
+                          newMsgs[newMsgs.length - 1] = {
+                            ...last,
+                            content: `错误: ${message}`,
+                            isStreaming: false,
+                          }
+                        }
+                        return newMsgs
+                      })
+                    },
+                  }
+
+                  await sendChatStream(
+                    "ai-doctor",
                     {
-                      inputs: inputs,
+                      messages: [userMsg],
                       files: filesToSend,
-                      apiKeyName: "ai-doctor",
+                    },
+                    streamCallbacks,
+                    {
+                      threadId: effectiveSessionId || undefined,
                       signal: abortController.signal,
                     },
                   )
+                  // Silence unused-locals warnings for fields kept for
+                  // future M5 wiring.
+                  void inputs
                 } catch (err) {
                   if (!streamHandledEnd) {
                     setIsAnalyzing(false)
