@@ -15,9 +15,18 @@ public class LangGraphProperties {
     /** Shared secret for X-Internal-Token header. Must be at least 32 chars in prod. */
     private String internalToken = "changeme-changeme-changeme-changeme";
 
-    /** Total request timeout in milliseconds (covers full SSE stream). */
+    /** TCP connect timeout for ai-runtime (ms). */
+    private long connectTimeoutMs = 5000L;
+
+    /** Read/response timeout for ai-runtime (ms). */
+    private long responseTimeoutMs = 120000L;
+
+    /**
+     * Total request timeout in milliseconds (covers full SSE stream).
+     * Kept for M0 back-compat; equivalent to responseTimeoutMs.
+     */
     private long requestTimeoutMs = 120000L;
 
-    /** TCP connect timeout for ai-runtime. */
-    private long connectTimeoutMs = 5000L;
+    /** Default text model for ai_doctor graph. */
+    private String textModel = "minimax-text-01";
 }

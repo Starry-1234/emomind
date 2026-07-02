@@ -1,53 +1,70 @@
 package com.emomind.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import com.emomind.dto.request.ChatRequest;
+import com.emomind.security.UserDetailsImpl;
+import com.emomind.service.AiProxyService;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
-import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
-/**
- * AI gateway controller — proxies requests to the LangGraph ai-runtime.
- *
- * M0: only /healthz is implemented (returns 200 if Spring can reach this code).
- * Real /chat (SSE), /chat/stop, /conversations, /messages, /files endpoints
- * land in M1 / M4.
- *
- * All endpoints under /api/v1/ai/** require authentication (handled by SecurityConfig),
- * except /api/v1/ai/healthz which is public for health checks.
- */
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/ai")
-@RequiredArgsConstructor
-@Tag(name = "AI", description = "LangGraph ai-runtime 代理（聊天 / 会话 / 文件）")
 public class AiController {
 
+    private static final Logger log = LoggerFactory.getLogger(AiController.class);
+    private final AiProxyService aiProxyService;
+
+    public AiController(AiProxyService aiProxyService) {
+        this.aiProxyService = aiProxyService;
+    }
+
     @GetMapping("/healthz")
-    @Operation(summary = "AI 路由存活检查（公开）")
-    public ResponseEntity<Map<String, Object>> healthz() {
-        return ResponseEntity.ok(Map.of(
+    public ResponseEntity<?> healthz() {
+        return ResponseEntity.ok().body(java.util.Map.of(
             "status", "ok",
             "service", "ai-gateway",
             "note", "ai-runtime integration ships in M1"
         ));
     }
 
-    /**
-     * Catch-all for unimplemented endpoints so they return 501 instead of 404
-     * while we're still building M1+ endpoints.
-     */
-    @RequestMapping(value = "/**", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-    public ResponseEntity<Map<String, Object>> notImplemented() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Map.of(
-            "code", "NOT_IMPLEMENTED",
-            "message", "This AI endpoint is not yet implemented (Milestone 0 stub)"
-        ));
+    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<Flux<DataBuffer>> chat(@Valid @RequestBody ChatRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return ResponseEntity.status(401).build();
+        }
+        Object principal = auth.getPrincipal();
+        UUID userId = (principal instanceof UserDetailsImpl u) ? u.getId() : UUID.fromString(auth.getName());
+        Set<String> roles = auth.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .collect(Collectors.toSet());
+
+        log.info("chat request user={} graph={} thread={}", userId, request.getGraph(), request.getThreadId());
+
+        Flux<DataBuffer> stream = aiProxyService.proxyChatStream(
+            userId, roles, request.getGraph(), request.getThreadId(), request.getInput());
+
+        return ResponseEntity.ok()
+            .header("Content-Type", "text/event-stream;charset=UTF-8")
+            .header("Cache-Control", "no-cache")
+            .header("Connection", "keep-alive")
+            .header("X-Accel-Buffering", "no")
+            .body(stream);
     }
 }
