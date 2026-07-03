@@ -42,10 +42,9 @@ def _is_retryable(exc: BaseException) -> bool:
 
 async def call_llm(model: Any, messages: list[BaseMessage]) -> BaseMessage:
     """Call model.ainvoke with up to 3 attempts on transient errors."""
-    attempt = {"n": 0}
 
     @retry(
-        retry=retry_if_exception(_retry_filter),
+        retry=retry_if_exception(_is_retryable),
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=0.5, min=0.5, max=4),
         reraise=True,
@@ -54,11 +53,6 @@ async def call_llm(model: Any, messages: list[BaseMessage]) -> BaseMessage:
         ),
     )
     async def _go() -> BaseMessage:
-        attempt["n"] += 1
         return await model.ainvoke(messages)
 
     return await _go()
-
-
-def _retry_filter(exc: BaseException) -> bool:
-    return _is_retryable(exc)

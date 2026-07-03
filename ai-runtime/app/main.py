@@ -16,6 +16,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="EmoMind AI Runtime",
     version="0.2.0",
+    description="LangGraph-based AI runtime for EmoMind. M1: SSE streaming + X-Internal-Token auth.",
     lifespan=lifespan,
 )
 

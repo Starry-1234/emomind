@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-import time
+from datetime import datetime, timezone
 from typing import Any, AsyncIterator
 
 from langchain_core.messages import AIMessageChunk
@@ -52,7 +52,7 @@ async def stream_graph(
                 data = event.get("data", {}) or {}
 
                 if kind == "on_chain_start" and name in _TRACKED_NODE_NAMES:
-                    yield format_sse_event("node_start", {"name": name, "ts": time.time()})
+                    yield format_sse_event("node_start", {"name": name, "ts": datetime.now(timezone.utc).isoformat()})
 
                 elif kind == "on_chat_model_stream":
                     chunk = data.get("chunk")
