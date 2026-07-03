@@ -1,6 +1,5 @@
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage
-from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
 from app.llm_retry import call_llm
 
