@@ -20,26 +20,23 @@ import { useConversation } from "@/contexts/ConversationContext"
 import useAuth from "@/hooks/useAuth"
 import { useChat } from "@/hooks/useChat"
 import { useCurrentTheme } from "@/hooks/useCurrentTheme"
-import { sendChatStream } from "@/services/langgraphApi"
+import {
+  uploadFile as apiUploadFile,
+  sendChatStream,
+} from "@/services/langgraphApi"
 import type {
+  LangGraphFile,
   LangGraphMessage,
   StreamCallbacks,
 } from "@/services/langgraphTypes"
 
-// TODO(M5): uploadFile() + the Dify-shaped `inputs`/`files` payload below
-// belong to the deleted difyApi. Replace with a Spring /files upload
-// helper and langgraphApi-shaped input once M5 rewrites this route.
-
-// Local stub so the call site still type-checks. Throws at runtime;
-// the analysis modal is gated behind M2/Qwen3-Omni work anyway.
-async function uploadFile(
-  _file: File,
-  _userId: string,
-  _category: string,
-): Promise<{ id: string }> {
-  throw new Error(
-    "uploadFile() not implemented — awaits M2 (Qwen3-Omni + Spring /api/v1/ai/files)",
-  )
+async function uploadAnalysisFiles(files: File[]): Promise<LangGraphFile[]> {
+  const results: LangGraphFile[] = []
+  for (const file of files) {
+    const result = await apiUploadFile(file)
+    results.push(result)
+  }
+  return results
 }
 
 export const Route = createFileRoute("/user/ai-doctor")({
@@ -202,6 +199,13 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
   const [showAnalysisUpload, setShowAnalysisUpload] = useState(false)
   const [analysisFiles, setAnalysisFiles] = useState<File[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  // M2: state machine driving analysis-modal progress UI.
+  const [analysisStage, setAnalysisStage] = useState<
+    "idle" | "uploading" | "analyzing" | "fusing" | "complete" | "error"
+  >("idle")
+  const [partialReport, setPartialReport] = useState("")
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const [_report, setReport] = useState("")
 
   // 文件图标
   const getFileIcon = (file: File) => {
@@ -777,14 +781,12 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   const abortController = new AbortController()
                   analysisAbortControllerRef.current = abortController
 
-                  // TODO(M5): uploadFile() came from the deleted difyApi.
-                  // M2/Qwen3-Omni path will replace this with a real
-                  // Spring /api/v1/ai/files upload + multimodal graph call.
-                  const uploadResults = await Promise.all(
-                    analysisFiles.map((file) =>
-                      uploadFile(file, userId, "ai-doctor"),
-                    ),
-                  )
+                  // M2: drive progress UI through analysisStage state machine.
+                  setAnalysisStage("uploading")
+
+                  // M2: real Spring /api/v1/ai/files upload via langgraphApi.
+                  const uploadResults = await uploadAnalysisFiles(analysisFiles)
+                  setAnalysisStage("analyzing")
 
                   const fileCategories = analysisFiles.map((f) =>
                     categorizeFile(f),
@@ -807,56 +809,42 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   }
                   setMessages((prev) => [...prev, assistantMsg])
 
-                  // TODO(M5): the Dify-shaped `inputs` blob (video/audio/text
-                  // split) was passed to difyApi.sendMessageStream. The new
-                  // langgraphApi takes LangGraphMessage[]; the multimodal
-                  // mapping lands in M2 (Qwen3-Omni path).
-                  const allFileData = uploadResults.map((result, idx) => ({
-                    type:
-                      fileCategories[idx] === "audio"
-                        ? "audio"
-                        : fileCategories[idx] === "video"
-                          ? "video"
-                          : "document",
-                    transfer_method: "local_file" as const,
-                    url: result.id,
-                    upload_file_id: result.id,
-                  }))
+                  // M2: build LangGraphMessage[] directly from uploaded files.
+                  // The multimodal graph fans out per-file analysis from input.files.
+                  const messages: import("@/services/langgraphTypes").LangGraphMessage[] =
+                    [
+                      {
+                        role: "user",
+                        content:
+                          "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
+                        files: uploadResults,
+                      },
+                    ]
 
-                  const inputs: Record<string, unknown> = {
-                    video: allFileData.find((f) => f.type === "video"),
-                    audio: allFileData.find((f) => f.type === "audio"),
-                    text: allFileData.find((f) => f.type === "document"),
-                    userinput: {
-                      query:
-                        "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
-                      files: [],
-                    },
-                  }
-
-                  const filesToSend = allFileData
-
-                  // TODO(M5): below is a thin shim from the old Dify
-                  // callback shape (onWorkflowStarted/onMessage/onMessageEnd)
-                  // to the new StreamCallbacks (onNodeStart/onToken/
-                  // onMessageEnd). M5 will rewrite the analysis modal in full
-                  // once /api/v1/ai/files exists.
+                  // M2: direct StreamCallbacks driving analysisStage sub-states.
                   const streamCallbacks: StreamCallbacks = {
-                    onNodeStart(_nodeName) {
-                      setMessages((prev) => {
-                        const newMsgs = [...prev]
-                        const last = newMsgs[newMsgs.length - 1]
-                        if (last?.isStreaming) {
-                          newMsgs[newMsgs.length - 1] = {
-                            ...last,
-                            content: "正在分析中，请稍候...\n",
-                          }
-                        }
-                        return newMsgs
-                      })
-                      accumulated = "正在分析中，请稍候...\n"
+                    onRunStart: (_threadId, _runId, _graph) => {
+                      setAnalysisStage("analyzing")
                     },
-                    onToken(delta) {
+                    onNodeStart: (nodeName) => {
+                      if (
+                        nodeName === "analyze_image" ||
+                        nodeName === "analyze_audio" ||
+                        nodeName === "analyze_video"
+                      ) {
+                        setAnalysisStage("analyzing")
+                      } else if (nodeName === "fusion_analyze") {
+                        setAnalysisStage("fusing")
+                      } else if (
+                        nodeName === "extract_doc" ||
+                        nodeName === "analyze_doc"
+                      ) {
+                        setAnalysisStage("analyzing")
+                      }
+                    },
+                    onToken: (delta) => {
+                      setAnalysisStage("analyzing")
+                      setPartialReport((prev) => prev + delta)
                       accumulated += delta
                       if (
                         accumulated.startsWith("正在分析中，请稍候...\n") &&
@@ -879,17 +867,18 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                         return newMsgs
                       })
                     },
-                    onMessageEnd(threadId, _runId, _fullContent) {
+                    onMessageEnd: (threadId, _runId, fullContent, _files) => {
                       streamHandledEnd = true
+                      setAnalysisStage("complete")
+                      setReport(fullContent)
                       setIsAnalyzing(false)
                       setMessages((prev) => {
                         const newMsgs = [...prev]
                         const last = newMsgs[newMsgs.length - 1]
                         if (last?.isStreaming) {
-                          const finalContent = last.content.replace(
-                            /^正在分析中，请稍候...\n?/,
-                            "",
-                          )
+                          const finalContent = (fullContent || accumulated)
+                            .replace(/^正在分析中，请稍候...\n?/, "")
+                            .trim()
                           newMsgs[newMsgs.length - 1] = {
                             ...last,
                             content: finalContent,
@@ -899,7 +888,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                         return newMsgs
                       })
 
-                      const actualAnalysisResult = accumulated
+                      const actualAnalysisResult = (fullContent || accumulated)
                         .replace(/^正在分析中，请稍候...\n?/, "")
                         .trim()
                       const reportData = {
@@ -935,8 +924,10 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                       }
                       loadConversations()
                     },
-                    onError(_code, message, _recoverable) {
+                    onError: (_code, message, _recoverable) => {
                       streamHandledEnd = true
+                      setAnalysisStage("error")
+                      setAnalysisError(message)
                       setIsAnalyzing(false)
                       setMessages((prev) => {
                         const newMsgs = [...prev]
@@ -956,8 +947,8 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   await sendChatStream(
                     "ai-doctor",
                     {
-                      messages: [userMsg],
-                      files: filesToSend,
+                      messages,
+                      files: uploadResults,
                     },
                     streamCallbacks,
                     {
@@ -965,11 +956,12 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                       signal: abortController.signal,
                     },
                   )
-                  // Silence unused-locals warnings for fields kept for
-                  // future M5 wiring.
-                  void inputs
                 } catch (err) {
                   if (!streamHandledEnd) {
+                    setAnalysisStage("error")
+                    setAnalysisError(
+                      err instanceof Error ? err.message : String(err),
+                    )
                     setIsAnalyzing(false)
                     setMessages((prev) => {
                       const newMsgs = [...prev]
@@ -992,16 +984,29 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
               {isAnalyzing ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  斟酌中…
+                  {analysisStage === "uploading"
+                    ? "上传中…"
+                    : analysisStage === "fusing"
+                      ? "正在融合多模态分析…"
+                      : analysisStage === "complete"
+                        ? "完成"
+                        : analysisStage === "error"
+                          ? "出错"
+                          : "斟酌中…"}
                 </>
               ) : (
                 "开始分析"
               )}
             </Button>
 
-            {isAnalyzing && (
+            {analysisStage !== "idle" && analysisStage !== "complete" && (
               <div className="mt-3 text-center text-sm text-muted-foreground">
-                医者正在品读档案，请稍候…
+                {analysisStage === "uploading" && "上传档案中，请稍候…"}
+                {analysisStage === "analyzing" &&
+                  `分析中… ${partialReport.slice(0, 80)}`}
+                {analysisStage === "fusing" && "正在融合多模态分析结果…"}
+                {analysisStage === "error" &&
+                  `错误：${analysisError ?? "未知错误"}`}
               </div>
             )}
           </motion.div>

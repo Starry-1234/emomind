@@ -8,6 +8,7 @@
 import { parseSseStream } from "@/lib/sseParser"
 import type {
   ChatStreamOptions,
+  LangGraphFile,
   LangGraphMessage,
   StreamCallbacks,
 } from "./langgraphTypes"
@@ -123,4 +124,26 @@ export async function stopChat(threadId: string, runId: string): Promise<void> {
     // Log so M5+ cancel diagnostics are tractable (the route is a no-op in M1).
     console.warn("[langgraphApi] stopChat failed", { threadId, runId, err })
   }
+}
+
+/**
+ * Upload a file to Spring's /api/v1/ai/files endpoint. Returns the
+ * LangGraphFile descriptor used by the multimodal graph (see M2 design).
+ *
+ * The browser sets the multipart Content-Type with the boundary automatically
+ * — do NOT set it manually or the upload will fail.
+ */
+export async function uploadFile(file: File): Promise<LangGraphFile> {
+  const form = new FormData()
+  form.append("file", file)
+  const res = await fetch(`${API_BASE}/api/v1/ai/files`, {
+    method: "POST",
+    credentials: "include",
+    body: form, // browser sets Content-Type with boundary
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`File upload failed: ${res.status} ${errText}`)
+  }
+  return (await res.json()) as LangGraphFile
 }

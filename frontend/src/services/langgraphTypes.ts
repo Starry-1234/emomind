@@ -11,6 +11,7 @@ export interface LangGraphFile {
   mime: string
   size: number
   name?: string
+  category?: "image" | "audio" | "video" | "doc"
 }
 
 export interface LangGraphMessage {
