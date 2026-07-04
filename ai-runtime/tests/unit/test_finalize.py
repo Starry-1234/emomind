@@ -25,3 +25,14 @@ async def test_finalize_returns_empty_string_when_nothing_to_finalize():
     state = {"modality": "text"}
     out = await finalize(state)
     assert out == {"analysis_result": ""}
+
+
+@pytest.mark.asyncio
+async def test_finalize_returns_fused_when_multimodal():
+    state = {
+        "fused": "综合分析：图片+音频+视频。",
+        "modality": "multimodal",
+        "analyses": {"image": "...", "audio": "..."},
+    }
+    out = await finalize(state)
+    assert out["analysis_result"] == "综合分析：图片+音频+视频。"
