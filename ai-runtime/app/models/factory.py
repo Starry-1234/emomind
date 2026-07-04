@@ -6,9 +6,11 @@ from langchain_core.language_models import BaseChatModel
 from app.config import Settings, settings as _settings
 from app.models.base import ChatModelProvider
 from app.models.minimax import MinMaxProvider
+from app.models.qwen_omni import QwenOmniProvider
 
 _PROVIDERS: dict[str, type[ChatModelProvider]] = {
     "minimax": MinMaxProvider,
+    "qwen3-omni": QwenOmniProvider,
 }
 
 
