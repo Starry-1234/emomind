@@ -29,4 +29,7 @@ public class LangGraphProperties {
 
     /** Default text model for ai_doctor graph. */
     private String textModel = "minimax-text-01";
+
+    /** Max upload size in megabytes (M2: applied at FileController before forwarding). */
+    private long maxFileSizeMb = 50L;
 }

@@ -55,6 +55,12 @@ async def chat(
     input_state.setdefault("user_id", user_id)
     input_state.setdefault("thread_id", thread_id)
     input_state.setdefault("run_id", run_id)
+    # M2: propagate files from request body into graph state
+    if "files" in body.input:
+        input_state["files"] = body.input["files"]
+
+
+
 
     async def event_gen() -> AsyncIterator[str]:
         # Emit run_start immediately so the client knows the request was accepted.
