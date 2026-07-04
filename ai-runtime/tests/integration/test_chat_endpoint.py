@@ -10,6 +10,7 @@ import json
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
 from app.main import app
 from app.config import settings
@@ -119,3 +120,68 @@ async def test_chat_endpoint_rejects_missing_user_id(monkeypatch):
     assert r.status_code == 401
     body = r.json()
     assert body["detail"]["code"] == "INVALID_INTERNAL_TOKEN"
+
+
+@pytest.mark.asyncio
+async def test_chat_endpoint_propagates_files_to_graph(monkeypatch, tmp_path):
+    """M2: input.files flows into graph state and reaches the analyze_* node.
+
+    T5's contract is narrower than "triggers multimodal path":
+    chat.py must propagate body.input.files -> state.files so that
+    classify_input sees the file and routes to the corresponding
+    analyze_* node (T4's routing concern, exercised elsewhere).
+
+    For a single image upload, T4 routes to analyze_image directly
+    (no fusion_analyze). We mock analyze_image to return canned
+    Chinese text starting with 图 (matching the M2 j2 prompt) and
+    assert SSE carries that text in message_end.
+    """
+    from app.memory.cache import write_file
+
+    monkeypatch.setattr(settings, "internal_token", INTERNAL_TOKEN)
+    monkeypatch.setenv("LANGGRAPH_STORAGE_PATH", str(tmp_path))
+    monkeypatch.setattr(settings, "storage_path", str(tmp_path))
+
+    # Upload a file first so write_file returns a meta dict with file_id.
+    meta = write_file(
+        user_id="00000000-0000-0000-0000-000000000001",
+        content=b"PNG data",
+        mime="image/png",
+        name="i.png",
+    )
+
+    fake_image = FakeListChatModel(responses=["图：一只猫"])
+    monkeypatch.setattr(
+        "app.graphs.nodes.analyze_image.get_chat_model", lambda name: fake_image
+    )
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post(
+            "/v1/chat",
+            json={
+                "graph": "ai-doctor",
+                "thread_id": "t-m2",
+                "input": {
+                    "messages": [{"role": "user", "content": "看看这张图"}],
+                    "files": [meta],
+                },
+            },
+            headers={
+                "X-Internal-Token": INTERNAL_TOKEN,
+                "X-User-Id": "00000000-0000-0000-0000-000000000001",
+            },
+        )
+    assert resp.status_code == 200
+    # Read SSE stream
+    body = b""
+    async for chunk in resp.aiter_bytes():
+        body += chunk
+    text = body.decode("utf-8", errors="replace")
+    assert "event: run_start" in text
+    assert "event: message_end" in text
+    # Single image: analyze_image runs and produces canned "图..." text.
+    # This proves files reached state.files and the routing node ran.
+    assert "图" in text
+    # fusion_analyze must NOT run for single-modality under T4 routing.
+    assert "综合分析" not in text
