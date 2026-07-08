@@ -54,10 +54,11 @@ async def test_multimodal_image_audio_path(tmp_storage, monkeypatch):
         "thread_id": "t1",
         "run_id": "r1",
     }
-    # All analyze_* nodes + fusion_analyze need fake models.
+    # M3 perf cleanup: fusion_analyze is no longer dispatched via Send.
+    # Finalize owns inline fusion, so we only need fakes for analyze_*
+    # (per-modality) and finalize (the synthesis call).
     fake_image = FakeListChatModel(responses=["图片描述"])
     fake_audio = FakeListChatModel(responses=["音频描述"])
-    fake_fusion = FakeListChatModel(responses=["综合分析报告"])
     fake_finalize = FakeListChatModel(responses=["综合finalize回复"])
     monkeypatch.setattr(
         "app.graphs.nodes.analyze_image.get_chat_model", lambda name: fake_image
@@ -66,17 +67,17 @@ async def test_multimodal_image_audio_path(tmp_storage, monkeypatch):
         "app.graphs.nodes.analyze_audio.get_chat_model", lambda name: fake_audio
     )
     monkeypatch.setattr(
-        "app.graphs.nodes.fusion_analyze.get_chat_model", lambda name: fake_fusion
-    )
-    monkeypatch.setattr(
         "app.graphs.nodes.finalize.get_chat_model", lambda name: fake_finalize
     )
     graph = build_ai_doctor_graph()
     result = await graph.ainvoke(state)
     assert "analysis_result" in result
-    # Final result should come from fusion_analyze (multimodal)
-    assert "综合" in result["analysis_result"] or "image" in result["analysis_result"] or "audio" in result["analysis_result"]
-    # Verify partial analyses were collected
+    # M3: final result comes from finalize's inline fusion (single LLM call
+    # for synthesis, not two). The canned fake_finalize response must win.
+    assert result["analysis_result"] == "综合finalize回复"
+    # Verify partial analyses were collected (shallow-merged from parallel branches).
     assert "image" in result["analyses"]
     assert "audio" in result["analyses"]
-    assert "fused" in result and "综合" in result["fused"]
+    # M3: state['fused'] is no longer written — the graph has only
+    # `analysis_result` set after finalize.
+    assert "fused" not in result
