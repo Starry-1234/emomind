@@ -13,6 +13,7 @@ from langchain_core.language_models.fake_chat_models import FakeListChatModel
 # re-sets them via monkeypatch.setenv to keep per-test isolation.
 os.environ.setdefault("LANGGRAPH_MINIMAX_API_KEY", "test-key")
 os.environ.setdefault("LANGGRAPH_QWEN_API_KEY", "test-key")
+os.environ.setdefault("LANGGRAPH_EMBEDDING_API_KEY", "test-key")
 
 
 @pytest.fixture
@@ -26,3 +27,4 @@ def _set_llm_env(monkeypatch):
     """Every test gets valid LANGGRAPH_MINIMAX_API_KEY and LANGGRAPH_QWEN_API_KEY."""
     monkeypatch.setenv("LANGGRAPH_MINIMAX_API_KEY", "test-key")
     monkeypatch.setenv("LANGGRAPH_QWEN_API_KEY", "test-key")
+    monkeypatch.setenv("LANGGRAPH_EMBEDDING_API_KEY", "test-key")

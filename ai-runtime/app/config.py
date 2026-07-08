@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     qwen_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     qwen_model: str = "qwen3-omni"
 
+    # M3: embedding model (Qwen text-embedding-v3 via DashScope)
+    embedding_api_key: str = Field(..., min_length=1)
+    embedding_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    embedding_model: str = "text-embedding-v3"
+    embedding_dim: int = 1024
+
     # Limits
     request_timeout_seconds: int = 120
     log_level: str = "INFO"
