@@ -7,10 +7,17 @@ Graph (text + single-file path):
 
 Graph (multimodal path):
   classify_input -> Send(fan-out per modality) -> [analyze_*]
-                -> fusion_analyze
                 -> finalize -> emit_response -> END
 
 extract_doc -> analyze_doc (chained in same Send branch).
+
+M3 perf cleanup: dropped the parallel `fusion_analyze` Send. It used to
+fan out an empty-analyses slice (its Send branch saw no `analyses` from
+its siblings) and always returned `{"fused": ""}`, so `finalize` had to
+re-do the fusion inline. Result was 2 LLM calls per multimodal run.
+Now `finalize` owns inline fusion as the primary path (1 LLM call).
+The standalone `fusion_analyze` function is still importable for direct
+unit testing / future callers; it's just no longer wired into the graph.
 """
 from __future__ import annotations
 
@@ -26,7 +33,6 @@ from app.graphs.nodes.classify_input import _files_to_modalities, classify_input
 from app.graphs.nodes.emit_response import emit_response
 from app.graphs.nodes.extract_doc import extract_doc
 from app.graphs.nodes.finalize import finalize
-from app.graphs.nodes.fusion_analyze import fusion_analyze
 from app.graphs.state import AiDoctorState
 
 
@@ -74,7 +80,8 @@ def _route_after_classify(state: AiDoctorState):
         if m == "doc":
             return "extract_doc"
         return _MODALITY_TO_NODE.get(m, "analyze_text")
-    # multimodal: fan out per modality + fusion_analyze
+    # multimodal: fan out per modality. Inline fusion happens in `finalize`
+    # after all per-modality branches write into state['analyses'].
     sends: list[Send] = []
     for m in modalities:
         node = _MODALITY_TO_NODE.get(m)
@@ -83,7 +90,6 @@ def _route_after_classify(state: AiDoctorState):
         # Pass a slice of state with only this modality's files
         sliced = {**state, "files": _files_of_modality(state, m)}
         sends.append(Send(node, sliced))
-    sends.append(Send("fusion_analyze", state))
     return sends
 
 
@@ -96,7 +102,6 @@ def build_ai_doctor_graph():
     g.add_node("analyze_image", analyze_image)
     g.add_node("extract_doc", extract_doc)
     g.add_node("analyze_doc", analyze_doc)
-    g.add_node("fusion_analyze", fusion_analyze)
     g.add_node("finalize", finalize)
     g.add_node("emit_response", emit_response)
 
@@ -111,16 +116,13 @@ def build_ai_doctor_graph():
     g.add_edge("extract_doc", "analyze_doc")
     # Each modality branch edges directly to finalize. The `analyses`
     # field uses a reducer (shallow merge) so parallel writes from
-    # analyze_* and fusion_analyze all merge into the final dict
-    # before finalize reads it. finalize has a defensive inline-fusion
-    # fallback so multimodal paths get a fused reply even if the
-    # parallel fusion_analyze Send ran with an empty-analyses slice.
+    # analyze_* branches all merge into the final dict before finalize
+    # reads it. finalize owns inline fusion for multimodal paths.
     g.add_edge("analyze_text", "finalize")
     g.add_edge("analyze_audio", "finalize")
     g.add_edge("analyze_video", "finalize")
     g.add_edge("analyze_image", "finalize")
     g.add_edge("analyze_doc", "finalize")
-    g.add_edge("fusion_analyze", "finalize")
     g.add_edge("finalize", "emit_response")
     g.add_edge("emit_response", END)
     return g.compile()
