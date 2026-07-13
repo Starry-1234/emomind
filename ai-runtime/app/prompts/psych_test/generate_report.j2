@@ -1,0 +1,15 @@
+总评分：{{ total_score }} / {{ total_max }}（{{ total_normalized }}%）
+
+各维度评分：
+{% for dim, info in dimension_breakdown.items() %}
+- {{ info.dimension_cn }}（{{ dim }}）：{{ info.score }} / {{ info.max }}（{{ info.normalized }}%），{{ info.level }}
+{% endfor %}
+
+情感标签：{{ emotion_tags | join("、") }}
+
+请基于"小心"的角色设定，给来访者一份共情式心理评估报告，包含：
+1. 总体解读（200-300 字）：综合各维度表现给出整体心理状态评估
+2. 各维度简要分析（100-200 字/维度）
+3. 建议（150-250 字）：可操作的自我照护建议
+
+直接输出报告内容，保持自然段格式，不要 Markdown 标题。
