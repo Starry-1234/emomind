@@ -257,3 +257,28 @@ async def test_chat_endpoint_dispatches_psych_test(monkeypatch, tmp_path):
     text = body.decode("utf-8", errors="replace")
     assert "event: run_start" in text
     assert "event: message_end" in text
+
+
+@pytest.mark.asyncio
+async def test_chat_endpoint_returns_400_for_unknown_graph(monkeypatch):
+    """Unknown graph name in request body returns 400 (not 200, not 500)."""
+    monkeypatch.setattr(settings, "internal_token", INTERNAL_TOKEN)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post(
+            "/v1/chat",
+            json={
+                "graph": "unknown-graph",
+                "thread_id": "unknown-1",
+                "input": {"messages": []},
+            },
+            headers={
+                "X-Internal-Token": INTERNAL_TOKEN,
+                "X-User-Id": "00000000-0000-0000-0000-000000000001",
+            },
+        )
+    assert resp.status_code == 400
+    body = resp.json()
+    assert body.get("detail", {}).get("code") == "GRAPH_NOT_FOUND"
+    assert body.get("detail", {}).get("graph") == "unknown-graph"
