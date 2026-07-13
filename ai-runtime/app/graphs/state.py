@@ -77,3 +77,7 @@ class PsychTestState(GraphState):
     # report
     report: Optional[dict]
     test_record_id: Optional[str]
+
+    # assistant's last reply text (set by guide_assistant, generate_first_question,
+    # generate_next_question, clarify_answer; consumed by SSE message_end in M4)
+    assistant_reply: Optional[str]

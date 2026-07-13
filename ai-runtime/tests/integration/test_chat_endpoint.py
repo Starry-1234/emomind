@@ -185,3 +185,75 @@ async def test_chat_endpoint_propagates_files_to_graph(monkeypatch, tmp_path):
     assert "图" in text
     # fusion_analyze must NOT run for single-modality under T4 routing.
     assert "综合分析" not in text
+
+
+@pytest.mark.asyncio
+async def test_chat_endpoint_dispatches_psych_test(monkeypatch, tmp_path):
+    """M3: POST /v1/chat with graph='psych-test' routes to psych_test graph."""
+    from app.graphs.nodes._test_bank_cache import TestBankCache
+    import app.graphs.nodes._test_bank_cache as cache_mod
+    cache_mod._cache = TestBankCache()  # reset
+
+    from langchain_core.language_models.fake_chat_models import FakeListChatModel
+    intake = FakeListChatModel(responses=["我理解你的状态。"])
+    import app.graphs.nodes.generate_first_question as gfq
+    monkeypatch.setattr(gfq, "get_chat_model", lambda name: intake)
+    from app.models.embedding import EmbeddingProvider
+
+    class _E(EmbeddingProvider):
+        dim = 4
+
+        async def embed(self, texts):
+            return [[0.1, 0.2, 0.3, 0.4] for _ in texts]
+
+    # Patch load_test_template's binding (module-level import in its namespace).
+    from app.graphs.nodes import load_test_template as lt_mod
+    from app.graphs.nodes import generate_first_question as gfq_mod
+    monkeypatch.setattr(lt_mod, "get_embedding_provider", lambda name: _E())
+    monkeypatch.setattr(gfq_mod, "get_embedding_provider", lambda name: _E())
+
+    # Set up a minimal bank
+    import json
+    bank_path = tmp_path / "question_bank.json"
+    bank_path.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "mood_00",
+                    "text": "Q",
+                    "dimension": "mood",
+                    "dimension_cn": "情绪",
+                    "keywords": "",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(cache_mod, "QUESTION_BANK_PATH", bank_path)
+
+    monkeypatch.setattr(settings, "internal_token", INTERNAL_TOKEN)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post(
+            "/v1/chat",
+            json={
+                "graph": "psych-test",
+                "thread_id": "psych-test-1",
+                "input": {
+                    "intent": "start_test",
+                    "messages": [{"role": "user", "content": "我最近心情低落"}],
+                },
+            },
+            headers={
+                "X-Internal-Token": INTERNAL_TOKEN,
+                "X-User-Id": "00000000-0000-0000-0000-000000000001",
+            },
+        )
+    assert resp.status_code == 200
+    body = b""
+    async for chunk in resp.aiter_bytes():
+        body += chunk
+    text = body.decode("utf-8", errors="replace")
+    assert "event: run_start" in text
+    assert "event: message_end" in text
