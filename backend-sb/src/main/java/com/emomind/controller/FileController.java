@@ -1,5 +1,6 @@
 package com.emomind.controller;
 
+import com.emomind.exception.FileAccessDeniedException;
 import com.emomind.security.UserDetailsImpl;
 import com.emomind.service.AiProxyService;
 import org.slf4j.Logger;
@@ -8,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -65,5 +67,18 @@ public class FileController {
             return u.getId();
         }
         return UUID.fromString(auth.getName());
+    }
+
+    /**
+     * M4 T2: ai-runtime returns 403 (FILE_ACCESS_DENIED) when the requested
+     * file belongs to a different user. Map that to a structured 403 JSON
+     * for the frontend instead of leaking the underlying WebClient error.
+     */
+    @ExceptionHandler(FileAccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleFileAccessDenied(FileAccessDeniedException e) {
+        return ResponseEntity.status(403).body(Map.of(
+            "code", "FILE_ACCESS_DENIED",
+            "message", e.getMessage()
+        ));
     }
 }
