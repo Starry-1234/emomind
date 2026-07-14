@@ -1,11 +1,11 @@
 """POST /v1/chat — main entry point.
 
 Spring Boot (with X-Internal-Token) calls this. We dispatch to the
-ai_doctor graph (M1 only — psych_test graph arrives in M3) and stream
-the graph's events back as SSE.
+ai_doctor graph (M1+M2) or the psych_test graph (M3) based on
+body.graph, and stream the graph's events back as SSE.
 
-M5 will add Redis-backed cancel flags here; M1 just streams to completion
-or timeout.
+M5 will add Redis-backed cancel flags here; M1+M2+M3 just stream to
+completion or timeout.
 """
 from __future__ import annotations
 
@@ -18,12 +18,14 @@ from pydantic import BaseModel, Field
 
 from app.auth import verify_internal_token
 from app.graphs.ai_doctor import build_ai_doctor_graph
+from app.graphs.psych_test import build_psych_test_graph
 from app.streaming import format_sse_event, stream_graph
 
 router = APIRouter()
 
 _GRAPH_BUILDERS: dict[str, Any] = {
     "ai-doctor": build_ai_doctor_graph,
+    "psych-test": build_psych_test_graph,
 }
 
 

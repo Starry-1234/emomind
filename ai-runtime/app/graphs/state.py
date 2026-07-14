@@ -47,3 +47,37 @@ class AiDoctorState(GraphState):
     files: Optional[list[dict]]  # [{"file_id": ..., "mime": ..., ...}]
     doc_text: Optional[str]      # intermediate: extract_doc -> analyze_doc
     fused: Optional[str]         # output of fusion_analyze
+
+
+class PsychTestState(GraphState):
+    """psych_test graph state (M3).
+
+    For M3 only the text path is supported; multimodal nodes
+    (added in M4) will reuse the ai_doctor multimodal graph.
+    """
+
+    # intent routing
+    intent: Optional[str]                    # "ask_howto" | "start_test" | "answer" | "chitchat"
+    phase: Optional[str]                     # "guide" | "testing" | "reporting"
+
+    # test bank (loaded by load_test_template; same for all sessions)
+    test_bank: Optional[dict]
+
+    # 30 selected questions for the current test
+    questions: Optional[list[str]]
+    pending_question: Optional[dict]
+    current: Optional[int]
+    answers: Optional[list[dict]]
+
+    # progress
+    test_progress: Optional[dict]
+    emotion_tags: Optional[list[str]]
+    answer_ambiguous: Optional[bool]          # M3 always False
+
+    # report
+    report: Optional[dict]
+    test_record_id: Optional[str]
+
+    # assistant's last reply text (set by guide_assistant, generate_first_question,
+    # generate_next_question, clarify_answer; consumed by SSE message_end in M4)
+    assistant_reply: Optional[str]
