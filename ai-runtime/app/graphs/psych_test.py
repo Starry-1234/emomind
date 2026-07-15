@@ -1,4 +1,4 @@
-"""M3 psych_test graph builder — 12 nodes + 2 routing functions + InMemorySaver.
+"""M3 psych_test graph builder — 12 nodes + 2 routing functions.
 
 Graph:
   START -> load_test_template -> load_memory -> intent_classifier
@@ -22,10 +22,13 @@ Phase collision resolution:
   keep its existing M3 Task 3 unit-test contract (test_generate_first_question.py
   asserts `out["phase"] == "testing"`). Both writes are aligned; no graph
   assertion breaks.
+
+M4: builder is now async and uses AsyncPostgresSaver via
+  await get_checkpointer(). Module-level InMemorySaver was removed
+  (T6).
 """
 from __future__ import annotations
 
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
@@ -42,6 +45,7 @@ from app.graphs.nodes.load_test_template import load_test_template
 from app.graphs.nodes.persist_test_record import persist_test_record
 from app.graphs.nodes.update_progress import update_progress
 from app.graphs.state import PsychTestState
+from app.memory.checkpointer import get_checkpointer
 
 
 def route_by_intent(state: PsychTestState) -> str:
@@ -72,12 +76,11 @@ def route_after_answer(state: PsychTestState) -> str:
     return "generate_next_question"
 
 
-# Module-level InMemorySaver (shared across all sessions in this process).
-# For M3, this is process-local; M4 replaces with PostgresSaver.
-_MEMORY = InMemorySaver()
+# M4: Module-level InMemorySaver was removed. The checkpointer is now
+# AsyncPostgresSaver, acquired via await get_checkpointer() at build time.
 
 
-def build_psych_test_graph():
+async def build_psych_test_graph():
     g = StateGraph(PsychTestState)
     g.add_node("load_test_template", load_test_template)
     g.add_node("load_memory", load_memory)
@@ -108,4 +111,5 @@ def build_psych_test_graph():
     g.add_edge("generate_report", "persist_test_record")
     g.add_edge("persist_test_record", "emit_response")
 
-    return g.compile(checkpointer=_MEMORY)
+    checkpointer = await get_checkpointer()
+    return g.compile(checkpointer=checkpointer)
