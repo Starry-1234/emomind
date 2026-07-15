@@ -60,3 +60,4 @@ jobs:
           LANGGRAPH_EMBEDDING_API_KEY: test-key
           LANGGRAPH_MAX_FILE_SIZE_MB: 50
           LANGGRAPH_STORAGE_PATH: /tmp/ai-runtime-test-storage
+          LANGGRAPH_SPRING_RUNTIME_URL: http://localhost:8080
