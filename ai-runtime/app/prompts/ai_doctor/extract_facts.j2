@@ -1,0 +1,17 @@
+以下是来访者与"小心"（心理咨询 AI）的对话历史：
+
+{% for m in messages %}
+{{ m.role }}: {{ m.content }}
+{% endfor %}
+
+请从对话中提取关于来访者的关键事实（用户偏好、性格特征、情绪模式、生活状况等）。
+每条事实用一个简短的 key（如 "favorite_color" / "stress_level" / "lives_alone"）和具体 value 描述。
+importance 字段为 0-1 之间的浮点数，表示这条事实对个性化未来回复的重要程度。
+
+请用 JSON 数组返回，例如：
+[
+  {"key": "favorite_color", "value": "用户喜欢蓝色", "importance": 0.3},
+  {"key": "stress_source", "value": "工作压力大", "importance": 0.9}
+]
+
+只输出 JSON，不要任何其他文字。
