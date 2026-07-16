@@ -48,8 +48,9 @@ async def get_file(
     meta = get_meta(file_id)
     if meta is None:
         raise HTTPException(status_code=404, detail={"code": "FILE_NOT_FOUND"})
+    if meta.get("user_id") != user_id:
+        raise HTTPException(status_code=403, detail={"code": "FILE_ACCESS_DENIED"})
     content = read_file(file_id, user_id)
     if content is None:
-        # Either not found for this user, or path missing
         raise HTTPException(status_code=404, detail={"code": "FILE_NOT_FOUND"})
     return Response(content=content, media_type=meta["mime"])

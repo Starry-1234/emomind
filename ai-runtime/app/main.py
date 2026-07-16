@@ -1,17 +1,25 @@
 """FastAPI entrypoint for ai-runtime."""
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from app.api.chat import router as chat_router
 from app.api.files import router as files_router
+from app.memory.checkpointer import close_checkpointer, get_checkpointer
+
+log = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # M2: nothing extra to warm up; local-FS storage is created on first
-    # upload by cache.write_file. M4 will init PostgresSaver here.
+    try:
+        await get_checkpointer()
+        log.info("PostgresSaver ready")
+    except Exception as exc:
+        log.error("PostgresSaver init failed (continuing without): %s", exc)
     yield
+    await close_checkpointer()
 
 
 app = FastAPI(

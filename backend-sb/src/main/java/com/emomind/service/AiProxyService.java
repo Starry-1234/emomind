@@ -1,10 +1,12 @@
 package com.emomind.service;
 
 import com.emomind.config.LangGraphProperties;
+import com.emomind.exception.FileAccessDeniedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
@@ -109,7 +111,37 @@ public class AiProxyService {
             .header("X-Internal-Token", props.getInternalToken())
             .header("X-Trace-Id", traceId)
             .retrieve()
+            .onStatus(HttpStatusCode::is4xxClientError, resp -> {
+                if (resp.statusCode().value() == 403) {
+                    return resp.bodyToMono(String.class).flatMap(body ->
+                        Mono.error(new FileAccessDeniedException("File access denied: " + fileId))
+                    );
+                }
+                return resp.createException();
+            })
             .bodyToMono(byte[].class)
             .doOnError(e -> log.error("ai-runtime file download error trace={}", traceId, e));
+    }
+
+    /**
+     * M4 T2: forward a completed psych-test (or other scored) result to
+     * ai-runtime's POST /v1/test-records so the Python side can persist it.
+     * Returns the test_record_id from the ai-runtime response.
+     */
+    public String proxyTestRecordPersist(UUID userId, Map<String, Object> body) {
+        String traceId = UUID.randomUUID().toString();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> resp = aiRuntimeWebClient.post()
+            .uri("/v1/test-records")
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-User-Id", userId.toString())
+            .header("X-Internal-Token", props.getInternalToken())
+            .header("X-Trace-Id", traceId)
+            .bodyValue(body)
+            .retrieve()
+            .bodyToMono(Map.class)
+            .doOnError(e -> log.error("ai-runtime test record persist error trace={}", traceId, e))
+            .block();
+        return resp != null ? (String) resp.get("test_record_id") : null;
     }
 }

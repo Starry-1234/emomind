@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     storage_path: str = "/var/lib/emomind/files"
     max_file_size_mb: int = 50
 
+    # Spring Boot gateway (M4: persist_test_record posts TestRecord here)
+    spring_runtime_url: str = "http://localhost:8080"
+
     # LLM providers
     # M1: MinMax (text)
     minimax_api_key: str = Field(..., min_length=1)

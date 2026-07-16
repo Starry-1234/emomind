@@ -34,6 +34,7 @@ from app.graphs.nodes.emit_response import emit_response
 from app.graphs.nodes.extract_doc import extract_doc
 from app.graphs.nodes.finalize import finalize
 from app.graphs.state import AiDoctorState
+from app.memory.checkpointer import get_checkpointer
 
 
 _MODALITY_TO_NODE = {
@@ -93,7 +94,7 @@ def _route_after_classify(state: AiDoctorState):
     return sends
 
 
-def build_ai_doctor_graph():
+async def build_ai_doctor_graph():
     g = StateGraph(AiDoctorState)
     g.add_node("classify_input", classify_input)
     g.add_node("analyze_text", analyze_text)
@@ -125,4 +126,5 @@ def build_ai_doctor_graph():
     g.add_edge("analyze_doc", "finalize")
     g.add_edge("finalize", "emit_response")
     g.add_edge("emit_response", END)
-    return g.compile()
+    checkpointer = await get_checkpointer()
+    return g.compile(checkpointer=checkpointer)

@@ -34,6 +34,12 @@ def _event_names(frames: list[str]) -> list[str]:
 async def test_chat_endpoint_emits_run_start_and_message_end(
     mock_minimax_model, monkeypatch
 ):
+    # M4 T6: skip if Postgres unavailable — chat.py now awaits get_checkpointer()
+    try:
+        from app.memory.checkpointer import get_checkpointer
+        await get_checkpointer()
+    except Exception as e:
+        pytest.skip(f"Postgres unavailable: {e}")
     # The router-level graph builder is what chat.py imports, so patch the
     # binding inside app.api.chat (the compiled graph's analyze_text node also
     # imports get_chat_model by name; both must be patched).
@@ -136,6 +142,12 @@ async def test_chat_endpoint_propagates_files_to_graph(monkeypatch, tmp_path):
     Chinese text starting with 图 (matching the M2 j2 prompt) and
     assert SSE carries that text in message_end.
     """
+    # M4 T6: skip if Postgres unavailable — chat.py awaits get_checkpointer()
+    try:
+        from app.memory.checkpointer import get_checkpointer
+        await get_checkpointer()
+    except Exception as e:
+        pytest.skip(f"Postgres unavailable: {e}")
     from app.memory.cache import write_file
 
     monkeypatch.setattr(settings, "internal_token", INTERNAL_TOKEN)
@@ -190,6 +202,12 @@ async def test_chat_endpoint_propagates_files_to_graph(monkeypatch, tmp_path):
 @pytest.mark.asyncio
 async def test_chat_endpoint_dispatches_psych_test(monkeypatch, tmp_path):
     """M3: POST /v1/chat with graph='psych-test' routes to psych_test graph."""
+    # M4 T6: skip if Postgres unavailable — chat.py awaits get_checkpointer()
+    try:
+        from app.memory.checkpointer import get_checkpointer
+        await get_checkpointer()
+    except Exception as e:
+        pytest.skip(f"Postgres unavailable: {e}")
     from app.graphs.nodes._test_bank_cache import TestBankCache
     import app.graphs.nodes._test_bank_cache as cache_mod
     cache_mod._cache = TestBankCache()  # reset

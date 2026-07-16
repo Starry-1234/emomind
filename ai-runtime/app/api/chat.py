@@ -50,7 +50,7 @@ async def chat(
 
     thread_id = body.thread_id or f"thread_{uuid.uuid4().hex}"
     run_id = f"run_{uuid.uuid4().hex}"
-    graph = builder()
+    graph = await builder()
 
     config = {"configurable": {"thread_id": thread_id, "user_id": user_id, "run_id": run_id}}
     input_state: dict[str, Any] = dict(body.input)
