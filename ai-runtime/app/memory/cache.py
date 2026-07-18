@@ -24,7 +24,42 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+import redis.asyncio as redis_async
+
 from app.config import settings
+
+# M5: Redis cancel flag TTL (10 min matches chat session timeout)
+_CANCEL_TTL_SECONDS = 600
+
+# Module-level Redis singleton
+_redis_client: Optional[redis_async.Redis] = None
+
+
+async def get_redis() -> redis_async.Redis:
+    """Return the module-level Redis singleton, creating it on first call."""
+    global _redis_client
+    if _redis_client is None:
+        _redis_client = redis_async.from_url(settings.redis_url)
+    return _redis_client
+
+
+async def set_cancel_flag(thread_id: str, ttl_seconds: int = _CANCEL_TTL_SECONDS) -> None:
+    """Set a Redis flag so the graph's next-node check exits early."""
+    r = await get_redis()
+    await r.setex(f"cancel:{thread_id}", ttl_seconds, "1")
+
+
+async def is_cancelled(thread_id: str) -> bool:
+    """Check if the Redis cancel flag is set for the given thread_id."""
+    r = await get_redis()
+    val = await r.get(f"cancel:{thread_id}")
+    return val is not None
+
+
+async def clear_cancel_flag(thread_id: str) -> None:
+    """Clear the Redis cancel flag (called when the graph ends)."""
+    r = await get_redis()
+    await r.delete(f"cancel:{thread_id}")
 
 _MIME_WHITELIST = frozenset({
     # images

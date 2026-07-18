@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.chat import router as chat_router
+from app.api.conversations import router as conversations_router
 from app.api.files import router as files_router
 from app.memory.checkpointer import close_checkpointer, get_checkpointer
 
@@ -34,6 +35,7 @@ app = FastAPI(
 
 app.include_router(chat_router, prefix="/v1")
 app.include_router(files_router, prefix="/v1")
+app.include_router(conversations_router, prefix="/v1/conversations")
 
 
 @app.get("/healthz")

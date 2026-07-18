@@ -9,6 +9,7 @@ completion or timeout.
 """
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Any, AsyncIterator
 
@@ -71,8 +72,31 @@ async def chat(
             "run_id": run_id,
             "graph": body.graph,
         })
+        # M5: track emitted question_ready events so the frontend
+        # can render the next prompt without waiting for message_end.
+        # Triggered by node_start events from generate_next_question
+        # or generate_first_question (M3 streaming fix).
+        emitted_first_question = False
         async for frame in stream_graph(graph, input_state, config, run_id):
             yield frame
+            # Cheaply parse node_start frames to detect question generation.
+            if not emitted_first_question and frame.startswith("event: node_start"):
+                try:
+                    data_line = next(
+                        l for l in frame.split("\n")
+                        if l.startswith("data: ")
+                    )
+                    payload = json.loads(data_line[len("data: "):])
+                    if payload.get("name") in (
+                        "generate_next_question", "generate_first_question"
+                    ):
+                        yield format_sse_event("workflow_event", {
+                            "type": "question_ready",
+                            "thread_id": thread_id,
+                        })
+                        emitted_first_question = True
+                except (StopIteration, ValueError, KeyError):
+                    pass
 
     return StreamingResponse(
         event_gen(),
