@@ -14,11 +14,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Map;
 import java.util.Set;
@@ -91,5 +93,27 @@ public class AiController {
 
         aiProxyService.proxyStop(userId, threadId, runId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * M5 T3: cancel a running conversation. Proxies POST
+     * /v1/conversations/{threadId}/cancel to ai-runtime, which sets a
+     * Redis cancel flag (M5 T1). Returns 200 with the ai-runtime body
+     * (e.g. {cancelled: true}); 401 if unauthenticated; 503 on ai-runtime
+     * failure. Not a streaming response — a normal JSON Mono.
+     */
+    @PostMapping("/conversations/{threadId}/cancel")
+    public Mono<ResponseEntity<Map>> cancel(@PathVariable String threadId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return Mono.just(ResponseEntity.status(401).build());
+        }
+        Object principal = auth.getPrincipal();
+        UUID userId = (principal instanceof UserDetailsImpl u) ? u.getId() : UUID.fromString(auth.getName());
+
+        log.info("cancel conversation user={} thread_id={}", userId, threadId);
+        return aiProxyService.proxyCancel(userId, threadId)
+            .map(body -> ResponseEntity.ok(body))
+            .onErrorResume(e -> Mono.just(ResponseEntity.status(503).build()));
     }
 }

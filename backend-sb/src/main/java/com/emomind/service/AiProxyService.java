@@ -144,4 +144,44 @@ public class AiProxyService {
             .block();
         return resp != null ? (String) resp.get("test_record_id") : null;
     }
+
+    /**
+     * M5 T3: forward POST /v1/conversations/{threadId}/cancel to ai-runtime,
+     * which sets a Redis cancel flag (wired in M5 T1). Returns the parsed
+     * JSON body (e.g. {thread_id, cancelled}). X-User-Id is the caller's id.
+     */
+    public Mono<Map> proxyCancel(UUID userId, String threadId) {
+        String traceId = UUID.randomUUID().toString();
+        return aiRuntimeWebClient.post()
+            .uri("/v1/conversations/{threadId}/cancel", threadId)
+            .header("X-User-Id", userId.toString())
+            .header("X-Internal-Token", props.getInternalToken())
+            .header("X-Trace-Id", traceId)
+            .retrieve()
+            .bodyToMono(Map.class)
+            .doOnError(e -> log.error("ai-runtime cancel error trace={}", traceId, e));
+    }
+
+    /**
+     * M5 T3: forward GET /v1/files?prefix=X to ai-runtime, which returns only
+     * files owned by the calling user (ACL enforced server-side via X-User-Id;
+     * T4 adds the ai-runtime endpoint). prefix is optional (null = no filter).
+     */
+    public Flux<Map> proxyFileList(UUID userId, String prefix) {
+        String traceId = UUID.randomUUID().toString();
+        return aiRuntimeWebClient.get()
+            .uri(uriBuilder -> {
+                var b = uriBuilder.path("/v1/files");
+                if (prefix != null && !prefix.isBlank()) {
+                    b.queryParam("prefix", prefix);
+                }
+                return b.build();
+            })
+            .header("X-User-Id", userId.toString())
+            .header("X-Internal-Token", props.getInternalToken())
+            .header("X-Trace-Id", traceId)
+            .retrieve()
+            .bodyToFlux(Map.class)
+            .doOnError(e -> log.error("ai-runtime file list error trace={}", traceId, e));
+    }
 }

@@ -57,6 +57,31 @@ public class FileController {
                 .body(bytes));
     }
 
+    /**
+     * M5 T3: list files owned by the calling user. ACL is enforced by
+     * ai-runtime's GET /v1/files (T4), which filters by X-User-Id server-side;
+     * Spring just forwards the JWT-derived user id. Optional prefix filters by
+     * file name prefix (null/blank = no filter). Returns [] if nothing matches.
+     */
+    @GetMapping
+    public ResponseEntity<java.util.List<Map<String, Object>>> list(
+            @RequestParam(required = false) String prefix) {
+        UUID userId = currentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        log.info("file list user={} prefix={}", userId, prefix);
+        java.util.List<Map<String, Object>> files = aiProxyService.proxyFileList(userId, prefix)
+            .map(m -> {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> cast = (Map<String, Object>) m;
+                return cast;
+            })
+            .collectList()
+            .block();
+        return ResponseEntity.ok(files);
+    }
+
     private UUID currentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
