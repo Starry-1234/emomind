@@ -165,3 +165,50 @@ def read_file(file_id: str, user_id: str) -> Optional[bytes]:
     if not path.exists():
         return None
     return path.read_bytes()
+
+
+async def list_user_files(
+    user_id: str, prefix: Optional[str] = None
+) -> list[dict]:
+    """Read all meta JSONL logs, filter by user_id, optionally by name prefix.
+
+    Returns a list of dicts: [{file_id, mime, size, name, uploaded_at}, ...]
+    Ordered newest-first (by uploaded_at desc).
+
+    `user_id` MUST come from a trusted source (e.g. X-User-Id via
+    verify_internal_token). The HTTP endpoint that exposes this helper
+    never accepts a user_id from the query string — doing so would let one
+    user list another's files.
+    """
+    base = Path(settings.storage_path)
+    if not base.exists():
+        return []
+    out: list[dict] = []
+    # meta logs live at <base>/YYYY/MM/DD/_meta/YYYY-MM-DD.jsonl
+    for log_path in base.glob("**/_meta/*.jsonl"):
+        try:
+            with open(log_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        rec = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if rec.get("user_id") != user_id:
+                        continue
+                    if prefix and not rec.get("name", "").startswith(prefix):
+                        continue
+                    out.append({
+                        "file_id": rec.get("file_id"),
+                        "mime": rec.get("mime"),
+                        "size": rec.get("size"),
+                        "name": rec.get("name"),
+                        "uploaded_at": rec.get("uploaded_at"),
+                    })
+        except OSError:
+            continue
+    # Newest first
+    out.sort(key=lambda r: r.get("uploaded_at", ""), reverse=True)
+    return out

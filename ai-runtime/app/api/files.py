@@ -5,12 +5,27 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import Response
 
 from app.auth import verify_internal_token
-from app.memory.cache import get_meta, read_file, write_file
+from app.memory.cache import get_meta, list_user_files, read_file, write_file
 
 # Inner routes are mounted under "/files" so when main.py registers this
-# router with prefix="/v1" the final paths become "/v1/files/upload" and
-# "/v1/files/{file_id}" — matching the Spring AiController contract.
+# router with prefix="/v1" the final paths become "/v1/files", "/v1/files/upload"
+# and "/v1/files/{file_id}" — matching the Spring AiController contract.
 router = APIRouter(prefix="/files")
+
+
+@router.get("")
+async def list_files(
+    prefix: str | None = None,
+    user_id: str = Depends(verify_internal_token),
+) -> list[dict]:
+    """List files owned by the calling user.
+
+    Spring's proxyFileList forwards here. The X-User-Id header is
+    the authoritative user_id; the function NEVER accepts a user_id
+    query param (would let one user list another's files).
+    """
+    files = await list_user_files(user_id, prefix)
+    return files
 
 
 @router.post("/upload")
