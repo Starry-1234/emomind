@@ -31,7 +31,12 @@ async def emit_response(state: GraphState) -> dict:
     try:
         from app.graphs.nodes._extract_facts import extract_facts_and_persist
         if state.get("user_id") and not state.get("intent"):
-            asyncio.create_task(extract_facts_and_persist(dict(state)))
+            # M5 minor #1: sample every 3rd turn to cap LLM cost.
+            # analyze_answer incremented messages_answered_count by 1
+            # on the answer; we extract on multiples of 3 (turn 3, 6, 9, ...).
+            answered_count = state.get("messages_answered_count", 0)
+            if answered_count > 0 and answered_count % 3 == 0:
+                asyncio.create_task(extract_facts_and_persist(dict(state)))
     except Exception:
         # Never let the long-term schedule error block the SSE response
         pass

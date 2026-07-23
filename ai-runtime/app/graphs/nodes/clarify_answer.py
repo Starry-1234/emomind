@@ -38,4 +38,13 @@ async def clarify_answer(state: PsychTestState, model: Any | None = None) -> dic
         ],
     )
     text = reply.content if isinstance(reply.content, str) else str(reply.content)
-    return {"assistant_reply": text}
+    # M5: emit a workflow_event so the frontend can render the
+    # clarification prompt (the assistant_reply text is the
+    # message_end payload as usual).
+    return {
+        "assistant_reply": text,
+        "workflow_event": {
+            "type": "clarify_request",
+            "thread_id": state.get("thread_id"),
+        },
+    }

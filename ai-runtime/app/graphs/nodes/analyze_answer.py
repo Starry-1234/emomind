@@ -73,6 +73,9 @@ async def analyze_answer(state: PsychTestState, model: Any | None = None) -> dic
     score = int(parsed.get("score", 0))
     score = max(0, min(4, score))  # clamp 0-4
     emotion_tags = parsed.get("emotion_tags", []) or []
+    # M5: confidence (0-1) from LLM; clamp to [0.0, 1.0]
+    confidence = float(parsed.get("confidence", 0.8))
+    confidence = max(0.0, min(1.0, confidence))
 
     answers = list(state.get("answers") or [])
     answers.append(
@@ -91,10 +94,14 @@ async def analyze_answer(state: PsychTestState, model: Any | None = None) -> dic
     # is not in the seeded scores dict.
     scores.setdefault(dim, []).append(score)
     progress["scores"] = scores
+    # M5: increment messages_answered_count for sampling gate in emit_response
+    new_count = state.get("messages_answered_count", 0) + 1
 
     return {
         "answers": answers,
         "emotion_tags": tags,
         "test_progress": progress,
-        "answer_ambiguous": False,  # M3 always False
+        "answer_ambiguous": False,  # M3 always False; M5 minor: clarify via confidence
+        "last_confidence": confidence,  # M5: graph routes on this
+        "messages_answered_count": new_count,  # M5: emit_response samples
     }

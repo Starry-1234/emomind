@@ -63,10 +63,14 @@ def route_by_intent(state: PsychTestState) -> str:
 def route_after_answer(state: PsychTestState) -> str:
     """Route after update_progress. Returns the next node name.
 
-    M3 never sets answer_ambiguous=True, so 'clarify_answer' is unreachable
-    in M3. M5 will add LLM-based ambiguity detection.
+    M5 minor #3: when analyze_answer returns last_confidence < 0.6,
+    route to clarify_answer (LLM asks user to clarify). M3's
+    answer_ambiguous path is kept for back-compat.
     """
     if state.get("answer_ambiguous"):
+        return "clarify_answer"
+    last_conf = state.get("last_confidence")
+    if last_conf is not None and last_conf < 0.6:
         return "clarify_answer"
     progress = state.get("test_progress") or {}
     current = progress.get("current", 0)
