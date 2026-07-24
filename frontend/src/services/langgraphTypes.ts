@@ -3,6 +3,8 @@
  * doc/langgraph-migration/02-components.md §1.1 SSE events.
  */
 
+export type Graph = "ai-doctor" | "psych-test"
+
 export type LangGraphRole = "user" | "assistant"
 
 export interface LangGraphFile {
