@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react"
 import { TestRecordsService } from "@/client"
 import { Button } from "@/components/ui/button"
 import useAuth from "@/hooks/useAuth"
-import { getConversationCount, getConversations } from "@/services/difyApi"
+import { listConversations } from "@/services/conversationApi"
 
 export const Route = createFileRoute("/user/")({
   component: UserHome,
@@ -291,19 +291,20 @@ async function smartNavigate(
     replace?: boolean
   }) => void,
 ) {
-  const result = await getConversations(userId, {
-    apiKeyName: contextKey,
-  })
+  const graph = contextKey === "test" ? "psych-test" : "ai-doctor"
+  const result = await listConversations(userId, graph)
 
-  if (result.data.length > 0) {
-    const mostRecent = result.data.reduce((latest, conv) =>
-      conv.updated_at > latest.updated_at ? conv : latest,
+  if (result.length > 0) {
+    const mostRecent = result.reduce((latest, conv) =>
+      new Date(conv.updated_at).getTime() > new Date(latest.updated_at).getTime()
+        ? conv
+        : latest,
     )
     const chatRoute =
       contextKey === "ai-doctor"
         ? "/user/ai-doctor/chat/$sessionId"
         : "/user/test/chat/$sessionId"
-    navigate({ to: chatRoute, params: { sessionId: mostRecent.id } })
+    navigate({ to: chatRoute, params: { sessionId: mostRecent.thread_id } })
   } else {
     const modulePath =
       contextKey === "ai-doctor" ? "/user/ai-doctor" : "/user/test"
@@ -341,12 +342,12 @@ function UserHome() {
   useEffect(() => {
     async function fetchCounts() {
       try {
-        const [chat, testChat] = await Promise.all([
-          getConversationCount(userId, "ai-doctor"),
-          getConversationCount(userId, "test"),
+        const [chatList, testChatList] = await Promise.all([
+          listConversations(userId, "ai-doctor"),
+          listConversations(userId, "psych-test"),
         ])
-        setChatCount(chat)
-        setTestChatCount(testChat)
+        setChatCount(chatList.length)
+        setTestChatCount(testChatList.length)
         setTestCount(records.length)
       } catch {
         // ignore

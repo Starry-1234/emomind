@@ -24,12 +24,18 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  type DifyConversation,
-  type DifyMessage,
-  deleteConversation,
-  getConversations,
-  getMessages,
-} from "@/services/difyApi"
+  type ConversationMeta,
+  listConversations,
+} from "@/services/conversationApi"
+
+// Local placeholder for message replay — full message-history endpoint lands
+// in M6 (ai-runtime /v1/messages/{thread_id} doesn't exist yet).
+interface AdminMessage {
+  id: string
+  query?: string
+  answer?: string
+  created_at: number
+}
 
 
 export const Route = createFileRoute("/_admin-layout/chat-history")({
@@ -39,8 +45,9 @@ export const Route = createFileRoute("/_admin-layout/chat-history")({
   }),
 })
 
-function formatTime(ts: number) {
-  return new Date(ts * 1000).toLocaleString("zh-CN", {
+function formatTime(ts: number | string) {
+  const ms = typeof ts === "string" ? new Date(ts).getTime() : ts * 1000
+  return new Date(ms).toLocaleString("zh-CN", {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -84,32 +91,33 @@ function ChatHistory() {
   ) as UserResponse | undefined
 
   // 2) 会话列表（固定为 ai-doctor，心理测评记录请去「用户测评记录」页面）
-  const { data: convsRes, isLoading: convsLoading } = useQuery({
+  const { data: conversations, isLoading: convsLoading } = useQuery({
     queryKey: ["admin-conversations", selectedUserId],
-    queryFn: () =>
-      getConversations(selectedUserId!, { limit: 50, apiKeyName: "ai-doctor" }),
+    queryFn: () => listConversations(selectedUserId!, "ai-doctor"),
     enabled: !!selectedUserId,
   })
 
-  const conversations = convsRes?.data || []
+  const conversationList = conversations ?? []
 
-  // 3) 消息列表
-  const { data: msgsRes, isLoading: msgsLoading } = useQuery({
+  // 3) 消息列表 — M6 backlog: ai-runtime /v1/messages/{thread_id} endpoint.
+  //    Stub returns empty array so the JSX renders the "暂无信笺往来" state.
+  const { data: messages, isLoading: msgsLoading } = useQuery({
     queryKey: ["admin-messages", selectedUserId, selectedConvId],
-    queryFn: () =>
-      getMessages(selectedUserId!, selectedConvId!, { limit: 100 }),
+    queryFn: async (): Promise<AdminMessage[]> => [],
     enabled: !!selectedUserId && !!selectedConvId,
   })
 
-  const messages = msgsRes?.data || []
-  const selectedConv = conversations.find(
-    (c: DifyConversation) => c.id === selectedConvId,
-  ) as DifyConversation | undefined
+  const messageList: AdminMessage[] = messages ?? []
+  const selectedConv = conversationList.find(
+    (c) => c.thread_id === selectedConvId,
+  )
 
-  // 4) 删除会话
+  // 4) 删除会话 — M6 backlog: Spring AiController doesn't expose
+  //    DELETE /api/v1/ai/conversations/{thread_id} for admins yet.
   const deleteMutation = useMutation({
-    mutationFn: (convId: string) =>
-      deleteConversation(convId, selectedUserId!, "ai-doctor"),
+    mutationFn: async (_convId: string) => {
+      // no-op until M6
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["admin-conversations", selectedUserId],
@@ -211,9 +219,9 @@ function ChatHistory() {
               <SealIcon char="话" />
               <span className="text-sm font-semibold">会话记录</span>
             </div>
-            {conversations.length > 0 && (
+            {conversationList.length > 0 && (
               <Badge variant="secondary" className="text-xs">
-                {conversations.length}
+                {conversationList.length}
               </Badge>
             )}
           </div>
@@ -239,18 +247,18 @@ function ChatHistory() {
                   <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
                     正在整理会话…
                   </div>
-                ) : conversations.length === 0 ? (
+                ) : conversationList.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-8 text-xs text-muted-foreground">
                     <SealIcon char="空" size="lg" className="opacity-50" />
                     <span>该用户暂无会话</span>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-0.5">
-                    {conversations.map((conv: DifyConversation) => (
+                    {conversationList.map((conv: ConversationMeta) => (
                       <div
-                        key={conv.id}
+                        key={conv.thread_id}
                         className={`group relative rounded-md transition-colors ${
-                          selectedConvId === conv.id
+                          selectedConvId === conv.thread_id
                             ? "bg-primary/10 text-primary"
                             : "hover:bg-muted"
                         }`}
@@ -258,12 +266,12 @@ function ChatHistory() {
                         <button
                           type="button"
                           className="w-full px-2.5 py-2.5 text-left cursor-pointer"
-                          aria-label={`选择会话: ${conv.name || "未命名会话"}`}
-                          onClick={() => setSelectedConvId(conv.id)}
+                          aria-label={`选择会话: ${conv.title || "未命名会话"}`}
+                          onClick={() => setSelectedConvId(conv.thread_id)}
                         >
                           <div className="min-w-0">
                             <div className="truncate text-xs font-medium pr-6">
-                              {conv.name || "未命名会话"}
+                              {conv.title || "未命名会话"}
                             </div>
                             <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
                               <Clock className="h-3 w-3" />
@@ -273,7 +281,7 @@ function ChatHistory() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setDeleteConvId(conv.id)}
+                          onClick={() => setDeleteConvId(conv.thread_id)}
                           className="opacity-0 group-hover:opacity-100 absolute right-1.5 top-1.5 size-6 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
                         >
                           <X className="size-3.5" />
@@ -303,7 +311,7 @@ function ChatHistory() {
               <div className="flex items-center gap-3 border-b px-4 py-3">
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold">
-                    {selectedConv?.name || "未命名会话"}
+                    {selectedConv?.title || "未命名会话"}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     创建于{" "}
@@ -311,12 +319,12 @@ function ChatHistory() {
                   </div>
                 </div>
                 <Badge variant="outline" className="text-xs">
-                  {messages.length} 条消息
+                  {messageList.length} 条消息
                 </Badge>
               </div>
 
               {/* 消息列表 */}
-              <MessageList messages={messages} isLoading={msgsLoading} />
+              <MessageList messages={messageList} isLoading={msgsLoading} />
             </>
           )}
         </div>
@@ -355,7 +363,7 @@ function MessageList({
   messages,
   isLoading,
 }: {
-  messages: DifyMessage[]
+  messages: AdminMessage[]
   isLoading: boolean
 }) {
   const bottomRef = useRef<HTMLDivElement>(null)
