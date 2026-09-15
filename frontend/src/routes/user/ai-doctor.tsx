@@ -10,7 +10,7 @@ import {
   Video,
   X,
 } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import { AnalysisReportsService } from "@/client"
 import { MessageActions } from "@/components/chat/MessageActions"
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { useConversation } from "@/contexts/ConversationContext"
 import useAuth from "@/hooks/useAuth"
 import { useChat } from "@/hooks/useChat"
+import { useChatHistory } from "@/hooks/useChatHistory"
 import { useCurrentTheme } from "@/hooks/useCurrentTheme"
 import {
   uploadFile as apiUploadFile,
@@ -93,13 +94,8 @@ const assistantMessageTransition = { duration: 0.4, ease: "easeInOut" as const }
 
 export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
   const { user } = useAuth()
-  const userId = user?.id || "anonymous"
-  const {
-    activeConvId,
-    setActiveConvId,
-    loadConversations,
-    selectConversationById,
-  } = useConversation()
+  const userId = user?.id ? String(user.id) : "anonymous"
+  const { selectedThreadId, setSelectedThreadId } = useConversation()
   useCurrentTheme() // keep hook for theme side-effects
   const navigate = useNavigate()
 
@@ -112,60 +108,118 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
     }
   }, [])
 
-  // ── 同步 URL sessionId 和 Context activeConvId ─────────────────────────────
-  const hadActiveIdRef = useRef(false)
+  // ── 同步 URL sessionId 和 Context selectedThreadId ───────────────────────
+  // M5: replaced M1 ConversationContext.activeConvId with V5 selectedThreadId.
+  const hadSelectedIdRef = useRef(false)
 
   useEffect(() => {
-    if (propSessionId && propSessionId !== activeConvId) {
-      if (activeConvId === "" && hadActiveIdRef.current) {
+    if (propSessionId && propSessionId !== selectedThreadId) {
+      if (selectedThreadId === "" && hadSelectedIdRef.current) {
         navigate({ to: "/user/ai-doctor", replace: true })
         return
       }
-      setActiveConvId(propSessionId)
+      setSelectedThreadId(propSessionId)
     }
 
-    if (activeConvId) {
-      hadActiveIdRef.current = true
+    if (selectedThreadId) {
+      hadSelectedIdRef.current = true
     }
-  }, [propSessionId, activeConvId, setActiveConvId, navigate])
+  }, [propSessionId, selectedThreadId, setSelectedThreadId, navigate])
 
   const effectiveSessionId = propSessionId ?? ""
 
-  const handleSessionCreated = (conversationId: string) => {
-    selectConversationById(conversationId, "ai-doctor")
-    loadConversations()
-    if (isMountedRef.current) {
-      navigate({
-        to: "/user/ai-doctor/chat/$sessionId",
-        params: { sessionId: conversationId },
-        replace: true,
-      })
-    }
-  }
+  const chat = useChat({
+    graph: "ai-doctor",
+    threadId: effectiveSessionId,
+    userId,
+  })
+
+  // Pull a refresh handle from useChatHistory so the analysis-modal
+  // onMessageEnd callback can invalidate the conversation list when the
+  // graph creates a new thread for the upload.
+  const { refresh: historyRefresh } = useChatHistory(userId, "ai-doctor")
 
   const {
     messages,
     setMessages,
-    inputText,
-    setInputText,
+    currentVersion,
     isStreaming,
-    attachedFiles,
-    messagesEndRef,
-    handleSend,
-    handleStop,
-    handleContinue,
-    handleRegenerate,
-    handleSwitchVersion,
-    handleKeyDown,
-    categorizeFile,
-    removeAttachment,
-  } = useChat(
-    userId,
-    effectiveSessionId,
-    setActiveConvId,
-    loadConversations,
-    handleSessionCreated,
-    "ai-doctor",
+    send: chatSend,
+    stop: chatStop,
+    regenerate: chatRegenerate,
+    switchVersion: chatSwitchVersion,
+  } = chat
+
+  // ── Local UI state (was previously inside the M1 useChat hook) ────────────
+  const [inputText, setInputText] = useState("")
+  // attachedFiles holds browser File[] for preview/UI; we upload + convert
+  // to LangGraphFile[] only at send-time.
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const analysisFileRef = useRef<HTMLInputElement>(null)
+  const analysisAbortControllerRef = useRef<AbortController | null>(null)
+
+  // M2 file categorization: image / audio / video / doc based on MIME prefix.
+  const categorizeFile = useCallback(
+    (file: File): "image" | "audio" | "video" | "doc" => {
+      if (file.type.startsWith("image")) return "image"
+      if (file.type.startsWith("audio")) return "audio"
+      if (file.type.startsWith("video")) return "video"
+      return "doc"
+    },
+    [],
+  )
+
+  const removeAttachment = useCallback((idx: number) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))
+  }, [])
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+  const handleSend = useCallback(async () => {
+    if (isStreaming) return
+    const text = inputText.trim()
+    if (!text && attachedFiles.length === 0) return
+    const files = attachedFiles
+    setInputText("")
+    setAttachedFiles([])
+    await chatSend(text, { files })
+  }, [chatSend, inputText, attachedFiles, isStreaming])
+
+  const handleStop = useCallback(() => {
+    chatStop()
+  }, [chatStop])
+
+  const handleContinue = useCallback((messageIndex: number) => {
+    // M5: useChat doesn't expose per-message continue; the only resume path
+    // is sending the last user message against the same thread. Best-effort
+    // no-op here for M5.
+    void messageIndex
+  }, [])
+
+  const handleRegenerate = useCallback(
+    (_messageIndex: number) => {
+      void chatRegenerate()
+    },
+    [chatRegenerate],
+  )
+
+  const handleSwitchVersion = useCallback(
+    (_messageIndex: number, direction: -1 | 1) => {
+      const next = currentVersion + direction
+      if (next >= 0) chatSwitchVersion(next)
+    },
+    [chatSwitchVersion, currentVersion],
+  )
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault()
+        handleSend()
+      }
+    },
+    [handleSend],
   )
 
   // 基础路由安全网
@@ -189,11 +243,6 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
     }
     prevMessagesLength.current = messages.length
   }, [messages, messagesEndRef.current])
-
-  // UI refs
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-  const analysisFileRef = useRef<HTMLInputElement>(null)
-  const analysisAbortControllerRef = useRef<AbortController | null>(null)
 
   // 分析模态框状态
   const [showAnalysisUpload, setShowAnalysisUpload] = useState(false)
@@ -334,10 +383,10 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                         <div className="flex flex-wrap gap-1.5 px-1">
                           {msg.files.map((f) => (
                             <div
-                              key={f.id}
+                              key={f.file_id}
                               className="text-xs text-muted-foreground"
                             >
-                              {f.type === "image" ? (
+                              {f.category === "image" ? (
                                 <img
                                   src={f.url}
                                   alt="附件"
@@ -346,7 +395,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                               ) : (
                                 <span className="inline-flex items-center gap-1 rounded border bg-background px-2 py-1">
                                   <FileText className="size-3" />
-                                  文件
+                                  {f.name ?? "文件"}
                                 </span>
                               )}
                             </div>
@@ -402,8 +451,8 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           <MessageActions
                             isPaused={msg.isPaused || false}
                             isStreaming={msg.isStreaming || false}
-                            versions={msg.versions}
-                            currentVersion={msg.currentVersion}
+                            versions={undefined}
+                            currentVersion={currentVersion}
                             onContinue={() => handleContinue(idx)}
                             onCopy={() =>
                               navigator.clipboard.writeText(msg.content)
@@ -796,30 +845,40 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                     c === "audio" ? "音频" : c === "video" ? "视频" : "文档",
                   )
 
-                  const userMsg: LangGraphMessage = {
+                  const userMsg: import("@/hooks/useChat").Message = {
+                    id: crypto.randomUUID(),
                     role: "user",
                     content: `【心理状况分析】上传了 ${analysisFiles.length} 个文件（${categoryLabels.join("、")}）：${fileNames}`,
+                    version: currentVersion,
+                    isStreaming: false,
+                    isPaused: false,
+                    createdAt: Date.now(),
                   }
                   setMessages((prev) => [...prev, userMsg])
 
-                  const assistantMsg: LangGraphMessage = {
+                  const assistantMsg: import("@/hooks/useChat").Message = {
+                    id: crypto.randomUUID(),
                     role: "assistant",
                     content: "",
+                    version: currentVersion,
                     isStreaming: true,
+                    isPaused: false,
+                    createdAt: Date.now(),
                   }
                   setMessages((prev) => [...prev, assistantMsg])
 
                   // M2: build LangGraphMessage[] directly from uploaded files.
                   // The multimodal graph fans out per-file analysis from input.files.
-                  const messages: import("@/services/langgraphTypes").LangGraphMessage[] =
-                    [
-                      {
-                        role: "user",
-                        content:
-                          "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
-                        files: uploadResults,
-                      },
-                    ]
+                  // Use a distinct local name so we don't shadow the outer
+                  // `messages` from useChat.
+                  const analysisInputMessages: LangGraphMessage[] = [
+                    {
+                      role: "user",
+                      content:
+                        "请你对我上传的档案文件进行专业心理状况分析，给出详细的分析报告。",
+                      files: uploadResults,
+                    },
+                  ]
 
                   // M2: direct StreamCallbacks driving analysisStage sub-states.
                   const streamCallbacks: StreamCallbacks = {
@@ -855,38 +914,42 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           "",
                         )
                       }
-                      setMessages((prev) => {
-                        const newMsgs = [...prev]
-                        const last = newMsgs[newMsgs.length - 1]
-                        if (last?.isStreaming) {
-                          newMsgs[newMsgs.length - 1] = {
-                            ...last,
-                            content: accumulated,
+                      setMessages(
+                        (prev: import("@/hooks/useChat").Message[]) => {
+                          const newMsgs = [...prev]
+                          const last = newMsgs[newMsgs.length - 1]
+                          if (last?.isStreaming) {
+                            newMsgs[newMsgs.length - 1] = {
+                              ...last,
+                              content: accumulated,
+                            }
                           }
-                        }
-                        return newMsgs
-                      })
+                          return newMsgs
+                        },
+                      )
                     },
                     onMessageEnd: (threadId, _runId, fullContent, _files) => {
                       streamHandledEnd = true
                       setAnalysisStage("complete")
                       setReport(fullContent)
                       setIsAnalyzing(false)
-                      setMessages((prev) => {
-                        const newMsgs = [...prev]
-                        const last = newMsgs[newMsgs.length - 1]
-                        if (last?.isStreaming) {
-                          const finalContent = (fullContent || accumulated)
-                            .replace(/^正在分析中，请稍候...\n?/, "")
-                            .trim()
-                          newMsgs[newMsgs.length - 1] = {
-                            ...last,
-                            content: finalContent,
-                            isStreaming: false,
+                      setMessages(
+                        (prev: import("@/hooks/useChat").Message[]) => {
+                          const newMsgs = [...prev]
+                          const last = newMsgs[newMsgs.length - 1]
+                          if (last?.isStreaming) {
+                            const finalContent = (fullContent || accumulated)
+                              .replace(/^正在分析中，请稍候...\n?/, "")
+                              .trim()
+                            newMsgs[newMsgs.length - 1] = {
+                              ...last,
+                              content: finalContent,
+                              isStreaming: false,
+                            }
                           }
-                        }
-                        return newMsgs
-                      })
+                          return newMsgs
+                        },
+                      )
 
                       const actualAnalysisResult = (fullContent || accumulated)
                         .replace(/^正在分析中，请稍候...\n?/, "")
@@ -899,7 +962,8 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           0,
                         ),
                         analysis_result: actualAnalysisResult,
-                        conversation_id: threadId || activeConvId || undefined,
+                        conversation_id:
+                          threadId || selectedThreadId || undefined,
                       }
                       AnalysisReportsService.createReport1({
                         requestBody: reportData,
@@ -912,8 +976,8 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                         })
 
                       if (threadId) {
-                        selectConversationById(threadId, "ai-doctor")
-                        loadConversations()
+                        setSelectedThreadId(threadId)
+                        historyRefresh()
                         if (isMountedRef.current) {
                           navigate({
                             to: "/user/ai-doctor/chat/$sessionId",
@@ -922,7 +986,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                           })
                         }
                       }
-                      loadConversations()
+                      historyRefresh()
                     },
                     onError: (_code, message, _recoverable) => {
                       streamHandledEnd = true
@@ -947,7 +1011,7 @@ export function AiDoctor({ sessionId: propSessionId }: { sessionId?: string }) {
                   await sendChatStream(
                     "ai-doctor",
                     {
-                      messages,
+                      messages: analysisInputMessages,
                       files: uploadResults,
                     },
                     streamCallbacks,

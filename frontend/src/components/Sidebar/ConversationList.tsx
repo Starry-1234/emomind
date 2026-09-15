@@ -1,193 +1,75 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+/**
+ * M5 — V5 ConversationList, scoped to the active graph from ConversationContext.
+ *
+ * M1-era ConversationList showed all conversations and grouped them by
+ * moduleType ("ai-doctor" vs "test") with a single badge per row. M5 splits
+ * that: each layout (user / admin) wraps in <ConversationProvider graph="…">
+ * and ConversationList now only lists that provider's graph.
+ *
+ * Notes:
+ *   - We do not delete on click; the new backend exposes
+ *     DELETE /api/v1/ai/conversations/{thread_id} which is wired in ai-runtime
+ *     but not yet through conversationApi. M5 keeps the delete affordance
+ *     stubbed — disabling the X button — and the implementation lands in
+ *     M6 when ai-runtime ships the message-load endpoint.
+ *   - We use useChatHistory(userId, graph) for the cached list; the V5 list
+ *     returns ConversationMeta[] (flat, no discriminator).
+ */
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import { Loader2, Plus, X } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 import { useState } from "react"
 import { SealIcon } from "@/components/Common/SealIcon"
-import { Badge } from "@/components/ui/badge"
 import {
   SidebarGroup,
   SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import {
-  type ConversationModuleType,
-  type TypedConversation,
-  useConversation,
-} from "@/contexts/ConversationContext"
+import { useConversation } from "@/contexts/ConversationContext"
 import useAuth from "@/hooks/useAuth"
+import { useChatHistory } from "@/hooks/useChatHistory"
 
-// ── 模块路由配置：根据 moduleType 解析对应的 chat 路由和 modulePath ──────────
-const MODULE_ROUTES: Record<
-  ConversationModuleType,
-  { chatRoute: string; modulePath: string }
-> = {
-  "ai-doctor": {
-    chatRoute: "/user/ai-doctor/chat/$sessionId",
-    modulePath: "/user/ai-doctor",
-  },
-  test: { chatRoute: "/user/test/chat/$sessionId", modulePath: "/user/test" },
+const ROUTE_FOR_GRAPH: Record<"ai-doctor" | "psych-test", string> = {
+  "ai-doctor": "/user/ai-doctor/chat/$sessionId",
+  "psych-test": "/user/test/chat/$sessionId",
 }
 
 export function ConversationList() {
-  const {
-    allConversations,
-    selectConversationById,
-    deleteConversationById,
-    modulePath,
-  } = useConversation()
-
+  const { currentGraph, selectedThreadId, setSelectedThreadId } =
+    useConversation()
   const { user } = useAuth()
-  const userId = user?.id || "anonymous"
+  const userId = user?.id ? String(user.id) : ""
   const { isMobile, setOpenMobile } = useSidebar()
   const navigate = useNavigate()
   const router = useRouterState()
   const currentPath = router.location.pathname
-  // 正在删除中的会话 ID
-  const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  // 从当前 URL 中提取 sessionId（如果处于动态路由中）
-  const sessionMatch = currentPath.match(
-    /\/user\/(?:ai-doctor|test)\/chat\/([^/]+)/,
-  )
-  const currentSessionId = sessionMatch ? sessionMatch[1] : ""
+  const { conversations, isLoading } = useChatHistory(userId, currentGraph)
+  // M6: wire up real deleteConversation(threadId) when ai-runtime ships it.
+  const [deletingId] = useState<string | null>(null)
 
-  // 按模块类型分组
-  const doctorConversations = allConversations.filter(
-    (c) => c.moduleType === "ai-doctor",
-  )
-  const testConversations = allConversations.filter(
-    (c) => c.moduleType === "test",
-  )
+  const baseRoute =
+    currentGraph === "psych-test" ? "/user/test" : "/user/ai-doctor"
+  const chatRoute = ROUTE_FOR_GRAPH[currentGraph]
 
   const handleNewConversation = () => {
-    const moduleType: ConversationModuleType = modulePath.startsWith(
-      "/user/test",
-    )
-      ? "test"
-      : "ai-doctor"
-
-    // 清除基础路由的 sessionStorage 缓存，确保显示干净的模板页面
-    // key 格式：emomind_chat_messages_${userId}_new / emomind_test_messages_${userId}_new
-    const cachePrefix =
-      moduleType === "test" ? "emomind_test_messages" : "emomind_chat_messages"
-    sessionStorage.removeItem(`${cachePrefix}_${userId}_new`)
-
-    navigate({ to: modulePath })
-    selectConversationById("", moduleType)
-    if (isMobile) {
-      setOpenMobile(false)
-    }
+    setSelectedThreadId(null)
+    navigate({ to: baseRoute })
+    if (isMobile) setOpenMobile(false)
   }
 
-  const handleSelectConversation = (conv: TypedConversation) => {
-    const route = MODULE_ROUTES[conv.moduleType]
-    navigate({ to: route.chatRoute, params: { sessionId: conv.id } })
-    selectConversationById(conv.id, conv.moduleType)
-    if (isMobile) {
-      setOpenMobile(false)
-    }
+  const handleSelectConversation = (threadId: string) => {
+    setSelectedThreadId(threadId)
+    navigate({ to: chatRoute, params: { sessionId: threadId } })
+    if (isMobile) setOpenMobile(false)
   }
 
-  const handleDeleteConversation = async (
-    convId: string,
-    e: React.MouseEvent,
-  ) => {
-    e.stopPropagation()
-    if (deletingId) return // 防止重复点击
-
-    // 先判断是否需要导航（在 deleteConversationById 可能失败的情况下也要导航）
-    const isTest = currentPath.startsWith("/user/test")
-    const isCurrentConv = currentSessionId === convId
-    const targetPath = isTest ? "/user/test" : "/user/ai-doctor"
-
-    // 如果被删的是当前正在查看的会话，先导航到基础路由再删除
-    // 这样无论 API 是否成功，用户都不会停留在已删除的会话页面
-    if (isCurrentConv) {
-      navigate({ to: targetPath, replace: true })
-    }
-
-    setDeletingId(convId)
-    try {
-      await deleteConversationById(convId)
-    } catch (err) {
-      alert(`删除失败: ${err instanceof Error ? err.message : "未知错误"}`)
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
-  // 渲染单条会话
-  const renderConversationItem = (conv: TypedConversation) => (
-    <SidebarMenuItem key={conv.id}>
-      <SidebarMenuButton
-        tooltip={conv.name || "新对话"}
-        isActive={currentSessionId === conv.id}
-        onClick={() => handleSelectConversation(conv)}
-      >
-        <SealIcon char="话" />
-        <span className="truncate flex-1">{conv.name || "新对话"}</span>
-        <Badge
-          variant="outline"
-          className={`ml-1 shrink-0 text-[10px] leading-none px-1.5 py-0.5 ${
-            conv.moduleType === "ai-doctor"
-              ? "border-primary/30 text-primary"
-              : "border-primary/30 text-primary"
-          }`}
-        >
-          {conv.moduleType === "ai-doctor" ? "医生" : "测评"}
-        </Badge>
-      </SidebarMenuButton>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <SidebarMenuAction
-            onClick={(e) => e.stopPropagation()}
-            disabled={deletingId === conv.id}
-          >
-            {deletingId === conv.id ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <X />
-            )}
-          </SidebarMenuAction>
-        </AlertDialogTrigger>
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
-            <AlertDialogDescription>
-              确定要删除会话「{conv.name || "新对话"}」吗？此操作不可撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation()
-                handleDeleteConversation(conv.id, e)
-              }}
-            >
-              删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </SidebarMenuItem>
-  )
+  const isCurrent = (threadId: string) =>
+    currentPath.includes(`/chat/${threadId}`) || selectedThreadId === threadId
 
   return (
     <SidebarGroup className="group/conversation">
@@ -196,42 +78,37 @@ export function ConversationList() {
         <Plus />
       </SidebarGroupAction>
       <SidebarGroupContent className="max-h-[50vh] overflow-y-auto">
-        {allConversations.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center px-2 py-3 text-xs text-muted-foreground">
+            <Loader2 className="mr-1.5 size-3 animate-spin" />
+            加载中…
+          </div>
+        ) : conversations.length === 0 ? (
           <div className="px-2 py-3 text-center text-xs text-muted-foreground">
             暂无会话记录
           </div>
         ) : (
-          <div className="space-y-1">
-            {/* 咨询记录分组 */}
-            {doctorConversations.length > 0 && (
-              <div>
-                <div className="flex items-center gap-1.5 px-2 pt-2 pb-1">
-                  <SealIcon char="医" size="sm" />
-                  <span className="text-[11px] font-medium text-muted-foreground">
-                    咨询记录
+          <SidebarMenu>
+            {conversations.map((conv) => (
+              <SidebarMenuItem key={conv.thread_id}>
+                <SidebarMenuButton
+                  tooltip={conv.title || "新对话"}
+                  isActive={isCurrent(conv.thread_id)}
+                  onClick={() => handleSelectConversation(conv.thread_id)}
+                >
+                  <SealIcon char="话" />
+                  <span className="truncate flex-1">
+                    {conv.title || "新对话"}
                   </span>
-                </div>
-                <SidebarMenu>
-                  {doctorConversations.map(renderConversationItem)}
-                </SidebarMenu>
-              </div>
-            )}
-
-            {/* 测评记录分组 */}
-            {testConversations.length > 0 && (
-              <div>
-                <div className="flex items-center gap-1.5 px-2 pt-2 pb-1">
-                  <SealIcon char="测" size="sm" />
-                  <span className="text-[11px] font-medium text-muted-foreground">
-                    测评记录
-                  </span>
-                </div>
-                <SidebarMenu>
-                  {testConversations.map(renderConversationItem)}
-                </SidebarMenu>
-              </div>
-            )}
-          </div>
+                  {/* M6: wire up deleteConversation(conv.thread_id) once
+                      ai-runtime ships it. Until then, the X button is hidden. */}
+                  {deletingId === conv.thread_id && (
+                    <Loader2 className="size-3 animate-spin" />
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
         )}
       </SidebarGroupContent>
     </SidebarGroup>

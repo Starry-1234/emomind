@@ -11,11 +11,10 @@ export const createUser = async ({
   email: string
   password: string
 }) => {
-  return await PrivateService.createUser({
+  return await PrivateService.createUser1({
     requestBody: {
       email,
       password,
-      is_verified: true,
       full_name: "Test User",
     },
   })

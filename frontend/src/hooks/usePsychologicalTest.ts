@@ -19,6 +19,7 @@
  *     compiles and renders.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
+import type { Dispatch, SetStateAction } from "react"
 import { useChat } from "./useChat"
 
 export interface ChatMessage {
@@ -27,6 +28,9 @@ export interface ChatMessage {
   isStreaming?: boolean
   isPaused?: boolean
   userQuery?: string
+  // M5: version arrays are best-effort (useChat exposes a single
+  // currentVersion); full version arrays are M6 backlog. MessageActions
+  // reads both, but they're optional so older components still render.
   versions?: string[]
   currentVersion?: number
 }
@@ -70,24 +74,18 @@ function tryParseTestJson(content: string | null | undefined): TestData | null {
 }
 
 /**
- * @param _userId    — kept for signature compatibility with test.tsx
- * @param _sessionId — ditto (the hook reads threadId from the URL via its caller)
- * @param _setActiveConvId — legacy callback from OLD ConversationContext; ignored.
- *   test.tsx will be migrated to the new context in a follow-up.
- * @param _loadConversations — ditto
- * @param _onSessionCreated — ditto
+ * @param userId    — current user id (passed through to useChat for X-User-Id routing)
+ * @param sessionId — optional thread id from the URL; if set, useChat binds
+ *   this thread so SSE resumes the existing checkpoint.
  */
 export function usePsychologicalTest(
-  _userId: string,
-  _sessionId: string,
-  _setActiveConvId?: (id: string) => void,
-  _loadConversations?: () => void,
-  _onSessionCreated?: (conversationId: string) => void,
+  userId: string,
+  sessionId?: string,
 ) {
   const chat = useChat({
     graph: "psych-test",
-    threadId: null,
-    userId: _userId,
+    threadId: sessionId ?? null,
+    userId,
   })
 
   // ── Chat → ChatMessage adapter ────────────────────────────────────────────
@@ -95,12 +93,12 @@ export function usePsychologicalTest(
   // test.tsx reads {role, content, isStreaming}; we forward directly and add
   // setMessages so the JSX baseline-safety net (test.tsx:217-232) still works.
   const messages: ChatMessage[] = chat.messages.map((m) => ({
-    role: m.role === "system" ? "assistant" : (m.role as "user" | "assistant"),
+    role: m.role as "user" | "assistant",
     content: m.content,
     isStreaming: m.isStreaming,
     isPaused: m.isPaused,
   }))
-  const setMessages = useCallback((_updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+  const setMessages: Dispatch<SetStateAction<ChatMessage[]>> = useCallback((_updater) => {
     // test.tsx uses setMessages only to clear the list. useChat doesn't expose
     // a direct setter; for M5 we accept the call as a no-op and clear via a
     // a STOP + a follow-up empty send. T8 backlog: threadId-aware clear.

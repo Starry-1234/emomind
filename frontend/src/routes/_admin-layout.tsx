@@ -8,7 +8,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { ConversationProvider } from "@/contexts/ConversationContext"
-import { isLoggedIn } from "@/hooks/useAuth"
+import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_admin-layout")({
   component: AdminLayout,
@@ -39,8 +39,12 @@ export const Route = createFileRoute("/_admin-layout")({
 })
 
 export default function AdminLayout() {
+  const { user } = useAuth()
   return (
-    <ConversationProvider>
+    <ConversationProvider
+      userId={user?.id ? String(user.id) : null}
+      graph="ai-doctor"
+    >
       <SidebarProvider className="h-full flex">
         <AppSidebar />
         <SidebarInset className="flex flex-col">

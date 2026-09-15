@@ -40,7 +40,7 @@ const useAuth = () => {
 
   const login = async (data: LoginRequest) => {
     const response = await AuthenticationService.login({
-      request: data,
+      requestBody: data,
     })
     localStorage.setItem("access_token", response.access_token || "")
   }

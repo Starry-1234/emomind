@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from "framer-motion"
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
+import { AnimatePresence, motion } from "framer-motion"
 import {
   CheckCircle2,
   ClipboardList,
@@ -119,13 +119,8 @@ export function PsychologicalTestInner({
   sessionId?: string
 }) {
   const { user } = useAuth()
-  const userId = user?.id || "anonymous"
-  const {
-    activeConvId,
-    setActiveConvId,
-    loadConversations,
-    selectConversationById,
-  } = useConversation()
+  const userId = user?.id ? String(user.id) : "anonymous"
+  const { selectedThreadId, setSelectedThreadId } = useConversation()
   const navigate = useNavigate()
 
   // 挂载状态跟踪
@@ -137,36 +132,27 @@ export function PsychologicalTestInner({
     }
   }, [])
 
-  // ── 同步 URL sessionId 和 Context activeConvId ─────────────────────────────
-  const hadActiveIdRef = useRef(false)
+  // ── 同步 URL sessionId 和 Context selectedThreadId ───────────────────────
+  // M5: replaced the M1 ConversationContext.activeConvId with the V5
+  // selectedThreadId. The semantics are identical for this consumer: bind
+  // the chat hook to the URL's thread so SSE resumes from that checkpoint.
+  const hadSelectedIdRef = useRef(false)
 
   useEffect(() => {
-    if (propSessionId && propSessionId !== activeConvId) {
-      if (activeConvId === "" && hadActiveIdRef.current) {
+    if (propSessionId && propSessionId !== selectedThreadId) {
+      if (selectedThreadId === "" && hadSelectedIdRef.current) {
         navigate({ to: "/user/test", replace: true })
         return
       }
-      setActiveConvId(propSessionId)
+      setSelectedThreadId(propSessionId)
     }
 
-    if (activeConvId) {
-      hadActiveIdRef.current = true
+    if (selectedThreadId) {
+      hadSelectedIdRef.current = true
     }
-  }, [propSessionId, activeConvId, setActiveConvId, navigate])
+  }, [propSessionId, selectedThreadId, setSelectedThreadId, navigate])
 
   const effectiveSessionId = propSessionId ?? ""
-
-  const handleSessionCreated = (conversationId: string) => {
-    selectConversationById(conversationId, "test")
-    loadConversations()
-    if (isMountedRef.current) {
-      navigate({
-        to: "/user/test/chat/$sessionId",
-        params: { sessionId: conversationId },
-        replace: true,
-      })
-    }
-  }
 
   const {
     messages,
@@ -192,13 +178,7 @@ export function PsychologicalTestInner({
     totalCount,
     allAnswered,
     progressPct,
-  } = usePsychologicalTest(
-    userId,
-    effectiveSessionId,
-    setActiveConvId,
-    loadConversations,
-    handleSessionCreated,
-  )
+  } = usePsychologicalTest(userId, effectiveSessionId)
 
   // 用户发送消息后自动滚动到底部
   const prevMessagesLength = useRef(0)
@@ -236,11 +216,15 @@ export function PsychologicalTestInner({
       {/* 顶栏 */}
       <div className="shrink-0 flex items-center gap-3 border-b px-5 py-3">
         <div className="flex size-8 items-center justify-center rounded border-2 border-primary/80">
-          <span className="font-serif-zh text-sm font-bold text-primary">测</span>
+          <span className="font-serif-zh text-sm font-bold text-primary">
+            测
+          </span>
         </div>
         <div>
           <h1 className="font-serif-zh text-sm font-semibold">心理测评</h1>
-          <p className="text-xs text-muted-foreground">专业心理量表 · 智能分析报告</p>
+          <p className="text-xs text-muted-foreground">
+            专业心理量表 · 智能分析报告
+          </p>
         </div>
       </div>
 
@@ -265,7 +249,9 @@ export function PsychologicalTestInner({
                 </div>
 
                 <div className="space-y-4 text-sm leading-relaxed text-foreground">
-                  <p>你好呀！我是你的心理测试小助手。这里是一个温暖的角落，可以帮助你更好地了解自己的内心世界。</p>
+                  <p>
+                    你好呀！我是你的心理测试小助手。这里是一个温暖的角落，可以帮助你更好地了解自己的内心世界。
+                  </p>
                   <p>你可以直接输入想聊的话题，或者点击下方快捷入口开始。</p>
                 </div>
 
@@ -337,7 +323,9 @@ export function PsychologicalTestInner({
                   }`}
                 >
                   {msg.role === "assistant" && (
-                    <div className="text-[10px] text-muted-foreground pt-2">测评师曰</div>
+                    <div className="text-[10px] text-muted-foreground pt-2">
+                      测评师曰
+                    </div>
                   )}
                   <div
                     className={`space-y-1.5 ${
@@ -412,7 +400,9 @@ export function PsychologicalTestInner({
                     )}
                   </div>
                   {msg.role === "user" && (
-                    <div className="text-[10px] text-muted-foreground pt-2">我问</div>
+                    <div className="text-[10px] text-muted-foreground pt-2">
+                      我问
+                    </div>
                   )}
                 </motion.div>
               ))}
@@ -439,7 +429,9 @@ export function PsychologicalTestInner({
                   {submissionStatus === "done" && (
                     <>
                       <Info className="size-4 text-[#8b7355]" />
-                      <span className="text-[#8b7355] font-medium">分析完成</span>
+                      <span className="text-[#8b7355] font-medium">
+                        分析完成
+                      </span>
                     </>
                   )}
                 </div>
@@ -552,9 +544,7 @@ export function PsychologicalTestInner({
                 disabled={!allAnswered}
                 onClick={handleTestSubmit}
                 className={`transition-all duration-200 ${
-                  allAnswered
-                    ? "bg-primary hover:bg-primary/90"
-                    : ""
+                  allAnswered ? "bg-primary hover:bg-primary/90" : ""
                 }`}
               >
                 提交答案
