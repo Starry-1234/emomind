@@ -1,9 +1,8 @@
 # 前端
 
-> **注意（emomind-lg / M0）**：本 README 从 `emomind-sb` 复制。前端的
-> AI 集成正在从 `difyApi.ts` 迁移到 `langgraphApi.ts`（M5 阶段）。
-> 在此之前，6 个 import 了 `difyApi` 的文件已被 neutralise，
-> dev server 可能不能完整跑通。详见
+> **注意（emomind-lg / M5）**：前端的 AI 集成已从 `difyApi.ts` 迁移
+> 到 `langgraphApi.ts`。旧 `difyApi` 模块已在 M5 T9 删除 —
+> `src/` 中已无 `difyApi` 引用。详见
 > `doc/langgraph-migration/08-frontend-migration.md`。
 
 ## 技术栈

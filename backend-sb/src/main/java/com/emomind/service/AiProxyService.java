@@ -59,9 +59,13 @@ public class AiProxyService {
             .doOnError(e -> log.error("ai-runtime chat stream error trace={}", traceId, e));
     }
 
-    /** M5 stub — present so the controller compiles if any caller hits /chat/stop. */
+    /**
+     * Backward-compat no-op. Kept so the {@code /chat/stop} route stays wired
+     * (legacy clients may still call it). The real cancel path is
+     * {@code proxyCancel} (M5 T3), which sets a Redis flag via ai-runtime.
+     */
     public Mono<Void> proxyStop(UUID userId, String threadId, String runId) {
-        log.warn("proxyStop called but not implemented in M1 — thread={} run={}", threadId, runId);
+        log.info("proxyStop called (legacy endpoint, no-op) thread={} run={}", threadId, runId);
         return Mono.empty();
     }
 

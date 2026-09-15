@@ -1,17 +1,19 @@
-"""emit_response — M1 stub.
+"""emit_response — terminal graph node.
 
-In M4 this node will emit an SSE 'message_end' event into the state and
-trigger long-term memory writes. For M1 it's a no-op pass-through that
-signals the graph to END. Real SSE emission happens in streaming.py at the
-api/chat.py layer.
+SSE emission happens upstream in `api/chat.py` (the streaming layer); this
+node is a no-op pass-through that signals the graph to END.
 
-Typed as GraphState (the union parent) so this node can be reused by both
-the ai_doctor and psych_test graphs without LangGraph filtering out keys
-declared on PsychTestState (e.g., assistant_reply).
+After pass-through, schedule long-term memory extraction (fire-and-forget,
+via `asyncio.create_task`). Only for `ai_doctor` — `psych_test` is a
+one-shot report and does not write long-term memory. Failures are caught
+and logged so they never block the SSE response.
 
-M4: After emit, schedule long-term memory extraction (fire-and-forget).
-Only for ai_doctor (psych_test is one-shot report, no long-term needed).
-Failures are caught and logged so they never block the SSE response.
+Typed as `GraphState` (the union parent) so this node can be reused by
+both `ai_doctor` and `psych_test` graphs without LangGraph filtering out
+keys declared on `PsychTestState` (e.g. `assistant_reply`).
+
+M5 minor #1: extraction is sampled every 3rd turn (gated by
+`messages_answered_count % 3 == 0`) to cap LLM cost.
 """
 from __future__ import annotations
 

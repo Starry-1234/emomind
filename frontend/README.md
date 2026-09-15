@@ -1,10 +1,9 @@
 # Frontend
 
-> **Note (emomind-lg / M0)**: This README was copied from `emomind-sb`.
-> The frontend's AI integration is being migrated from `difyApi.ts` to
-> `langgraphApi.ts` in M5. Until then, the 6 files that import
-> `difyApi` have been neutralized and the dev server may not work
-> end-to-end. See `doc/langgraph-migration/08-frontend-migration.md`.
+> **Note (emomind-lg / M5)**: AI integration has been migrated from
+> `difyApi.ts` to `langgraphApi.ts`. The legacy `difyApi` module was
+> deleted in M5 T9 — no `difyApi` imports remain in `src/`. See
+> `doc/langgraph-migration/08-frontend-migration.md`.
 
 ## Tech Stack
 
