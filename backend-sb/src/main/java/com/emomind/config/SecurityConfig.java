@@ -54,6 +54,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/password-recovery/**").permitAll()
                         .requestMatchers("/api/v1/reset-password/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users/signup").permitAll()
+                        .requestMatchers("/api/v1/private/**").permitAll()
                         .requestMatchers("/api/v1/utils/health-check/**").permitAll()
                         .requestMatchers("/api/v1/ai/healthz").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
