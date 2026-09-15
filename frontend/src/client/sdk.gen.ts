@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { GetStatsResponse, GetReportsData, GetReportsResponse, CreateReportData, CreateReportResponse, GetReports1Data, GetReports1Response, CreateReport1Data, CreateReport1Response, GetReportData, GetReportResponse, DeleteReportData, DeleteReportResponse, ResetPasswordData, ResetPasswordResponse, RecoverPasswordData, RecoverPasswordResponse, TestTokenResponse, LoginData, LoginResponse, UploadFileData, UploadFileResponse, SendChatMessageData, SendChatMessageResponse, GetMessagesData, GetMessagesResponse, GetConversationsData, GetConversationsResponse, DeleteConversationData, DeleteConversationResponse, GetRecordData, GetRecordResponse, UpdateRecordData, UpdateRecordResponse, DeleteRecordData, DeleteRecordResponse, GetRecordsData, GetRecordsResponse, CreateRecordData, CreateRecordResponse, GetRecords1Data, GetRecords1Response, CreateRecord1Data, CreateRecord1Response, GetAllRecordsData, GetAllRecordsResponse, DeleteAnyRecordData, DeleteAnyRecordResponse, SignupData, SignupResponse, GetAllUsersData, GetAllUsersResponse, CreateUserData, CreateUserResponse, GetUserByIdData, GetUserByIdResponse, DeleteUserData, DeleteUserResponse, UpdateUserData, UpdateUserResponse, GetCurrentUserResponse, DeleteCurrentUserResponse, UpdateCurrentUserData, UpdateCurrentUserResponse, UpdatePasswordData, UpdatePasswordResponse, HealthCheckResponse } from './types.gen';
+import type { GetStatsResponse, CancelData, CancelResponse, ChatData, ChatResponse, StopChatData, StopChatResponse, HealthzResponse, GetReportsData, GetReportsResponse, CreateReportData, CreateReportResponse, GetReports1Data, GetReports1Response, CreateReport1Data, CreateReport1Response, GetReportData, GetReportResponse, DeleteReportData, DeleteReportResponse, ResetPasswordData, ResetPasswordResponse, RecoverPasswordData, RecoverPasswordResponse, TestTokenResponse, LoginData, LoginResponse, List11Data, List11Response, CreateData, CreateResponse, ListData, ListResponse, UploadData, UploadResponse, DownloadData, DownloadResponse, CreateUser1Data, CreateUser1Response, GetRecordData, GetRecordResponse, UpdateRecordData, UpdateRecordResponse, DeleteRecordData, DeleteRecordResponse, GetRecordsData, GetRecordsResponse, CreateRecordData, CreateRecordResponse, GetRecords1Data, GetRecords1Response, CreateRecord1Data, CreateRecord1Response, GetAllRecordsData, GetAllRecordsResponse, DeleteAnyRecordData, DeleteAnyRecordResponse, SignupData, SignupResponse, GetAllUsersData, GetAllUsersResponse, CreateUserData, CreateUserResponse, GetUserByIdData, GetUserByIdResponse, DeleteUserData, DeleteUserResponse, UpdateUserData, UpdateUserResponse, GetCurrentUserResponse, DeleteCurrentUserResponse, UpdateCurrentUserData, UpdateCurrentUserResponse, UpdatePasswordData, UpdatePasswordResponse, HealthCheckResponse } from './types.gen';
 
 export class AdminService {
     /**
@@ -15,6 +15,65 @@ export class AdminService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/admin/stats'
+        });
+    }
+}
+
+export class AiControllerService {
+    /**
+     * @param data The data for the request.
+     * @param data.threadId
+     * @returns unknown OK
+     * @throws ApiError
+     */
+    public static cancel(data: CancelData): CancelablePromise<CancelResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ai/conversations/{threadId}/cancel',
+            path: {
+                threadId: data.threadId
+            }
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns DataBuffer OK
+     * @throws ApiError
+     */
+    public static chat(data: ChatData): CancelablePromise<ChatResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ai/chat',
+            body: data.requestBody,
+            mediaType: 'application/json'
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns unknown OK
+     * @throws ApiError
+     */
+    public static stopChat(data: StopChatData): CancelablePromise<StopChatResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ai/chat/stop',
+            body: data.requestBody,
+            mediaType: 'application/json'
+        });
+    }
+    
+    /**
+     * @returns unknown OK
+     * @throws ApiError
+     */
+    public static healthz(): CancelablePromise<HealthzResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/ai/healthz'
         });
     }
 }
@@ -170,7 +229,7 @@ export class AuthenticationService {
     /**
      * 用户登录，返回 JWT 访问令牌
      * @param data The data for the request.
-     * @param data.request
+     * @param data.requestBody
      * @returns TokenResponse OK
      * @throws ApiError
      */
@@ -178,7 +237,109 @@ export class AuthenticationService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/login/access-token',
-            body: data.request,
+            body: data.requestBody,
+            mediaType: 'application/json'
+        });
+    }
+}
+
+export class ConversationMetaControllerService {
+    /**
+     * @param data The data for the request.
+     * @param data.threadId
+     * @param data.graph
+     * @returns unknown OK
+     * @throws ApiError
+     */
+    public static list11(data: List11Data): CancelablePromise<List11Response> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/ai/conversations',
+            query: {
+                graph: data.graph,
+                thread_id: data.threadId
+            }
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ConversationMetaResponse OK
+     * @throws ApiError
+     */
+    public static create(data: CreateData): CancelablePromise<CreateResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ai/conversations',
+            body: data.requestBody,
+            mediaType: 'application/json'
+        });
+    }
+}
+
+export class FileControllerService {
+    /**
+     * @param data The data for the request.
+     * @param data.prefix
+     * @returns unknown OK
+     * @throws ApiError
+     */
+    public static list(data: ListData = {}): CancelablePromise<ListResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/ai/files',
+            query: {
+                prefix: data.prefix
+            }
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.formData
+     * @returns unknown OK
+     * @throws ApiError
+     */
+    public static upload(data: UploadData = {}): CancelablePromise<UploadResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ai/files',
+            formData: data.formData,
+            mediaType: 'multipart/form-data'
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.fileId
+     * @returns string OK
+     * @throws ApiError
+     */
+    public static download(data: DownloadData): CancelablePromise<DownloadResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/ai/files/{fileId}',
+            path: {
+                fileId: data.fileId
+            }
+        });
+    }
+}
+
+export class PrivateService {
+    /**
+     * Create a user without auth (test seeding only)
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns UserResponse OK
+     * @throws ApiError
+     */
+    public static createUser1(data: CreateUser1Data): CancelablePromise<CreateUser1Response> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/private/users',
+            body: data.requestBody,
             mediaType: 'application/json'
         });
     }

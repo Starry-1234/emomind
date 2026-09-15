@@ -28,6 +28,45 @@ export type AnalysisReportResponse = {
     created_at?: string;
 };
 
+export type ChatRequest = {
+    graph: string;
+    threadId?: string;
+    input: {
+        [key: string]: {
+            [key: string]: unknown;
+        };
+    };
+};
+
+export type ConversationMetaCreateRequest = {
+    graph: string;
+    thread_id: string;
+    title?: string;
+    metadata?: {
+        [key: string]: {
+            [key: string]: unknown;
+        };
+    };
+};
+
+export type ConversationMetaResponse = {
+    id?: string;
+    graph?: string;
+    thread_id?: string;
+    title?: string;
+    metadata?: {
+        [key: string]: {
+            [key: string]: unknown;
+        };
+    };
+    created_at?: string;
+    updated_at?: string;
+};
+
+export type DataBuffer = {
+    [key: string]: unknown;
+};
+
 export type LoginRequest = {
     username: string;
     password: string;
@@ -188,6 +227,34 @@ export type UserUpdateRequest = {
 
 export type GetStatsResponse = (AdminStatsResponse);
 
+export type CancelData = {
+    threadId: string;
+};
+
+export type CancelResponse = ({
+    [key: string]: {
+        [key: string]: unknown;
+    };
+});
+
+export type ChatData = {
+    requestBody: ChatRequest;
+};
+
+export type ChatResponse = (Array<DataBuffer>);
+
+export type StopChatData = {
+    requestBody: {
+        [key: string]: (string);
+    };
+};
+
+export type StopChatResponse = (unknown);
+
+export type HealthzResponse = ({
+    [key: string]: unknown;
+});
+
 export type GetReportsData = {
     pageable: Pageable;
 };
@@ -239,67 +306,57 @@ export type RecoverPasswordResponse = (MessageResponse);
 export type TestTokenResponse = (UserResponse);
 
 export type LoginData = {
-    request: LoginRequest;
+    requestBody: LoginRequest;
 };
 
 export type LoginResponse = (TokenResponse);
 
-export type UploadFileData = {
-    apiKeyName: string;
-    requestBody: {
-        [key: string]: {
-            [key: string]: unknown;
-        };
+export type List11Data = {
+    graph?: string;
+    threadId: string;
+};
+
+export type List11Response = ((ConversationMetaResponse | Array<ConversationMetaResponse>));
+
+export type CreateData = {
+    requestBody: ConversationMetaCreateRequest;
+};
+
+export type CreateResponse = (ConversationMetaResponse);
+
+export type ListData = {
+    prefix?: string;
+};
+
+export type ListResponse = (Array<{
+    [key: string]: {
+        [key: string]: unknown;
+    };
+}>);
+
+export type UploadData = {
+    formData?: {
+        file: (Blob | File);
     };
 };
 
-export type UploadFileResponse = ({
+export type UploadResponse = ({
     [key: string]: {
         [key: string]: unknown;
     };
 });
 
-export type SendChatMessageData = {
-    apiKeyName: string;
-    requestBody: {
-        [key: string]: {
-            [key: string]: unknown;
-        };
-    };
+export type DownloadData = {
+    fileId: string;
 };
 
-export type SendChatMessageResponse = (unknown);
+export type DownloadResponse = (Array<(string)>);
 
-export type GetMessagesData = {
-    apiKeyName: string;
-    conversationId: string;
-    user?: string;
+export type CreateUser1Data = {
+    requestBody: UserRegisterRequest;
 };
 
-export type GetMessagesResponse = ({
-    [key: string]: {
-        [key: string]: unknown;
-    };
-});
-
-export type GetConversationsData = {
-    apiKeyName: string;
-    user?: string;
-};
-
-export type GetConversationsResponse = ({
-    [key: string]: {
-        [key: string]: unknown;
-    };
-});
-
-export type DeleteConversationData = {
-    apiKeyName: string;
-    id: string;
-    user?: string;
-};
-
-export type DeleteConversationResponse = (MessageResponse);
+export type CreateUser1Response = (UserResponse);
 
 export type GetRecordData = {
     id: string;

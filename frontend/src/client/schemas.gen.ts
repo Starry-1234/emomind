@@ -352,6 +352,90 @@ export const AnalysisReportResponseSchema = {
     }
 } as const;
 
+export const ConversationMetaCreateRequestSchema = {
+    required: ['graph', 'thread_id'],
+    type: 'object',
+    properties: {
+        graph: {
+            maxLength: 64,
+            minLength: 0,
+            type: 'string'
+        },
+        thread_id: {
+            maxLength: 128,
+            minLength: 0,
+            type: 'string'
+        },
+        title: {
+            maxLength: 255,
+            minLength: 0,
+            type: 'string'
+        },
+        metadata: {
+            type: 'object',
+            additionalProperties: {
+                type: 'object'
+            }
+        }
+    }
+} as const;
+
+export const ConversationMetaResponseSchema = {
+    type: 'object',
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid'
+        },
+        graph: {
+            type: 'string'
+        },
+        thread_id: {
+            type: 'string'
+        },
+        title: {
+            type: 'string'
+        },
+        metadata: {
+            type: 'object',
+            additionalProperties: {
+                type: 'object'
+            }
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
+export const ChatRequestSchema = {
+    required: ['graph', 'input'],
+    type: 'object',
+    properties: {
+        graph: {
+            type: 'string'
+        },
+        threadId: {
+            type: 'string'
+        },
+        input: {
+            type: 'object',
+            additionalProperties: {
+                type: 'object'
+            }
+        }
+    }
+} as const;
+
+export const DataBufferSchema = {
+    type: 'object'
+} as const;
+
 export const UserUpdateRequestSchema = {
     type: 'object',
     properties: {
