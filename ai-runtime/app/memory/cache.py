@@ -99,16 +99,27 @@ def _meta_log_for(now: datetime, base: Path) -> Path:
 
 
 def write_file(
-    *, user_id: str, content: bytes, mime: str, name: str
+    *, user_id: str, content: bytes, mime: str, name: str,
+    uploaded_at: Optional[str] = None,
 ) -> dict:
-    """Write content to disk, append meta record, return meta dict."""
+    """Write content to disk, append meta record, return meta dict.
+
+    `uploaded_at` is an optional ISO-8601 override; defaults to the current
+    UTC time. Tests pass explicit values when they need deterministic
+    ordering (Windows datetime.now() resolution can collapse sub-millisecond
+    writes into the same microsecond, making sort-by-time tests flaky).
+    """
     if not _is_mime_allowed(mime):
         raise ValueError(f"Unsupported mime type: {mime!r}")
     if len(content) > settings.max_file_size_mb * 1024 * 1024:
         raise ValueError(
             f"File too large: {len(content)} bytes (max {settings.max_file_size_mb} MB)"
         )
-    now = datetime.now(timezone.utc)
+    if uploaded_at is None:
+        now = datetime.now(timezone.utc)
+        uploaded_at = now.isoformat()
+    else:
+        now = datetime.fromisoformat(uploaded_at)
     file_id = uuid.uuid4().hex
     base = Path(settings.storage_path)
     yyyy, mm, dd = now.strftime("%Y"), now.strftime("%m"), now.strftime("%d")
@@ -126,7 +137,7 @@ def write_file(
         "size": len(content),
         "name": name,
         "path": str(target_path),
-        "uploaded_at": now.isoformat(),
+        "uploaded_at": uploaded_at,
     }
     with open(meta_log, "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")

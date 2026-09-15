@@ -55,9 +55,21 @@ async def test_files_list_filters_by_user_id(tmp_storage):
 async def test_files_list_returns_newest_first(tmp_storage):
     """Multiple files for the same user should be sorted by uploaded_at desc."""
     user = str(uuid.uuid4())
-    write_file(user_id=user, content=b"first", mime="image/png", name="first.png")
-    write_file(user_id=user, content=b"second", mime="image/png", name="second.png")
-    write_file(user_id=user, content=b"third", mime="image/png", name="third.png")
+    # Pass explicit uploaded_at values 1 ms apart so the test is not
+    # dependent on the host clock's microsecond resolution (Windows can
+    # collapse sub-millisecond writes into the same microsecond).
+    write_file(
+        user_id=user, content=b"first", mime="image/png", name="first.png",
+        uploaded_at="2026-01-01T00:00:00.000000+00:00",
+    )
+    write_file(
+        user_id=user, content=b"second", mime="image/png", name="second.png",
+        uploaded_at="2026-01-01T00:00:00.001000+00:00",
+    )
+    write_file(
+        user_id=user, content=b"third", mime="image/png", name="third.png",
+        uploaded_at="2026-01-01T00:00:00.002000+00:00",
+    )
 
     files = await list_user_files(user)
     assert len(files) == 3
