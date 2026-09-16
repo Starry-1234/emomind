@@ -152,6 +152,9 @@ services:
       LANGGRAPH_REDIS_URL: redis://redis:6379
       LANGGRAPH_INTERNAL_TOKEN: ${LANGGRAPH_INTERNAL_TOKEN}
       LANGGRAPH_STORAGE_PATH: /var/lib/emomind/files
+      # M1+: LLM provider keys (pydantic-settings required; see app/config.py)
+      LANGGRAPH_MINIMAX_API_KEY: ${LANGGRAPH_MINIMAX_API_KEY?Variable not set}
+      LANGGRAPH_QWEN_API_KEY: ${LANGGRAPH_QWEN_API_KEY?Variable not set}
       # M3: psych_test RAG subsystem
       LANGGRAPH_EMBEDDING_API_KEY: ${LANGGRAPH_EMBEDDING_API_KEY}
       LANGGRAPH_EMBEDDING_BASE_URL: ${LANGGRAPH_EMBEDDING_BASE_URL}
