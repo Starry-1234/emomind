@@ -59,6 +59,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/ai/healthz").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info", "/actuator/metrics", "/actuator/prometheus").permitAll()
+                        // Spring Boot error dispatch — must be permitAll so the
+                        // /error forward (e.g. after SSE commit) doesn't re-run
+                        // auth and fail with "response already committed" noise.
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
