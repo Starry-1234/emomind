@@ -6,8 +6,9 @@ cd "$(dirname "$0")/.."
 echo "=== EmoMind 开发模式启动 ==="
 
 # 1. 启动基础设施
-echo "[1/3] 启动基础设施 (db, mailcatcher)..."
-docker compose up -d db mailcatcher
+# ai-runtime 依赖 db + redis（看 compose.yml），所以一起带起来
+echo "[1/3] 启动基础设施 (db, redis, ai-runtime, mailcatcher)..."
+docker compose up -d db redis ai-runtime mailcatcher
 
 # 2. 启动后端（后台运行，日志输出到 backend.log）
 echo "[2/3] 启动后端..."
