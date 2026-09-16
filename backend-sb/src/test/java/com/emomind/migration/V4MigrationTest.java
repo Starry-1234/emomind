@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * proxy, so we cannot start a container from inside the JVM. Instead, we reuse
  * a manually-launched pgvector container — start it once via:
  *
- *     docker run -d --name pgvector-test -p 55432:5432 \
+ *     docker run -d --name pgvector-test -p 25432:5432 \
  *         -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
  *         -e POSTGRES_DB=emomind_test pgvector/pgvector:pg17
  *
@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class V4MigrationTest {
 
     private static final String JDBC_URL =
-        "jdbc:postgresql://localhost:55432/emomind_test";
+        "jdbc:postgresql://localhost:25432/emomind_test";
 
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry registry) {

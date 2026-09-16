@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Mirrors the {@link com.emomind.migration.V4MigrationTest} setup: on this
  * Windows host Testcontainers cannot start a container from inside the JVM
  * (Docker CLI proxy returns HTTP 400 over the named pipe). Instead, we reuse
- * the manually-launched {@code pgvector-test} container on localhost:55432 —
+ * the manually-launched {@code pgvector-test} container on localhost:25432 —
  * started by {@code scripts/test.sh} before the maven invocation.
  */
 @SpringBootTest
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ConversationMetaTest {
 
     private static final String JDBC_URL =
-        "jdbc:postgresql://localhost:55432/emomind_test";
+        "jdbc:postgresql://localhost:25432/emomind_test";
 
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry registry) {

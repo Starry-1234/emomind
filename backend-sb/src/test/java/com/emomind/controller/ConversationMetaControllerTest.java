@@ -50,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ConversationMetaControllerTest {
 
     private static final String JDBC_URL =
-        "jdbc:postgresql://localhost:55432/emomind_test";
+        "jdbc:postgresql://localhost:25432/emomind_test";
 
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry registry) {
